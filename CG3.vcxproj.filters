@@ -25,6 +25,9 @@
     <Filter Include="math">
       <UniqueIdentifier>{d550c156-20f2-429d-9345-fa886c180b31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{ea94aad2-7d6a-4408-a993-71c40fa08722}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -64,9 +67,6 @@
     </ClCompile>
     <ClCompile Include="externals\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Log.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Math.cpp">
       <Filter>ソース ファイル</Filter>
@@ -154,6 +154,9 @@
     </ClCompile>
     <ClCompile Include="DebugUI.cpp">
       <Filter>Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -285,6 +288,9 @@
     </ClInclude>
     <ClInclude Include="DebugUI.h">
       <Filter>Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

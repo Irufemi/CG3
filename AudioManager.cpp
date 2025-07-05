@@ -16,6 +16,18 @@ void AudioManager::Initialize() {
     MFStartup(MF_VERSION, MFSTARTUP_FULL);
 }
 
+//Media Foundationの初期化
+void AudioManager::StartUp() {
+
+
+    /*サウンド再生*/
+
+    ///Microsoft Media Foundation
+
+    //Media Foundationの初期化
+    MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
+}
+
 void AudioManager::Shutdown() {
     // 保持しているサウンドデータをすべてクリア
     soundRegistry_.clear();

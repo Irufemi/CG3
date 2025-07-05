@@ -35,6 +35,9 @@ public:
     void Initialize();
     void Shutdown();
 
+    //Media Foundationの初期化
+    void StartUp();
+
     // 指定フォルダから対応する音声ファイルをすべてロードする
     void LoadAllSoundsFromFolder(const std::string& folderPath);
     

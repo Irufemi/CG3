@@ -17,6 +17,9 @@
 #include "DrawImGui.h"
 #include "GetBackBufferIndex.h"
 #include "Obj.h"
+#include "Log.h"
+
+
 
 /*プロジェクトを作ろう*/
 
@@ -135,36 +138,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
     assert(SUCCEEDED(hr));
 
-    /*サウンド再生*/
-
-    ///Microsoft Media Foundation
-
-    //Media Foundationの初期化
-    MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
+    // AudioManagerの生成・Media Foundationの初期化
+    auto audioManager = std::make_unique<AudioManager>();
+    audioManager->StartUp();
 
     /*CrashHandler*/
     SetUnhandledExceptionFilter(ExportDump);
 
-    /*ログを出そう*/
+    // ログを出せるようにする
+    std::unique_ptr<Log> log = std::make_unique<Log>();
+    log->Initialize();
 
-    //ログのディレクトリを用意
-    std::filesystem::create_directory("logs");
-
-    //現在時刻を取得
-    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-    //ログファイルの名前にコンマ何秒はいらないので、削って秒にする
-    std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> nowSeconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
-    // 日本時間(PCの設定時間)に変換
-    std::chrono::zoned_time localTime{ std::chrono::current_zone(),nowSeconds };
-    //formatを使って毎月日_時分秒の文字列に変換
-    std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
-    //時刻を使ってファイル名を決定
-    std::string logFilePath = std::string("logs/") + dateString + ".log";
-    //ファイルを使って書き込み準備
-    std::ofstream logStream(logFilePath);
-
-    //出力ウィンドウへの文字出力
-    OutputDebugStringA("Hello,DirectX!\n");
 
     /*ウィンドウを作ろう*/
 
@@ -200,7 +184,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     //ウィンドウの生成
     HWND hwnd = CreateWindow(
         wc.lpszClassName,		//利用するクラス名
-        L"CG2",			        //タイトルバーの文字(何でも良い)
+        L"CG3",			        //タイトルバーの文字(何でも良い)
         WS_OVERLAPPEDWINDOW,	//よく見るウィンドウスタイル
         CW_USEDEFAULT,			//表示X座標(windowsに任せる)
         CW_USEDEFAULT,			//表示Y座標(windowsに任せる)
@@ -238,19 +222,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ///DXGIFactoryの生成
 
     //DXGIファクトリーの生成
-    IDXGIFactory7* dxgiFactory = nullptr;
+    Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
     //HRESULTはWndows系のエラーコードであり、
     //関数が成功したかどうかをSUCCEEDEDマクロで判定できる
-     hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+    hr = CreateDXGIFactory(IID_PPV_ARGS(dxgiFactory.GetAddressOf()));
     //初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、どうにもできない場合が多いのでassertにしておく
     assert(SUCCEEDED(hr));
 
     ///使用するアダプタ(GPU)を決定する
 
     //使用するアダプタ用の変数。最初にnullptrを入れておく
-    IDXGIAdapter4* useAdapter = nullptr;
+    Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
     //良い順にアダプタを頼む
-    for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter)) != DXGI_ERROR_NOT_FOUND; i++) {
+    for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(useAdapter.GetAddressOf())) != DXGI_ERROR_NOT_FOUND; i++) {
         //アダプター情報を取得する
         DXGI_ADAPTER_DESC3 adapterDesc{};
         hr = useAdapter->GetDesc3(&adapterDesc);
@@ -258,7 +242,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         //ソフトウェアアダプタでなければ採用!
         if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
             //採用したアダプタの情報をログに出力。wstringの方なので注意
-            Log(logStream, ConvertString(std::format(L"use Adapter:{}\n", adapterDesc.Description)));
+            OutPutLog(log->GetLogStream(), ConvertString(std::format(L"use Adapter:{}\n", adapterDesc.Description)));
             break;
         }
         useAdapter = nullptr; //ソフトウェアアダプタの場合は見なかったことにする
@@ -277,23 +261,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     //高い順に生成できるか試してく
     for (size_t i = 0; i < _countof(featureLevels); ++i) {
         //採用したアダプターでデバイスを生成
-        hr = D3D12CreateDevice(useAdapter, featureLevels[i], IID_PPV_ARGS(device.GetAddressOf()));
+        hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(device.GetAddressOf()));
         //指定した機能レベルでデバイスが生成できたかを確認
         if (SUCCEEDED(hr)) {
             //生成できたのでログ出力を行ってループを抜ける
-            Log(logStream, std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+            OutPutLog(log->GetLogStream(), std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
             break;
         }
     }
     //デバイス生成がうまくいかなかったので起動できない
     assert(device != nullptr);
-    Log(logStream, "Complete create D3D12Device!!!\n"); //初期化完了のログを出す
+    OutPutLog(log->GetLogStream(), "Complete create D3D12Device!!!\n"); //初期化完了のログを出す
 
     InputManager* inputManager = new InputManager;
     inputManager->Initialize(wc, hwnd);
 
+    // 生成が完了したのでuseAdapterを解放
+    if (useAdapter) { useAdapter.Reset(); }
+
     // AudioManagerの初期化
-    auto audioManager = std::make_unique<AudioManager>();
     audioManager->Initialize();
 
     // "resources"フォルダから音声ファイルをすべてロード
@@ -379,6 +365,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
     assert(SUCCEEDED(hr));
 
+    // 作成したのでdxgiFactoryを解放
+    if (dxgiFactory) { dxgiFactory.Reset(); }
+
+
     /*テクスチャを切り替えよう*/
 
     //DescriptorSize
@@ -463,16 +453,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ///DXCの初期化
 
     //dxcCompilerを初期化
-    IDxcUtils* dxcUtils = nullptr;
-    IDxcCompiler3* dxcCompiler = nullptr;
-    hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+    Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils = nullptr;
+    Microsoft::WRL::ComPtr <IDxcCompiler3> dxcCompiler = nullptr;
+    hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(dxcUtils.GetAddressOf()));
     assert(SUCCEEDED(hr));
-    hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
+    hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(dxcCompiler.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     //現時点でincludeはしないが、includeに対応するための設定を行っておく
-    IDxcIncludeHandler* includeHandler = nullptr;
-    hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
+    Microsoft::WRL::ComPtr <IDxcIncludeHandler> includeHandler = nullptr;
+    hr = dxcUtils->CreateDefaultIncludeHandler(includeHandler.GetAddressOf());
     assert(SUCCEEDED(hr));
 
     ///RootSignatureを生成する
@@ -549,17 +539,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ///RootSignatureを生成する
 
     //シリアライズしてバイナリにする
-    ID3DBlob* signatureBlob = nullptr;
-    ID3DBlob* errorBlob = nullptr;
-    hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+    Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob>  errorBlob = nullptr;
+    hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
     if (FAILED(hr)) {
-        Log(logStream, reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+        OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
         assert(false);
     }
     //バイナリを元に生成
     ID3D12RootSignature* rootSignature = nullptr;
     hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
     assert(SUCCEEDED(hr));
+
+    // 生成が完了したのでsignatureBlob、errorBlobを解放
+    if (signatureBlob) { signatureBlob.Reset(); }
+    if (errorBlob) { errorBlob.Reset(); }
 
     /*テクスチャを貼ろう*/
 
@@ -611,11 +605,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ///ShaderをCompileする
 
     //Shaderをコンパイルする
-    IDxcBlob* vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler, includeHandler, logStream);
+    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log->GetLogStream());
     assert(vertexShaderBlob != nullptr);
 
-    IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler, includeHandler, logStream);
+    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log->GetLogStream());
     assert(pixelShaderBlob != nullptr);
+
+    // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
+    if (dxcUtils) { dxcUtils.Reset(); }
+    if (dxcCompiler) { dxcCompiler.Reset(); }
+    if (includeHandler) { includeHandler.Reset(); }
 
     /*前後関係を正しくしよう*/
 
@@ -639,6 +638,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     graphicsPipelineStateDesc.InputLayout = inputLayoutDesc; // InputLayout
     graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),vertexShaderBlob->GetBufferSize() }; // VertexShader
     graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize() }; // PixelShader
+
+    // 生成が完了したのでvertexShaderBlobを解放
+    if (vertexShaderBlob) { vertexShaderBlob.Reset(); }
+    if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
 
     /*前後関係を正しくしよう*/
 
@@ -693,9 +696,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     //バッファの場合はこれにする決まり
     vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     //実際に頂点リソースを作る
-    ID3D12Resource* dummyVertexResource = nullptr;
-    hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&dummyVertexResource));
+    Microsoft::WRL::ComPtr<ID3D12Resource> dummyVertexResource = nullptr;
+    hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(dummyVertexResource.GetAddressOf()));
     assert(SUCCEEDED(hr));
+
+    // 頂点リソースを作ったので解放
+    if (dummyVertexResource) { dummyVertexResource.Reset(); }
 
     /*三角形を表示しよう*/
 
@@ -720,7 +726,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     scissorRect.bottom = kClientHeight;
 
     DebugUI ui{};
-    ui.Initialize(commandList, device.Get(), hwnd,swapChainDesc,rtvDesc,srvDescriptorHeap);
+    ui.Initialize(commandList, device.Get(), hwnd, swapChainDesc, rtvDesc, srvDescriptorHeap);
 
 
     auto* drawManager = new DrawManager;
@@ -754,7 +760,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // (3) 初期 BGM を一番最初のカテゴリ／トラックでループ再生
     IXAudio2SourceVoice* bgmVoice = nullptr;
-    float bgmVolume = 0.5f;
+    float bgmVolume = 0.01f;
     {
         auto categories = audioManager->GetCategories();           // 登録済みカテゴリ一覧取得 :contentReference[oaicite:1]{index=1}
         if (!categories.empty()) {
@@ -829,8 +835,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 debugCamera->Update();
                 camera->SetViewMatrix(debugCamera->GetCamera().GetViewMatrix());
                 camera->SetPerspectiveFovMatrix(debugCamera->GetCamera().GetPerspectiveFovMatrix());
-            }
-            else {
+            } else {
                 camera->Update("Camera");
 
             }
@@ -964,19 +969,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     delete textureManager;
     delete inputManager;
 
-    
+
 
     // OSハンドル
     CloseHandle(fenceEvent);
 
     // リソース（VBやPSOなど）
-    if (dummyVertexResource) { dummyVertexResource->Release(); dummyVertexResource = nullptr; }
     if (graphicsPipelineState) { graphicsPipelineState->Release(); graphicsPipelineState = nullptr; }
     if (rootSignature) { rootSignature->Release(); rootSignature = nullptr; }
-    if (signatureBlob) { signatureBlob->Release(); signatureBlob = nullptr; }
-    if (errorBlob) { errorBlob->Release(); errorBlob = nullptr; }
-    if (vertexShaderBlob) { vertexShaderBlob->Release(); vertexShaderBlob = nullptr; }
-    if (pixelShaderBlob) { pixelShaderBlob->Release(); pixelShaderBlob = nullptr; }
 
     // テクスチャ・バッファ系（あれば）
     if (depthStencilResource) { depthStencilResource->Release(); depthStencilResource = nullptr; }
@@ -1001,17 +1001,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // スワップチェーン
     if (swapChain) { swapChain->Release(); swapChain = nullptr; }
 
-    // HLSLコンパイラ
-    if (includeHandler) { includeHandler->Release(); includeHandler = nullptr; }
-    if (dxcCompiler) { dxcCompiler->Release(); dxcCompiler = nullptr; }
-    if (dxcUtils) { dxcUtils->Release(); dxcUtils = nullptr; }
-
     // Device（一番最後に解放）
     if (device) { device.Reset(); }
 
-    // DXGI
-    if (useAdapter) { useAdapter->Release(); useAdapter = nullptr; }
-    if (dxgiFactory) { dxgiFactory->Release(); dxgiFactory = nullptr; }
+    
 
     // Debug (一番最後の最後)
 #ifdef _DEBUG

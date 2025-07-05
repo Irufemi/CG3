@@ -4,12 +4,6 @@
 
 #include <Windows.h>
 
-/*ログを出そう*/
-
-#include <string>
-
-#include <format>
-
 /*DirectX12を初期化しよう*/
 
 #include <d3d12.h>
@@ -68,8 +62,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 std::wstring ConvertString(const std::string& str);
 
 std::string ConvertString(const std::wstring& str);
-
-void Log(std::ostream& os, const std::string& message);
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 
