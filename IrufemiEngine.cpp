@@ -470,6 +470,37 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+
+    /*いろいろなBlend*/
+
+    ///加算合成(AddBlend)
+
+    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;*/
+
+    /// 減算合成(逆減算合成)(SubtractBlend)
+
+    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;*/
+
+    /// 乗算合成(MultiplyBlend)
+
+    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;*/
+
+    /// スクリーン合成(ScreenBlend)
+
+    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;*/
+
+    /*BlendMode*/
+
+    /// BlendModeの設定(NormalBlend)
+
     // ここからの下3行はα値のブレンド設定で基本的に使わない。書いてある通りにしておけばいい。
     // 参考にするのであれば下記のリンクを参照
     // https://learn.microsoft.com/ja-jp/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc
