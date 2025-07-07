@@ -112,7 +112,7 @@ void Sphere::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Came
     materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 
     materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    materialData_->enableLighting = false;
+    materialData_->enableLighting = true;
     materialData_->uvTransform = Math::MakeIdentity4x4();
 
     materialResource_->Unmap(0, nullptr);
