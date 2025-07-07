@@ -653,7 +653,6 @@ void IrufemiEngine::Finalize() {
     if (device) { device.Reset(); }
 
 
-
     // Debug (一番最後の最後)
 #ifdef _DEBUG
     if (debugController) { debugController->Release(); debugController = nullptr; }
