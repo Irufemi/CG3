@@ -3,6 +3,12 @@
 #include <filesystem> // フォルダ内のファイルを探索するために使用
 #include <algorithm>  // 文字列を小文字に変換するために使用
 
+#pragma comment (lib,"xaudio2.lib")
+#pragma comment(lib, "Mf.lib")
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "Mfreadwrite.lib")
+#pragma comment(lib, "mfuuid.lib")
+
 void AudioManager::Initialize() {
     // XAudio2エンジンの生成
     HRESULT hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);

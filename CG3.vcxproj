@@ -120,6 +120,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
     <ClCompile Include="GetBackBufferIndex.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="IrufemiEngine.cpp" />
     <ClCompile Include="LoadObjFile.cpp" />
     <ClCompile Include="LoadTexture.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -171,6 +172,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Function.h" />
     <ClInclude Include="GetBackBufferIndex.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="IrufemiEngine.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MaterialData.h" />
     <ClInclude Include="Math.h" />

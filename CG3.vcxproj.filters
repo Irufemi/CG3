@@ -158,6 +158,9 @@
     <ClCompile Include="Log.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="IrufemiEngine.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Function.h">
@@ -290,6 +293,9 @@
       <Filter>Manager</Filter>
     </ClInclude>
     <ClInclude Include="Log.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="IrufemiEngine.h">
       <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>

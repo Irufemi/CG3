@@ -14,7 +14,7 @@ void DrawManager::Initialize(
     ID3D12CommandQueue* commandQueue,
     IDXGISwapChain4* swapChain,
     ID3D12Fence* fence,
-    HANDLE fenceEvent,
+    const HANDLE &fenceEvent,
     ID3D12CommandAllocator* commandAllocator,
     ID3D12DescriptorHeap* srvDescriptorHeap,
     ID3D12RootSignature* rootSignature,

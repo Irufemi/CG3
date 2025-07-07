@@ -14,7 +14,7 @@
 class DebugCamera {
 private: //メンバ変数
     // カメラ注視点までの距離(ピボット回転)
-    float distance_;
+    float distance_{};
     // 入力クラスのポインタ
     InputManager* input_ = nullptr;
     // スケーリング

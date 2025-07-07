@@ -2,6 +2,9 @@
 
 #include <cassert>
 
+#pragma comment(lib,"dinput8.lib")
+#pragma comment(lib,"dxguid.lib")
+
 void InputManager::Initialize(WNDCLASS& wc, HWND& hwnd) {
 
     /*入力デバイス*/
