@@ -17,9 +17,6 @@ void AudioManager::Initialize() {
     // マスターボイスの生成
     hr = pXAudio2_->CreateMasteringVoice(&pMasteringVoice_);
     assert(SUCCEEDED(hr));
-
-    // Media Foundationの初期化
-    MFStartup(MF_VERSION, MFSTARTUP_FULL);
 }
 
 //Media Foundationの初期化
@@ -34,7 +31,7 @@ void AudioManager::StartUp() {
     MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 }
 
-void AudioManager::Shutdown() {
+void AudioManager::Finalize() {
     // 保持しているサウンドデータをすべてクリア
     soundRegistry_.clear();
 

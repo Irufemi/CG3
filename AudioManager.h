@@ -33,7 +33,7 @@ public:
 
     // オーディオエンジンの初期化・終了処理
     void Initialize();
-    void Shutdown();
+    void Finalize();
 
     //Media Foundationの初期化
     void StartUp();

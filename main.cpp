@@ -40,6 +40,8 @@
 #define DIRECTINPUT_VERSION 0x0800 //DirectInputのバージョン指定
 #include <dinput.h>
 
+#include <algorithm>
+
 /*プロジェクトを作ろう*/
 
 //クライアント領域のサイズ
@@ -53,7 +55,7 @@ const std::wstring kTitle = L"CG3_LE2B_11_スエヒロ_コウイチ";
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     std::unique_ptr<IrufemiEngine> engine = std::make_unique<IrufemiEngine>();
-    engine->Initialize(kTitle,kClientWidth, kClientHeight);
+    engine->Initialize(kTitle, kClientWidth, kClientHeight);
 
     /*三角形を表示しよう*/
 
@@ -105,7 +107,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     debugCamera->Initialize(engine->GetInputManager().get());
 
     Obj obj;
-    obj.Initialize(engine->GetDevice().Get(), camera.get(), engine->GetSrvDescriptorHeap(), engine->GetCommandList());
+    obj.Initialize(engine->GetDevice().Get(), camera.get(), engine->GetSrvDescriptorHeap(), engine->GetCommandList(), "fence.obj");
 
     Sphere sphere;
     sphere.Initialize(engine->GetDevice().Get(), camera.get(), textureManager.get());
@@ -197,39 +199,49 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             // カテゴリコンボ
             auto cats = engine->GetAudioManager()->GetCategories();
-            if (ImGui::BeginCombo("Category", cats[selectedCat].c_str())) {
-                for (int i = 0; i < (int)cats.size(); ++i) {
-                    bool sel = (i == selectedCat);
-                    if (ImGui::Selectable(cats[i].c_str(), sel)) {
-                        selectedCat = i;
-                        selectedTrack = 0;
+            if (!cats.empty()) {
+                // selectedCat を範囲内にクランプ
+                selectedCat = std::clamp(selectedCat, 0, (int)cats.size() - 1);
+                if (ImGui::BeginCombo("Category", cats[selectedCat].c_str())) {
+                    for (int i = 0; i < (int)cats.size(); ++i) {
+                        bool sel = (i == selectedCat);
+                        if (ImGui::Selectable(cats[i].c_str(), sel)) {
+                            selectedCat = i;
+                            selectedTrack = 0;
+                        }
+                        if (sel) ImGui::SetItemDefaultFocus();
                     }
-                    if (sel) ImGui::SetItemDefaultFocus();
+                    ImGui::EndCombo();
                 }
-                ImGui::EndCombo();
             }
+            
 
             // トラックコンボ
-            auto tracks = engine->GetAudioManager()->GetSoundNames(cats[selectedCat]);
-            if (ImGui::BeginCombo("BGM Track", tracks[selectedTrack].c_str())) {
-                for (int i = 0; i < (int)tracks.size(); ++i) {
-                    bool sel = (i == selectedTrack);
-                    if (ImGui::Selectable(tracks[i].c_str(), sel)) {
-                        selectedTrack = i;
-                        if (bgmVoice) {
-                            engine->GetAudioManager()->Stop(bgmVoice);
-                            bgmVoice = nullptr;
+            if (!cats.empty()) {
+                auto tracks = engine->GetAudioManager()->GetSoundNames(cats[selectedCat]);
+                if (!tracks.empty()) {
+                    selectedTrack = std::clamp(selectedTrack, 0, (int)tracks.size() - 1);
+                    if (ImGui::BeginCombo("BGM Track", tracks[selectedTrack].c_str())) {
+                        for (int i = 0; i < (int)tracks.size(); ++i) {
+                            bool sel = (i == selectedTrack);
+                            if (ImGui::Selectable(tracks[i].c_str(), sel)) {
+                                selectedTrack = i;
+                                if (bgmVoice) {
+                                    engine->GetAudioManager()->Stop(bgmVoice);
+                                    bgmVoice = nullptr;
+                                }
+                                std::string key = cats[selectedCat] + "/" + tracks[i];
+                                bgmVoice = engine->GetAudioManager()->Play(
+                                    engine->GetAudioManager()->GetSoundData(key),
+                                    true,  // ループ
+                                    bgmVolume
+                                );
+                            }
+                            if (sel) ImGui::SetItemDefaultFocus();
                         }
-                        std::string key = cats[selectedCat] + "/" + tracks[i];
-                        bgmVoice = engine->GetAudioManager()->Play(
-                            engine->GetAudioManager()->GetSoundData(key),
-                            true,  // ループ
-                            bgmVolume
-                        );
+                        ImGui::EndCombo();
                     }
-                    if (sel) ImGui::SetItemDefaultFocus();
                 }
-                ImGui::EndCombo();
             }
 
             // 音量スライダー
@@ -285,7 +297,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             //drawManager->DrawObj(viewport, scissorRect, obj);
 
-            drawManager->DrawSphere(viewport, scissorRect, sphere);
+            //drawManager->DrawSphere(viewport, scissorRect, sphere);
+            drawManager->DrawObj(viewport, scissorRect, obj);
 
             ui.QueuePostDrawCommands();
 

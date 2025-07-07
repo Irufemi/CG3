@@ -614,11 +614,15 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(dummyVertexResource.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
-    // 頂点リソースを作ったので解放
+    // 頂点リソースを作ったのでdummyVertexResourceを解放
     if (dummyVertexResource) { dummyVertexResource.Reset(); }
 }
 
 void IrufemiEngine::Finalize() {
+
+    inputManager->Finalize();
+    audioManager->Finalize();
+
     // OSハンドル
     CloseHandle(fenceEvent);
 

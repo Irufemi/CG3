@@ -17,14 +17,16 @@ class InputManager {
 
 public:
     //コンストラクタ
-    InputManager(){}
+    InputManager() {}
     //デストラクタ
-    ~InputManager(){
+    ~InputManager() {}
+    //初期化
+    void Initialize(WNDCLASS& wc, HWND& hwnd);
+    // 解放
+    void Finalize() {
         directInput->Release();
         keybord->Release();
     }
-    //初期化
-    void Initialize(WNDCLASS &wc, HWND &hwnd);
     //更新
     void Update();
 
