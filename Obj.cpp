@@ -3,7 +3,6 @@
 #include "Function.h"
 #include "Math.h"
 
-
 void Obj::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList, const std::string& filename) {
 
     this->camera_ = camera;
