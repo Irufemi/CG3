@@ -461,6 +461,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12_BLEND_DESC blendDesc{};
     //すべての色要素を書き込む
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+    /*BlendMode*/
+
+    /// BlendModeの設定(NormalBlend)
+
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
     blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
