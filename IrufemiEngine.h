@@ -1,14 +1,14 @@
 #pragma once
 
 #include "D3DResourceLeakChecker.h"
-#include "AudioManager.h"
+#include "manager/AudioManager.h"
+#include "manager/InputManager.h"
 #include <memory>
 #include "Log.h"
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxcapi.h>
 #include <wrl.h>
-#include "InputManager.h"
 #include <dxgi1_6.h>
 
 // 前方宣言
@@ -38,38 +38,38 @@ private: // メンバ変数
     // --- Debug & Logging ---
 
     // リソース解放リークチェック
-    D3DResourceLeakChecker leakCheck;
+    D3DResourceLeakChecker leakCheck_;
 
-    ID3D12Debug1* debugController = nullptr;
+    ID3D12Debug1* debugController_ = nullptr;
 
     // ログ
-    std::unique_ptr<Log> log = nullptr;
+    std::unique_ptr<Log> log_ = nullptr;
 
     // --- Window ---
 
-    HWND hwnd;
+    HWND hwnd_;
 
     // --- Manager ---
 
     // AudioManager
-    std::unique_ptr< AudioManager>audioManager = nullptr;
+    std::unique_ptr< AudioManager>audioManager_ = nullptr;
 
     // InputManager
-    std::unique_ptr <InputManager> inputManager = nullptr;
+    std::unique_ptr <InputManager> inputManager_ = nullptr;
 
     // --- D3D Device & Core ---
 
-    Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
 
-    ID3D12CommandQueue* commandQueue = nullptr;
+    ID3D12CommandQueue* commandQueue_ = nullptr;
 
-    ID3D12CommandAllocator* commandAllocator = nullptr;
+    ID3D12CommandAllocator* commandAllocator_ = nullptr;
 
-    ID3D12GraphicsCommandList* commandList = nullptr;
+    ID3D12GraphicsCommandList* commandList_ = nullptr;
 
     // --- SwapChain & Render Targets ---
 
-    DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc_{};
 
     IDXGISwapChain4* swapChain = nullptr;
 
@@ -116,25 +116,25 @@ public: // メンバ関数
 
 public: // ゲッター
 
-    ID3D12GraphicsCommandList* GetCommandList() { return this->commandList; }
-    Microsoft::WRL::ComPtr<ID3D12Device> GetDevice() { return this->device; }
-    HWND& GetHwnd() { return this->hwnd; }
-    DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return this->swapChainDesc; }
+    ID3D12GraphicsCommandList* GetCommandList() { return this->commandList_; }
+    Microsoft::WRL::ComPtr<ID3D12Device> GetDevice() { return this->device_.Get(); }
+    HWND& GetHwnd() { return this->hwnd_; }
+    DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return this->swapChainDesc_; }
     D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return this->rtvDesc; }
     ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return this->srvDescriptorHeap; }
-    ID3D12CommandQueue* GetCommandQueue() { return this->commandQueue; }
+    ID3D12CommandQueue* GetCommandQueue() { return this->commandQueue_; }
     IDXGISwapChain4* GetSwapChain() { return this->swapChain; }
     ID3D12Fence* GetFence() { return this->fence; }
     HANDLE& GetFenceEvent() { return this->fenceEvent; }
-    ID3D12CommandAllocator* GetCommandAllocator() { return this->commandAllocator; }
+    ID3D12CommandAllocator* GetCommandAllocator() { return this->commandAllocator_; }
     ID3D12RootSignature* GetRootSignature() { return this->rootSignature; }
     ID3D12PipelineState* GetGraphicsPipelineState() { return this->graphicsPipelineState; }
     ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return this->dsvDescriptorHeap; }
     ID3D12Resource* GetSwapChainResources(UINT index) { return this->swapChainResources[index]; }
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return this->rtvHandles[index]; }
     uint64_t& GetFenceValue() { return this->fenceValue; }
-    std::unique_ptr<AudioManager>& GetAudioManager() { return this->audioManager; }
-    std::unique_ptr<InputManager>& GetInputManager() { return this->inputManager; }
+    std::unique_ptr<AudioManager>& GetAudioManager() { return this->audioManager_; }
+    std::unique_ptr<InputManager>& GetInputManager() { return this->inputManager_; }
 
 public: // セッター
     void AddFenceValue(uint32_t index) { this->fenceValue += index; }

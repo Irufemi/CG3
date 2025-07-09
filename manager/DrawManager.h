@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <array>
 
+// 前方宣言
 class Sphere;
 class Obj;
+class D3D12ResourceUtil;
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -84,5 +86,11 @@ public: //メンバ関数
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
         Obj& obj
+    );
+
+    void DrawByIndex(
+        D3D12_VIEWPORT& viewport,
+        D3D12_RECT& scissorRect,
+        D3D12ResourceUtil* resource
     );
 };

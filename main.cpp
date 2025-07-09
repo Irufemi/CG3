@@ -4,14 +4,14 @@
 
 #include "Camera.h"
 #include "DebugCamera.h"
-#include "DebugUI.h"
-#include "DrawManager.h"
-#include "TextureManager.h"
+#include "manager/DebugUI.h"
+#include "manager/DrawManager.h"
+#include "manager/TextureManager.h"
 #include "Sprite.h"
 #include "Triangle.h"
 #include "Sphere.h"
 #include "Obj.h"
-#include "GetBackBufferIndex.h"
+#include "function/GetBackBufferIndex.h"
 
 /*プロジェクトを作ろう*/
 
@@ -23,9 +23,9 @@
 
 #include <xaudio2.h>
 
-#include "ChunkHeader.h"
-#include "RiffHeader.h"
-#include "FormatChunk.h"
+#include "math/ChunkHeader.h"
+#include "math/RiffHeader.h"
+#include "math/FormatChunk.h"
 
 ///Microsoft Media Foundation
 
@@ -80,7 +80,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     scissorRect.bottom = kClientHeight;
 
     DebugUI ui{};
-    ui.Initialize(engine->GetCommandList(), engine->GetDevice().Get(), engine->GetHwnd(), engine->GetSwapChainDesc(), engine->GetRtvDesc(), engine->GetSrvDescriptorHeap());
+    ui.Initialize(engine->GetCommandList(), engine->GetDevice(), engine->GetHwnd(), engine->GetSwapChainDesc(), engine->GetRtvDesc(), engine->GetSrvDescriptorHeap());
 
 
     auto drawManager = std::make_unique< DrawManager>();
@@ -97,7 +97,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     );
 
     auto textureManager = std::make_unique <TextureManager>();
-    textureManager->Initialize(engine->GetDevice().Get(), engine->GetSrvDescriptorHeap(), engine->GetCommandList());
+    textureManager->Initialize(engine->GetDevice(), engine->GetSrvDescriptorHeap(), engine->GetCommandList());
     textureManager->LoadAllFromFolder("resources/");
 
     auto camera = std::make_unique < Camera>();
@@ -106,11 +106,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     auto debugCamera = std::make_unique < DebugCamera>();
     debugCamera->Initialize(engine->GetInputManager().get());
 
-    Obj obj;
-    obj.Initialize(engine->GetDevice().Get(), camera.get(), engine->GetSrvDescriptorHeap(), engine->GetCommandList(), "fence.obj");
+    Triangle triangle;
+    triangle.Initialize(camera.get(), textureManager.get());
+    bool isActiveTriangle = false;
+
+    Sprite sprite;
+    sprite.Initialize(engine->GetDevice(), camera.get(), textureManager.get());
+    bool isActiveSprite = false;
 
     Sphere sphere;
-    sphere.Initialize(engine->GetDevice().Get(), camera.get(), textureManager.get());
+    sphere.Initialize(camera.get(), textureManager.get());
+    bool isActiveSphere = true;
+
+    Obj obj;
+    obj.Initialize(engine->GetDevice(), camera.get(), engine->GetSrvDescriptorHeap(), engine->GetCommandList(), "fence.obj");
+    bool isActiveObj = false;
 
     // (3) 初期 BGM を一番最初のカテゴリ／トラックでループ再生
     IXAudio2SourceVoice* bgmVoice = nullptr;

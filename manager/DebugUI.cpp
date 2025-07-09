@@ -5,9 +5,9 @@
 
 /*開発のUIを出そう*/
 
-#include "externals/imgui/imgui.h"
-#include "externals/imgui/imgui_impl_dx12.h"
-#include "externals/imgui/imgui_impl_win32.h"
+#include "../externals/imgui/imgui.h"
+#include "../externals/imgui/imgui_impl_dx12.h"
+#include "../externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void DebugUI::Initialize(ID3D12GraphicsCommandList* commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device, HWND& hwnd, DXGI_SWAP_CHAIN_DESC1& swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap) {

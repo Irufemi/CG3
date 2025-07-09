@@ -20,36 +20,36 @@
 /*三角形を表示しよう*/
 
 #include <dxcapi.h>
-#include "Vector4.h"
+#include "../math/Vector4.h"
 
 /*開発のUIを出そう*/
 
-#include "externals/imgui/imgui.h"
-#include "externals/imgui/imgui_impl_dx12.h"
-#include "externals/imgui/imgui_impl_win32.h"
+#include "../externals/imgui/imgui.h"
+#include "../externals/imgui/imgui_impl_dx12.h"
+#include "../externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 /*テクスチャを貼ろう*/
 
-#include "externals/DirectXTex/DirectXTex.h"
+#include "../externals/DirectXTex/DirectXTex.h"
 
 /*テクスチャを正しく配置しよう*/
 
 ///事前準備
 
-#include "externals/DirectXTex/d3dx12.h"
+#include "../externals/DirectXTex/d3dx12.h"
 
 #include <vector>
 
 /*objファイルを読んでみよう*/
 
-#include "ModelData.h"
-#include "MaterialData.h"
+#include "../math/ModelData.h"
+#include "../math/MaterialData.h"
 
 #include <wrl.h>
 
 /*サウンド再生*/
-#include "SoundData.h"
+#include "../math/SoundData.h"
 
 /*ウィンドウを作ろう*/
 

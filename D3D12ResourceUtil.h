@@ -4,25 +4,23 @@
 #include <d3d12.h>
 #include <cstdint>
 
-#include "Matrix4x4.h"
-#include "Transform.h"
-#include "VertexData.h"
-#include "Material.h"
-#include "TransformationMatrix.h"
-#include "DirectionalLight.h"
-#include "TextureManager.h"
+#include "math/Matrix4x4.h"
+#include "math/Transform.h"
+#include "math/VertexData.h"
+#include "math/Material.h"
+#include "math/TransformationMatrix.h"
+#include "math/DirectionalLight.h"
+#include "manager/TextureManager.h"
 
-#include "Function.h"
-
-class Resource {
-protected: //メンバ変数
+class D3D12ResourceUtil {
+public: //メンバ変数
 
 #pragma region Vertex
 
-    // 頂点データリスト
+    // 頂点データリスト(position,tecoord,normal)
     std::vector<VertexData> vertexDataList_{};
 
-    //頂点データ
+    //頂点データ(position,tecoord,normal)
     VertexData* vertexData_ = nullptr;
 
 #pragma endregion
@@ -39,36 +37,38 @@ protected: //メンバ変数
 
 #pragma region Transform
 
+    // transform(scale,rotate,translate)
     Transform transform_ = {
         {1.0f,1.0f,1.0f},   //scale
         {0.0f,0.0f,0.0f},   //rotate
         {0.0f,0.0f,0.0f}    //translate
     };
 
-    // TransformationMatrix
-    TransformationMatrix transformationMatrix{};
+    // TransformationMatrix(WVP,world)
+    TransformationMatrix transformationMatrix_{};
 
-    // TransformationMatrixData
+    // TransformationMatrixData(WVP,world)
     TransformationMatrix* transformationData_ = nullptr;
 
 #pragma endregion
 
 #pragma region Material
 
-    //uvTransform
+    //uvTransform(scale,rotate,translate)
     Transform uvTransform_{
         {1.0f,1.0f,1.0f},
         {0.0f,0.0f,0.0f},
         {0.0f,0.0f,0.0f}
     };
 
-    //マテリアルデータ
+    //マテリアルデータ(color,enableLighting,uvTransform)
     Material* materialData_ = nullptr;
 
 #pragma endregion
 
 #pragma region DirectionalLight
 
+    // directionalLight(color,direction,intensity)
     DirectionalLight* directionalLightData_ = nullptr;
 
 #pragma endregion
@@ -92,19 +92,19 @@ protected: //メンバ変数
 #pragma region ID3D12Resource
 
     // 頂点データ用定数バッファ
-    ID3D12Resource* vertexResource_ = nullptr;
+    Microsoft::WRL::ComPtr <ID3D12Resource> vertexResource_ = nullptr;
     //　頂点インデックス用定数バッファ
-    ID3D12Resource* indexResource_ = nullptr;
+    Microsoft::WRL::ComPtr <ID3D12Resource> indexResource_ = nullptr;
     // 色用定数バッファ
-    ID3D12Resource* materialResource_ = nullptr;
+    Microsoft::WRL::ComPtr <ID3D12Resource> materialResource_ = nullptr;
     // 拡縮回転移動行列用定数バッファ
-    ID3D12Resource* transformationResource_ = nullptr;
+    Microsoft::WRL::ComPtr <ID3D12Resource> transformationResource_ = nullptr;
     // 光用定数バッファ
-    ID3D12Resource* directionalLightResource_ = nullptr;
+    Microsoft::WRL::ComPtr <ID3D12Resource> directionalLightResource_ = nullptr;
 
 #pragma endregion
 
-#pragma region 外部参照
+#pragma region 外部参照(共通)
 
     static Microsoft::WRL::ComPtr<ID3D12Device> device_;
 
@@ -112,13 +112,12 @@ protected: //メンバ変数
 
 public: //メンバ関数
     //デストラクタ
-    ~Resource() {
-        if (vertexResource_) { vertexResource_->Release(); vertexResource_ = nullptr; }
-        if (indexResource_) { indexResource_->Release(); indexResource_ = nullptr; }
-        if (materialResource_) { materialResource_->Release(); materialResource_ = nullptr; }
-        if (transformationResource_) { transformationResource_->Release(); transformationResource_ = nullptr; }
-        if (directionalLightResource_) { directionalLightResource_->Release(); directionalLightResource_ = nullptr; }
-        if (device_) { device_.Reset(); device_ = nullptr; }
+    ~D3D12ResourceUtil() {
+        if (vertexResource_) { vertexResource_.Reset(); }
+        if (indexResource_) { indexResource_.Reset(); }
+        if (materialResource_) { materialResource_.Reset(); }
+        if (transformationResource_) { transformationResource_.Reset(); }
+        if (directionalLightResource_) { directionalLightResource_.Reset(); }
     }
 
     //ID3D12Resourceを生成する

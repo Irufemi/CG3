@@ -3,13 +3,13 @@
 #include <d3d12.h>
 #include <vector>
 #include <cstdint>
-#include "TextureManager.h"
-#include "VertexData.h"
-#include "Material.h"
-#include "Matrix4x4.h"
-#include "TransformationMatrix.h"
-#include "DirectionalLight.h"
-#include "Transform.h"
+#include "manager/TextureManager.h"
+#include "math/VertexData.h"
+#include "math/Material.h"
+#include "math/Matrix4x4.h"
+#include "math/TransformationMatrix.h"
+#include "math/DirectionalLight.h"
+#include "math/Transform.h"
 #include "Camera.h"
 #include <wrl.h>
 

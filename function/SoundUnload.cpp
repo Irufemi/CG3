@@ -1,6 +1,6 @@
 #include "Function.h"
 
-#include "SoundData.h"
+#include "../math/SoundData.h"
 
 ///音声データの解放
 

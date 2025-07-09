@@ -1,16 +1,16 @@
 #include "TextureManager.h"
 
-#include "Function.h"
+#include "../function/Function.h"
 
 /*テクスチャを貼ろう*/
 
-#include "externals/DirectXTex/DirectXTex.h"
+#include "../externals/DirectXTex/DirectXTex.h"
 
 /*テクスチャを正しく配置しよう*/
 
 ///事前準備
 
-#include "externals/DirectXTex/d3dx12.h"
+#include "../externals/DirectXTex/d3dx12.h"
 
 #include <filesystem>
 
