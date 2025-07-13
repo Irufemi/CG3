@@ -95,9 +95,9 @@ IDxcBlob* CompileShader(
     //Compilerに使用するProfile
     const wchar_t* profile,
     //初期化で生成したものを3つ
-    IDxcUtils* dxcUtils,
-    IDxcCompiler3* dxcCompiler,
-    IDxcIncludeHandler* includeHandler,
+    const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
+    const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
+    const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
     std::ostream& os
 );
 
@@ -123,15 +123,15 @@ ID3D12Resource* CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>
 
 /*テクスチャを正しく配置しよう*/
 
-ID3D12Resource* UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, ID3D12GraphicsCommandList* commandList);
+ID3D12Resource* UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 /*前後関係を正しくしよう*/
 
 ID3D12Resource* CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height);
 
-D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
+D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
-D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
+D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 /*objjファイルを読んでみよう*/
 

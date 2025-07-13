@@ -9,7 +9,7 @@
 #include <algorithm>
 
 //初期化
-void Sphere::Initialize(Camera* camera, TextureManager* textureManager, const std::string& textureName) {
+void Sphere::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
@@ -70,7 +70,7 @@ void Sphere::Initialize(Camera* camera, TextureManager* textureManager, const st
     }
     
     // メモリを確保
-    resource_->CreateResource();
+    resource_->CreateResource(device.Get());
 
     // 書き込みをできる状態にする
     resource_->Map();

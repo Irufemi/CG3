@@ -10,7 +10,8 @@
 #include "../externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-void DebugUI::Initialize(ID3D12GraphicsCommandList* commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device, HWND& hwnd, DXGI_SWAP_CHAIN_DESC1& swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap) {
+void DebugUI::Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device, HWND& hwnd, DXGI_SWAP_CHAIN_DESC1& swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap) {
+    
     this->commandList_ = commandList;
 
     /*開発UIを出そう*/
@@ -44,7 +45,7 @@ void DebugUI::FrameStart() {
 
 void DebugUI::Shutdown() {
 
-    if (commandList_) { commandList_ = nullptr; }
+    if (commandList_) { commandList_.Reset(); }
     /*開発のUIを出そう*/
 
     ///ImGuiの終了処理
@@ -74,6 +75,6 @@ void DebugUI::QueuePostDrawCommands() {
     ///ImGuiを描画する
 
     //実際のcommandListのImGuiの描画コマンドを積む
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList_);
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList_.Get());
 
 }

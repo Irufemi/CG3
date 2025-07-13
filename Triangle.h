@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "manager/TextureManager.h"
 #include <wrl.h>
+#include <memory>
 
 
 class Triangle {
@@ -27,15 +28,12 @@ protected: //メンバ変数
 
 public: //メンバ関数
     //デストラクタ
-    ~Triangle() {
-       
-        if (resource_) { resource_.release(); }
-    }
+    ~Triangle() = default;
 
     //初期化
-    void Initialize( Camera* camera, TextureManager* textureManager, const std::string& textureName = "uvChecker.png");
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, const std::string& textureName = "uvChecker.png");
     //更新
-    void Update(const char* triangleName, bool debug = true);
+    void Update(const char* triangleName = "");
 
     //ゲッター
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }

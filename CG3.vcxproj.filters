@@ -31,6 +31,9 @@
     <Filter Include="engine">
       <UniqueIdentifier>{ea94aad2-7d6a-4408-a993-71c40fa08722}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -69,9 +72,6 @@
       <Filter>objects</Filter>
     </ClCompile>
     <ClCompile Include="Sphere.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Object.cpp">
       <Filter>objects</Filter>
     </ClCompile>
     <ClCompile Include="Obj.cpp">
@@ -155,6 +155,12 @@
     </ClCompile>
     <ClCompile Include="function\WindowProc.cpp">
       <Filter>function</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleScene.cpp">
+      <Filter>Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -288,6 +294,18 @@
     </ClInclude>
     <ClInclude Include="function\GetBackBufferIndex.h">
       <Filter>function</Filter>
+    </ClInclude>
+    <ClInclude Include="IScene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="GameScene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleScene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneName.h">
+      <Filter>Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

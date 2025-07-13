@@ -14,10 +14,12 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
-Microsoft::WRL::ComPtr<ID3D12Device> D3D12ResourceUtil::device_ = nullptr;
 
 // 初期化
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight) {
+    
+    clientWidth_ = clientWidth;
+    clientHeight_ = clientHeight;
 
     /*テクスチャを貼ろう*/
 
@@ -59,7 +61,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
 
     //ウィンドウサイズを表す構造体にクライアント領域を入れる
-    RECT wrc = { 0,0,clientWidth ,clientHeight };
+    RECT wrc = { 0,0,clientWidth_ ,clientHeight_ };
 
     //クライアント領域をもとに実際のサイズにwrcを変更してもらう
     AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
@@ -86,7 +88,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ///DebugLayer(デバッグレイヤー)
 
 #ifdef _DEBUG
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController_)))) {
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
         //さらにGPU側でもチェックを行うようにする
@@ -145,6 +147,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     for (size_t i = 0; i < _countof(featureLevels); ++i) {
         //採用したアダプターでデバイスを生成
         hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(device_.GetAddressOf()));
+        
         //指定した機能レベルでデバイスが生成できたかを確認
         if (SUCCEEDED(hr)) {
             //生成できたのでログ出力を行ってループを抜ける
@@ -156,8 +159,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     assert(device_ != nullptr);
     OutPutLog(log_->GetLogStream(), "Complete create D3D12Device!!!\n"); //初期化完了のログを出す
 
-    // デバイス生成がうまくいったので参照渡し
-    D3D12ResourceUtil::device_ = this->device_.Get();
 
     inputManager_ = std::make_unique<InputManager>();
     inputManager_->Initialize(wc, hwnd_);
@@ -216,34 +217,34 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     //コマンドキューを生成する
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-    hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue_));
+    hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(commandQueue_.GetAddressOf()));
     //コマンドキューの生成がうまくいかないので起動できない
     assert(SUCCEEDED(hr));
 
     ///CommandListを生成する
 
     //コマンドアロケータを生成する
-    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator_));
+    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator_.GetAddressOf()));
     //コマンドアロケータの生成がうまくいかなかったので起動できない
     assert(SUCCEEDED(hr));
 
     //コマンドリストを生成する
-    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_, nullptr, IID_PPV_ARGS(&commandList_));
+    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_.Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
     //コマンドリストの生成がうまくいかなかったので起動できない
     assert(SUCCEEDED(hr));
 
     ///SwapChainを生成する
 
     //スワップチェーンを生成する
-    swapChainDesc_.Width = clientWidth; //画面の幅。ウィンドウのクライアント領域を同じものにしておく
-    swapChainDesc_.Height = clientHeight; //画面の高さ。ウィンドウのクライアント領域を同じものにしておく
+    swapChainDesc_.Width = clientWidth_; //画面の幅。ウィンドウのクライアント領域を同じものにしておく
+    swapChainDesc_.Height = clientHeight_; //画面の高さ。ウィンドウのクライアント領域を同じものにしておく
     swapChainDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM; //色の形式
     swapChainDesc_.SampleDesc.Count = 1; //マルチサンプルしない
     swapChainDesc_.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; //描画のターゲットとして利用する
     swapChainDesc_.BufferCount = 2; //ダブルバッファ
     swapChainDesc_.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //モニタにうつしたら、中身を破棄
     //コマンドキュー、ウィンドウハンドル、設定を渡して生成する
-    hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue_, hwnd_, &swapChainDesc_, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
+    hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue_.Get(), hwnd_, &swapChainDesc_, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChain.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     // 作成したのでdxgiFactoryを解放
@@ -266,39 +267,39 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     rtvDescriptorHeap = CreateDescriptorHeap(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
     //SRV用のヒープでディスクリプタの数は128。SSRVはShader内で触るものなので、ShaderVisibleはtrue
-    srvDescriptorHeap = CreateDescriptorHeap(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+    srvDescriptorHeap_ = CreateDescriptorHeap(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
     /*画面の色を変えよう*/
 
     ///SwapChainからResourceを引っ張ってくる
 
     //SwapChainからResourceを引っ張ってくる
-    hr = swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChainResources[0]));
+    hr = swapChain->GetBuffer(0, IID_PPV_ARGS(swapChainResources[0].GetAddressOf()));
     //うまく取得できなければ起動できない
     assert(SUCCEEDED(hr));
-    hr = swapChain->GetBuffer(1, IID_PPV_ARGS(&swapChainResources[1]));
+    hr = swapChain->GetBuffer(1, IID_PPV_ARGS(swapChainResources[1].GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     ///RTVを作る
 
     //RTVの設定
-    rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; //出力結果をSRGBに変換して書き込む
-    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D; //2Dテクスチャとして書き込む
+    rtvDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; //出力結果をSRGBに変換して書き込む
+    rtvDesc_.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D; //2Dテクスチャとして書き込む
     //ディスクリプタの先頭を取得する
     D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
     //RTVを2つ作るのでディスクリプタを2つ用意
     //まず1つ目を作る。1つ目は最初のところに作る。作る場所をこちらで指定してあげる必要がある
     rtvHandles[0] = rtvStartHandle;
-    device_->CreateRenderTargetView(swapChainResources[0], &rtvDesc, rtvHandles[0]);
+    device_->CreateRenderTargetView(swapChainResources[0].Get(), &rtvDesc_, rtvHandles[0]);
     //2つ目のディスクリプタハンドルを得る(自力で)
     rtvHandles[1].ptr = rtvHandles[0].ptr + device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     //2つ目を作る
-    device_->CreateRenderTargetView(swapChainResources[1], &rtvDesc, rtvHandles[1]);
+    device_->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc_, rtvHandles[1]);
 
     /*前後関係を正しくしよう*/
 
     //DepthtencilTexturreをウィンドウのサイズで作成
-    depthStencilResource = CreateDepthStencilTextureResource(device_.Get(), clientWidth, clientHeight);
+    depthStencilResource = CreateDepthStencilTextureResource(device_.Get(), clientWidth_, clientHeight_);
 
     ///DepthStencilView(DSV)
 
@@ -310,14 +311,14 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //Format。基本的にはResourceに合わせる
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D; //2dTexture
     //DSVHeapの先頭にDSVをつける
-    device_->CreateDepthStencilView(depthStencilResource, &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    device_->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
     /*完璧な画面クリアを目指して*/
 
     ///FenceとEventを生成する
 
     //初期値0でFenceを作る
-    hr = device_->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+    hr = device_->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     //FenceのSignalを待つためのイベントを作成する
@@ -423,7 +424,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         assert(false);
     }
     //バイナリを元に生成
-    hr = device_->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+    hr = device_->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(rootSignature_.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     // 生成が完了したのでsignatureBlob、errorBlobを解放
@@ -556,7 +557,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ///PSOを生成する
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-    graphicsPipelineStateDesc.pRootSignature = rootSignature; // RootSignature
+    graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get(); // RootSignature
     graphicsPipelineStateDesc.InputLayout = inputLayoutDesc; // InputLayout
     graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),vertexShaderBlob->GetBufferSize() }; // VertexShader
     graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize() }; // PixelShader
@@ -588,7 +589,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     graphicsPipelineStateDesc.SampleDesc.Count = 1;
     graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
     //実際に生成
-    hr = device_->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
+    hr = device_->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(graphicsPipelineState.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     //頂点リソース用のヒープを生成
@@ -622,51 +623,116 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // 頂点リソースを作ったのでdummyVertexResourceを解放
     if (dummyVertexResource) { dummyVertexResource.Reset(); }
+
+    /*三角形を表示しよう*/
+
+    ///ViewportとScissor(シザー)
+
+    //クライアント領域のサイズと一緒にして画面全体に表示
+    viewport.Width = static_cast<FLOAT>(clientWidth_);
+    viewport.Height = static_cast<FLOAT>(clientHeight_);
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+
+    //基本的にビューポートと同じ矩形が構成されるようにする
+    scissorRect.left = 0;
+    scissorRect.right = clientWidth_;
+    scissorRect.top = 0;
+    scissorRect.bottom = clientHeight;
+
+    ui = std::make_unique <DebugUI>();
+    ui->Initialize(commandList_.Get(), device_.Get(), hwnd_, swapChainDesc_, rtvDesc_, srvDescriptorHeap_.Get());
+
+
+    drawManager = std::make_unique< DrawManager>();
+    drawManager->Initialize(
+        commandList_.Get(),
+        commandQueue_.Get(),
+        swapChain.Get(),
+        fence.Get(),
+        fenceEvent,
+        commandAllocator_.Get(),
+        srvDescriptorHeap_.Get(),
+        rootSignature_.Get(),
+        graphicsPipelineState.Get()
+    );
+
+    textureManager = std::make_unique <TextureManager>();
+    textureManager->Initialize(device_.Get(), srvDescriptorHeap_.Get(), commandList_.Get());
+    textureManager->LoadAllFromFolder("resources/");
 }
 
 void IrufemiEngine::Finalize() {
 
-    inputManager_->Finalize();
-    audioManager_->Finalize();
+    if (inputManager_) {
+        inputManager_->Finalize();
+        inputManager_.reset();
+    }
+    if (audioManager_) {
+        audioManager_->Finalize();
+        audioManager_.reset();
+    }
+    if (drawManager) {
+        drawManager->Finalize();
+        drawManager.reset();
+    }
+    if (ui) {
+        ui->Shutdown();
+        ui.reset();
+    }
+
+    /*DirectX12のオブジェクトを解放しよう*/
+
+    ///解放処理
+
+    // GPU待機
+    if (commandQueue_ && fence) {
+        commandQueue_->Signal(fence.Get(), ++fenceValue);
+        if (fence->GetCompletedValue() < fenceValue) {
+            fence->SetEventOnCompletion(fenceValue, fenceEvent);
+            WaitForSingleObject(fenceEvent, INFINITE);
+        }
+    }
 
     // OSハンドル
     CloseHandle(fenceEvent);
 
     // リソース（VBやPSOなど）
-    if (graphicsPipelineState) { graphicsPipelineState->Release(); graphicsPipelineState = nullptr; }
-    if (rootSignature) { rootSignature->Release(); rootSignature = nullptr; }
+    if (graphicsPipelineState) { graphicsPipelineState.Reset(); }
+    if (rootSignature_) { rootSignature_.Reset(); }
 
     // テクスチャ・バッファ系（あれば）
-    if (depthStencilResource) { depthStencilResource->Release(); depthStencilResource = nullptr; }
+    if (depthStencilResource) { depthStencilResource.Reset(); }
 
     // ディスクリプタヒープ
-    if (rtvDescriptorHeap) { rtvDescriptorHeap->Release(); rtvDescriptorHeap = nullptr; }
-    if (srvDescriptorHeap) { srvDescriptorHeap->Release(); srvDescriptorHeap = nullptr; }
-    if (dsvDescriptorHeap) { dsvDescriptorHeap->Release(); dsvDescriptorHeap = nullptr; }
+    if (rtvDescriptorHeap) { rtvDescriptorHeap.Reset(); }
+    if (srvDescriptorHeap_) { srvDescriptorHeap_.Reset(); }
+    if (dsvDescriptorHeap) { dsvDescriptorHeap.Reset(); }
 
     // スワップチェーンのバッファ
-    if (swapChainResources[0]) { swapChainResources[0]->Release(); swapChainResources[0] = nullptr; }
-    if (swapChainResources[1]) { swapChainResources[1]->Release(); swapChainResources[1] = nullptr; }
+    if (swapChainResources[0]) { swapChainResources[0].Reset(); }
+    if (swapChainResources[1]) { swapChainResources[1].Reset(); }
 
     // コマンド系
-    if (commandList_) { commandList_->Release(); commandList_ = nullptr; }
-    if (commandAllocator_) { commandAllocator_->Release(); commandAllocator_ = nullptr; }
-    if (commandQueue_) { commandQueue_->Release(); commandQueue_ = nullptr; }
+    if (commandList_) { commandList_.Reset(); }
+    if (commandAllocator_) { commandAllocator_.Reset(); }
+    if (commandQueue_) { commandQueue_.Reset(); }
 
     // フェンス
-    if (fence) { fence->Release(); fence = nullptr; }
+    if (fence) { fence.Reset(); }
 
     // スワップチェーン
-    if (swapChain) { swapChain->Release(); swapChain = nullptr; }
+    if (swapChain) { swapChain.Reset(); }
 
     // Device（一番最後に解放）
-    if (D3D12ResourceUtil::device_) { D3D12ResourceUtil::device_.Reset(); }
-    if (this->device_) { device_.Reset(); }
+    if (this->device_) { this->device_.Reset(); }
 
 
     // Debug (一番最後の最後)
 #ifdef _DEBUG
-    if (debugController_) { debugController_->Release(); debugController_ = nullptr; }
+    if (debugController_) { debugController_.Reset(); }
 #endif
 
     // ウィンドウ

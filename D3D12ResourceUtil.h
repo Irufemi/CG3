@@ -3,6 +3,7 @@
 #include <vector>
 #include <d3d12.h>
 #include <cstdint>
+#include <wrl.h>
 
 #include "math/Matrix4x4.h"
 #include "math/Transform.h"
@@ -11,6 +12,7 @@
 #include "math/TransformationMatrix.h"
 #include "math/DirectionalLight.h"
 #include "manager/TextureManager.h"
+#include "function/Function.h"
 
 class D3D12ResourceUtil {
 public: //メンバ変数
@@ -104,15 +106,10 @@ public: //メンバ変数
 
 #pragma endregion
 
-#pragma region 外部参照(共通)
-
-    static Microsoft::WRL::ComPtr<ID3D12Device> device_;
-
-#pragma endregion
-
 public: //メンバ関数
     //デストラクタ
     ~D3D12ResourceUtil() {
+        UnMap();
         if (vertexResource_) { vertexResource_.Reset(); }
         if (indexResource_) { indexResource_.Reset(); }
         if (materialResource_) { materialResource_.Reset(); }
@@ -121,12 +118,12 @@ public: //メンバ関数
     }
 
     //ID3D12Resourceを生成する
-    void CreateResource() {
-        vertexResource_ = CreateBufferResource(device_.Get(), sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
-        indexResource_ = CreateBufferResource(device_.Get(), sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-        materialResource_ = CreateBufferResource(device_.Get(), sizeof(Material));
-        transformationResource_ = CreateBufferResource(device_.Get(), sizeof(TransformationMatrix));
-        directionalLightResource_ = CreateBufferResource(device_.Get(), sizeof(DirectionalLight));
+    void CreateResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device) {
+        vertexResource_ = CreateBufferResource(device.Get(), sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
+        indexResource_ = CreateBufferResource(device.Get(), sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
+        materialResource_ = CreateBufferResource(device.Get(), sizeof(Material));
+        transformationResource_ = CreateBufferResource(device.Get(), sizeof(TransformationMatrix));
+        directionalLightResource_ = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
     }
 
     //バッファへの書き込みを開放

@@ -7,6 +7,7 @@
 #include <vector>
 #include <d3d12.h>
 #include <wrl.h>
+#include <memory>
 #include "D3D12ResourceUtil.h"
 
 
@@ -44,12 +45,10 @@ public: //メンバ関数
     Sphere() {};
 
     // デストラクタ
-    ~Sphere() {
-        if (resource_) { resource_.release(); }
-    }
+    ~Sphere() = default;
 
     // 初期化
-    void Initialize(Camera* camera, TextureManager* textureManager, const std::string& textureName = "uvChecker.png");
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, const std::string& textureName = "uvChecker.png");
 
     // 更新
     void Update(const char* sphereName = " ");

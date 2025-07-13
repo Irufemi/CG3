@@ -22,6 +22,9 @@ private:
     // ロードした音声データをファイル名をキーにして保持するマップ
     std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
 
+    // 再生中の SourceVoice を一元管理
+    std::vector<IXAudio2SourceVoice*> activeVoices_;
+
     // カテゴリ名 → その中にあるファイル名リスト（ソート済み）
     std::map<std::string, std::vector<std::string>> categoryMap_;
 
@@ -40,7 +43,7 @@ public:
 
     // 指定フォルダから対応する音声ファイルをすべてロードする
     void LoadAllSoundsFromFolder(const std::string& folderPath);
-    
+
     // サブフォルダ単位でロードするオーバーロード版
     void LoadSoundsFromFolder(const std::string& folderPath, const std::string& category);
 
@@ -58,6 +61,6 @@ public:
         std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f);
 
     // 再生中のボイスを停止し、破棄する
-    void Stop(IXAudio2SourceVoice* voice);
+    void Stop(IXAudio2SourceVoice*& voice);
 
 };

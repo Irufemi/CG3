@@ -123,6 +123,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="function\SoundUnload.cpp" />
     <ClCompile Include="function\UploadTextureData.cpp" />
     <ClCompile Include="function\WindowProc.cpp" />
+    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="IrufemiEngine.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="main.cpp" />
@@ -133,7 +134,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="manager\TextureManager.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Obj.cpp" />
-    <ClCompile Include="Object.cpp" />
     <ClCompile Include="Sound.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
@@ -142,6 +142,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ClCompile>
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,7 +159,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="function\Function.h" />
     <ClInclude Include="function\GetBackBufferIndex.h" />
+    <ClInclude Include="GameScene.h" />
     <ClInclude Include="IrufemiEngine.h" />
+    <ClInclude Include="IScene.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="manager\AudioManager.h" />
     <ClInclude Include="manager\DebugUI.h" />
@@ -185,6 +188,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\VertexData.h" />
     <ClInclude Include="Obj.h" />
     <ClInclude Include="D3D12ResourceUtil.h" />
+    <ClInclude Include="SceneName.h" />
     <ClInclude Include="Sound.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -193,6 +197,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ClInclude>
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TitleScene.h" />
     <ClInclude Include="Triangle.h" />
   </ItemGroup>
   <ItemGroup>

@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-void Triangle::Initialize( Camera* camera, TextureManager* textureManager, const std::string& textureName) {
+void Triangle::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>&device,Camera* camera, TextureManager* textureManager, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
@@ -30,7 +30,7 @@ void Triangle::Initialize( Camera* camera, TextureManager* textureManager, const
     resource_->indexDataList_.push_back(2); //　右下
 
     // リソースのメモリを確保
-    resource_->CreateResource();
+    resource_->CreateResource(device.Get());
 
     // 書き込めるようにする
     resource_->Map();
@@ -83,8 +83,7 @@ void Triangle::Initialize( Camera* camera, TextureManager* textureManager, const
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         if (it != textureNames.end()) {
             selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-        }
-        else {
+        } else {
             selectedTextureIndex_ = 0;
         }
 
@@ -96,54 +95,50 @@ void Triangle::Initialize( Camera* camera, TextureManager* textureManager, const
 
 }
 
-void Triangle::Update(const char* triangleName,bool debug ) {
+void Triangle::Update(const char* triangleName) {
 
-    if (debug) {
+#ifdef _DEBUG
+    std::string name = std::string("Triangle: ") + triangleName;
 
-        #ifdef _DEBUG
-        std::string name = std::string("Triangle: ") + triangleName;
+    //ImGui
 
-        //ImGui
+    //カメラウィンドウを作り出す
+    ImGui::Begin(name.c_str());
+    // scale
+    ImGui::DragFloat3("scale", &resource_->transform_.scale.x, 0.1f);
+    // rotate
+    ImGui::DragFloat3("rotate", &resource_->transform_.rotate.x, 0.1f);
+    // translate
+    ImGui::DragFloat3("translate", &resource_->transform_.translate.x, 0.1f);
+    //Color
+    ImGui::ColorEdit4("color", &resource_->materialData_->color.x);
 
-        //カメラウィンドウを作り出す
-        ImGui::Begin(name.c_str());
-        // scale
-        ImGui::DragFloat3("scale", &resource_->transform_.scale.x, 0.1f);
-        // rotate
-        ImGui::DragFloat3("rotate", &resource_->transform_.rotate.x, 0.1f);
-        // translate
-        ImGui::DragFloat3("translate", &resource_->transform_.translate.x, 0.1f);
-        //Color
-        ImGui::ColorEdit4("color", &resource_->materialData_->color.x);
+    std::vector<std::string> textureNames = textureManager_->GetTextureNames();
+    std::sort(textureNames.begin(), textureNames.end());
 
-        std::vector<std::string> textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
-
-        if (!textureNames.empty()) {
-            selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, (int)textureNames.size() - 1);
-            if (ImGui::BeginCombo("Texture", textureNames[selectedTextureIndex_].c_str())) {
-                for (int i = 0; i < textureNames.size(); ++i) {
-                    bool isSelected = (i == selectedTextureIndex_);
-                    if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
-                        selectedTextureIndex_ = i;
-                        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]); // ★ここで更新
-                    }
+    if (!textureNames.empty()) {
+        selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, (int)textureNames.size() - 1);
+        if (ImGui::BeginCombo("Texture", textureNames[selectedTextureIndex_].c_str())) {
+            for (int i = 0; i < textureNames.size(); ++i) {
+                bool isSelected = (i == selectedTextureIndex_);
+                if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
+                    selectedTextureIndex_ = i;
+                    resource_->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]); // ★ここで更新
                 }
-                ImGui::EndCombo();
             }
+            ImGui::EndCombo();
         }
-        else {
-            ImGui::Text("No textures found.");
-        }
-
-        //入力終了
-        ImGui::End();
-
-        #endif // _DEBUG
-
+    } else {
+        ImGui::Text("No textures found.");
     }
+
+    //入力終了
+    ImGui::End();
+
+#endif // _DEBUG
+
     resource_->transform_.rotate.y += 0.03f;
-    
+
 
     resource_->vertexDataList_.clear();
 

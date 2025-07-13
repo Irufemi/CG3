@@ -32,21 +32,18 @@ void AudioManager::StartUp() {
 }
 
 void AudioManager::Finalize() {
-    // 保持しているサウンドデータをすべてクリア
-    soundRegistry_.clear();
+    // (1) すべての SourceVoice を停止・破棄
+    for (auto v : activeVoices_) {
+        v->Stop(0);
+        v->DestroyVoice();
 
-    // マスターボイスの破棄
-    if (pMasteringVoice_) {
-        pMasteringVoice_->DestroyVoice();
-        pMasteringVoice_ = nullptr;
     }
-    // XAudio2エンジンの解放
-    if (pXAudio2_) {
-        pXAudio2_->Release();
-        pXAudio2_ = nullptr;
-    }
-
-    // Media Foundationの終了
+    activeVoices_.clear();
+    // (2) マスターボイス破棄
+    if (pMasteringVoice_) pMasteringVoice_->DestroyVoice(), pMasteringVoice_ = nullptr;
+    // (3) XAudio2 解放
+    if (pXAudio2_) pXAudio2_->Release(), pXAudio2_ = nullptr;
+    // (4) Media Foundation 終了
     MFShutdown();
 }
 
@@ -152,13 +149,21 @@ IXAudio2SourceVoice* AudioManager::Play(std::shared_ptr<Sound> soundData, bool l
     assert(SUCCEEDED(hr));
 
     // 生成したソースボイスのポインタを返す（外部で音量変更などに使うため）
+    // 管理リストに追加してから返す
+    activeVoices_.push_back(pSourceVoice);
     return pSourceVoice;
 }
 
-void AudioManager::Stop(IXAudio2SourceVoice* voice) {
+void AudioManager::Stop(IXAudio2SourceVoice*& voice) {
     if (voice) {
         voice->Stop(0);
-        voice->DestroyVoice(); // ボイスを破棄してリソースを解放
-        voice = nullptr;
+        voice->DestroyVoice();
+        // 管理リストから除去
+        activeVoices_.erase(
+            std::remove(activeVoices_.begin(), activeVoices_.end(), voice),
+            activeVoices_.end()
+        );
+        voice = nullptr;  // 呼び出し側変数もクリア
+
     }
 }

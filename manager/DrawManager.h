@@ -4,8 +4,10 @@
 #include <dxgi1_6.h>
 #include <cstdint>
 #include <array>
+#include <wrl.h>
 
 // 前方宣言
+class Sprite;
 class Sphere;
 class Obj;
 class D3D12ResourceUtil;
@@ -31,7 +33,7 @@ public: //メンバ関数
         ID3D12CommandQueue* commandQueue,
         IDXGISwapChain4* swapChain,
         ID3D12Fence* fence,
-        const HANDLE &fenceEvent,
+        HANDLE &fenceEvent,
         ID3D12CommandAllocator* commandAllocator,
         ID3D12DescriptorHeap* srvDescriptorHeap,
         ID3D12RootSignature* rootSignature,
@@ -61,31 +63,26 @@ public: //メンバ関数
         D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
         ID3D12Resource* materialResource,
         ID3D12Resource* wvpResource,
-        ID3D12Resource * directionalLightResource,
+        ID3D12Resource* directionalLightResource,
         D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
     );
 
     void DrawSprite(
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
-        D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
-        D3D12_INDEX_BUFFER_VIEW& indexBufferView,
-        ID3D12Resource* materialResource,
-        ID3D12Resource* wvpResource,
-        ID3D12Resource* directionalLightResource,
-        D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
+        Sprite* sprite
     );
 
     void DrawSphere(
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
-        Sphere& sphere
+        Sphere* sphere
     );
 
     void DrawObj(
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
-        Obj& obj
+        Obj* obj
     );
 
     void DrawByIndex(
