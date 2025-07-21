@@ -62,6 +62,10 @@ private: // メンバ変数
 
 public: // メンバ関数
 
+    // デストラクタ
+    ~GameScene() {
+    }
+
     /// <summary>
     /// 初期化
     /// </summary>

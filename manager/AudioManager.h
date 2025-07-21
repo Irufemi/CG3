@@ -32,7 +32,7 @@ public:
     // コンストラクタ
     AudioManager() = default;
     // デストラクタ
-    ~AudioManager() = default;
+    ~AudioManager();
 
     // オーディオエンジンの初期化・終了処理
     void Initialize();
@@ -62,5 +62,6 @@ public:
 
     // 再生中のボイスを停止し、破棄する
     void Stop(IXAudio2SourceVoice*& voice);
+    void StopAll(); // 追加: 全Voice停止（Finalize内で利用）
 
 };

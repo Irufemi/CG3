@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Windows.h>
+
 #include <vector>
 #include <d3d12.h>
 #include <cstdint>
@@ -109,6 +111,11 @@ public: //メンバ変数
 public: //メンバ関数
     //デストラクタ
     ~D3D12ResourceUtil() {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "[D3D12ResourceUtil] Destruct: vertex=%p, index=%p, material=%p, trans=%p, light=%p\n",
+            vertexResource_.Get(), indexResource_.Get(), materialResource_.Get(), transformationResource_.Get(), directionalLightResource_.Get());
+        OutputDebugStringA(buf);
+
         UnMap();
         if (vertexResource_) { vertexResource_.Reset(); }
         if (indexResource_) { indexResource_.Reset(); }
@@ -117,13 +124,25 @@ public: //メンバ関数
         if (directionalLightResource_) { directionalLightResource_.Reset(); }
     }
 
+
     //ID3D12Resourceを生成する
-    void CreateResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device) {
-        vertexResource_ = CreateBufferResource(device.Get(), sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
-        indexResource_ = CreateBufferResource(device.Get(), sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-        materialResource_ = CreateBufferResource(device.Get(), sizeof(Material));
-        transformationResource_ = CreateBufferResource(device.Get(), sizeof(TransformationMatrix));
-        directionalLightResource_ = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
+    void CreateResource(ID3D12Device* device) {
+        vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
+        char buf[256];
+        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
+        OutputDebugStringA(buf);
+        indexResource_ = CreateBufferResource(device, sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
+        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
+        OutputDebugStringA(buf);
+        materialResource_ = CreateBufferResource(device, sizeof(Material));
+        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
+        OutputDebugStringA(buf);
+        transformationResource_ = CreateBufferResource(device, sizeof(TransformationMatrix));
+        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", transformationResource_.Get(), __FILE__, __LINE__);
+        OutputDebugStringA(buf);
+        directionalLightResource_ = CreateBufferResource(device, sizeof(DirectionalLight));
+        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", directionalLightResource_.Get(), __FILE__, __LINE__);
+        OutputDebugStringA(buf);
     }
 
     //バッファへの書き込みを開放

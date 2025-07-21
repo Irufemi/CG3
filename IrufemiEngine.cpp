@@ -14,6 +14,8 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
+//デストラクタ
+IrufemiEngine::~IrufemiEngine() { Finalize(); }
 
 // 初期化
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight) {
@@ -152,6 +154,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         if (SUCCEEDED(hr)) {
             //生成できたのでログ出力を行ってループを抜ける
             OutPutLog(log_->GetLogStream(), std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+            auto msg = std::format("Resource[{}] created at {} in {}:{}\n", "ID3D12Device", static_cast<const void*>(device_.Get()), __FILE__, __LINE__);
+            OutputDebugStringA(msg.c_str());
             break;
         }
     }
@@ -666,28 +670,28 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
 void IrufemiEngine::Finalize() {
 
+    // 入力系の解放
     if (inputManager_) {
         inputManager_->Finalize();
         inputManager_.reset();
     }
+    // サウンド
     if (audioManager_) {
         audioManager_->Finalize();
         audioManager_.reset();
     }
+    // 描画
     if (drawManager) {
         drawManager->Finalize();
         drawManager.reset();
     }
+    // UI
     if (ui) {
         ui->Shutdown();
         ui.reset();
     }
 
-    /*DirectX12のオブジェクトを解放しよう*/
-
-    ///解放処理
-
-    // GPU待機
+    // GPU同期
     if (commandQueue_ && fence) {
         commandQueue_->Signal(fence.Get(), ++fenceValue);
         if (fence->GetCompletedValue() < fenceValue) {
@@ -696,48 +700,37 @@ void IrufemiEngine::Finalize() {
         }
     }
 
-    // OSハンドル
-    CloseHandle(fenceEvent);
+    // フェンスイベント
+    if (fenceEvent) {
+        CloseHandle(fenceEvent);
+        fenceEvent = nullptr;
+    }
 
-    // リソース（VBやPSOなど）
-    if (graphicsPipelineState) { graphicsPipelineState.Reset(); }
-    if (rootSignature_) { rootSignature_.Reset(); }
+    // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
+    graphicsPipelineState.Reset();
+    rootSignature_.Reset();
+    depthStencilResource.Reset();
+    rtvDescriptorHeap.Reset();
+    srvDescriptorHeap_.Reset();
+    dsvDescriptorHeap.Reset();
+    swapChainResources[0].Reset();
+    swapChainResources[1].Reset();
+    commandList_.Reset();
+    commandAllocator_.Reset();
+    commandQueue_.Reset();
+    fence.Reset();
+    swapChain.Reset();
+    device_.Reset();
 
-    // テクスチャ・バッファ系（あれば）
-    if (depthStencilResource) { depthStencilResource.Reset(); }
-
-    // ディスクリプタヒープ
-    if (rtvDescriptorHeap) { rtvDescriptorHeap.Reset(); }
-    if (srvDescriptorHeap_) { srvDescriptorHeap_.Reset(); }
-    if (dsvDescriptorHeap) { dsvDescriptorHeap.Reset(); }
-
-    // スワップチェーンのバッファ
-    if (swapChainResources[0]) { swapChainResources[0].Reset(); }
-    if (swapChainResources[1]) { swapChainResources[1].Reset(); }
-
-    // コマンド系
-    if (commandList_) { commandList_.Reset(); }
-    if (commandAllocator_) { commandAllocator_.Reset(); }
-    if (commandQueue_) { commandQueue_.Reset(); }
-
-    // フェンス
-    if (fence) { fence.Reset(); }
-
-    // スワップチェーン
-    if (swapChain) { swapChain.Reset(); }
-
-    // Device（一番最後に解放）
-    if (this->device_) { this->device_.Reset(); }
-
-
-    // Debug (一番最後の最後)
 #ifdef _DEBUG
-    if (debugController_) { debugController_.Reset(); }
+    debugController_.Reset();
 #endif
 
-    // ウィンドウ
-    CloseWindow(hwnd_);
+    if (hwnd_) {
+        CloseWindow(hwnd_);
+        hwnd_ = nullptr;
+    }
 
-    // COMアンイニシャライズ
+    // COM解放
     CoUninitialize();
 }

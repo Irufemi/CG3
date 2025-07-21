@@ -6,7 +6,7 @@
 
 ///DirectX12のTextureResourceを作る
 
-ID3D12Resource* CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const DirectX::TexMetadata& metadata) {
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const DirectX::TexMetadata& metadata) {
     //1. metadataを基にResourceの設定
     //2. 利用するHeapの設定
     //3. Resourceを生成する
@@ -57,7 +57,7 @@ ID3D12Resource* CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>
     /*テクスチャを貼ろう*/
     
     //Resourceの生成
-    ID3D12Resource* resource = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
     HRESULT hr = device->CreateCommittedResource(
         &heapProperties, //Heapの設定
         D3D12_HEAP_FLAG_NONE, //Heapの特殊な設定。特になし。
@@ -71,7 +71,7 @@ ID3D12Resource* CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>
         /*テクスチャを貼ろう*/
 
         nullptr, //Clear最適値。使わないのでnullptr
-        IID_PPV_ARGS(&resource) //作成するResourceポインタへのポインタ
+        IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
     assert(SUCCEEDED(hr));
     return resource;

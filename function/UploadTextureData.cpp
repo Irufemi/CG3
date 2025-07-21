@@ -24,7 +24,7 @@
 /*テクスチャを正しく配置しよう*/
 
 [[nodiscard]] //戻り値を破棄しないように
-ID3D12Resource* UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
+Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
     ///IntermediteResource(中間リソース)
     
     std::vector<D3D12_SUBRESOURCE_DATA> subResources;
@@ -33,11 +33,11 @@ ID3D12Resource* UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& 
     //2. Subresourceの数を基に、コピー元となるIntermediateResourceに必要なサイズを計算する
     uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subResources.size()));
     //3. 計算したサイズでIntermediteResourceを作る
-    ID3D12Resource* intermediateResource = CreateBufferResource(device.Get(), intermediateSize);
+    Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(device.Get(), intermediateSize);
     
     ///データ転送をコマンドに積む
 
-    UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource, 0, 0, UINT(subResources.size()), subResources.data());
+    UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subResources.size()), subResources.data());
     
     ///ResourceStateを変更し、IntermediateResourceを返す
 

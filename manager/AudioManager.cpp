@@ -9,6 +9,10 @@
 #pragma comment(lib, "Mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
 
+AudioManager::~AudioManager() {
+    Finalize();
+}
+
 void AudioManager::Initialize() {
     // XAudio2エンジンの生成
     HRESULT hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
@@ -32,18 +36,16 @@ void AudioManager::StartUp() {
 }
 
 void AudioManager::Finalize() {
-    // (1) すべての SourceVoice を停止・破棄
-    for (auto v : activeVoices_) {
-        v->Stop(0);
-        v->DestroyVoice();
+    StopAll(); // すべてのVoiceを安全に停止＆Destroy
 
+    if (pMasteringVoice_) {
+        pMasteringVoice_->DestroyVoice();
+        pMasteringVoice_ = nullptr;
     }
-    activeVoices_.clear();
-    // (2) マスターボイス破棄
-    if (pMasteringVoice_) pMasteringVoice_->DestroyVoice(), pMasteringVoice_ = nullptr;
-    // (3) XAudio2 解放
-    if (pXAudio2_) pXAudio2_->Release(), pXAudio2_ = nullptr;
-    // (4) Media Foundation 終了
+    if (pXAudio2_) {
+        pXAudio2_->Release();
+        pXAudio2_ = nullptr;
+    }
     MFShutdown();
 }
 
@@ -158,12 +160,23 @@ void AudioManager::Stop(IXAudio2SourceVoice*& voice) {
     if (voice) {
         voice->Stop(0);
         voice->DestroyVoice();
-        // 管理リストから除去
-        activeVoices_.erase(
-            std::remove(activeVoices_.begin(), activeVoices_.end(), voice),
-            activeVoices_.end()
-        );
-        voice = nullptr;  // 呼び出し側変数もクリア
-
+        // 管理リストから安全に除去
+        auto it = std::remove(activeVoices_.begin(), activeVoices_.end(), voice);
+        if (it != activeVoices_.end()) {
+            activeVoices_.erase(it, activeVoices_.end());
+        }
+        voice = nullptr;  // 呼び出し側ポインタもクリア
     }
+}
+
+void AudioManager::StopAll() {
+    // すべてのSourceVoiceを安全に停止・Destroy
+    for (auto& voice : activeVoices_) {
+        if (voice) {
+            voice->Stop(0);
+            voice->DestroyVoice();
+            voice = nullptr;
+        }
+    }
+    activeVoices_.clear();
 }

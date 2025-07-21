@@ -2,7 +2,7 @@
 
 /*三角形の色を変えよう*/
 
-ID3D12Resource* CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes) {
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes) {
 
     ///BufferResourceを生成する
 
@@ -22,8 +22,8 @@ ID3D12Resource* CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>&
     //バッファの場合はこれにする決まり
     vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     //実際に頂点リソースを作る
-    ID3D12Resource* bufferResource = nullptr;
-    HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&bufferResource));
+    Microsoft::WRL::ComPtr<ID3D12Resource> bufferResource = nullptr;
+    HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(bufferResource.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     return bufferResource;

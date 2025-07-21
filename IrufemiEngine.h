@@ -53,10 +53,10 @@ private: // メンバ変数
     HWND hwnd_;
 
     // 画面横幅
-    int32_t clientWidth_{};
+    int32_t clientWidth_ = 0;
 
     // 画面縦幅
-    int32_t clientHeight_{};
+    int32_t clientHeight_ = 0;
 
     //ビューポート
     D3D12_VIEWPORT viewport = D3D12_VIEWPORT{};
@@ -132,7 +132,7 @@ public: // メンバ関数
     IrufemiEngine() = default;
 
     //デストラクタ
-    ~IrufemiEngine() { Finalize(); }
+    ~IrufemiEngine();
 
     /// <summary>
     ///  初期化
