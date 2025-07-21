@@ -1,13 +1,13 @@
 #include "Texture.h"
 
-#include "Function.h"
+#include "function/Function.h"
 
 #include "externals/DirectXTex/DirectXTex.h"
 
 #include "externals/DirectXTex/d3dx12.h"
 
 
-void Texture::Initialize(const std::string& filePath, const Microsoft::WRL::ComPtr<ID3D12Device>& device, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList) {
+void Texture::Initialize(const std::string& filePath, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
 
     index_ += 1;
 
@@ -22,14 +22,14 @@ void Texture::Initialize(const std::string& filePath, const Microsoft::WRL::ComP
     //textureを読んで転送する
     DirectX::ScratchImage mipImages = LoadTexture(filePath_);
     const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-    textureResource = CreateTextureResource(device_.Get(), metadata);
+    textureResource_ = CreateTextureResource(device_.Get(), metadata);
     //UploadTextureData(textureResource, mipImages);
 
     /*テクスチャを正しく配置しよう*/
 
     ///コマンドを実行して完了を待つ
 
-    intermediateReasource_ = UploadTextureData(textureResource, mipImages, device_.Get(), commandList_);
+    intermediateResource_ = UploadTextureData(textureResource_.Get(), mipImages, device_.Get(), commandList_.Get());
 
     ///実際にShaderResourceViewを作る
 
@@ -46,11 +46,9 @@ void Texture::Initialize(const std::string& filePath, const Microsoft::WRL::ComP
 
     //SRVを生成するDescriptorHeapの場所を決める
     //先頭はImGuiが使っているのでその次を使う
-    textureSrvHandleCPU_ = GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, index_);
-    textureSrvHandleGPU_ = GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, index_);
+    textureSrvHandleCPU_ = GetCPUDescriptorHandle(srvDescriptorHeap_.Get(), descriptorSizeSRV, index_);
+    textureSrvHandleGPU_ = GetGPUDescriptorHandle(srvDescriptorHeap_.Get(), descriptorSizeSRV, index_);
 
     //SRVの生成
-    device_->CreateShaderResourceView(textureResource, &srvDesc, textureSrvHandleCPU_);
-
-
+    device_->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
 }

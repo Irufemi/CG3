@@ -24,20 +24,20 @@
 /*テクスチャを正しく配置しよう*/
 
 [[nodiscard]] //戻り値を破棄しないように
-ID3D12Resource* UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, ID3D12GraphicsCommandList* commandList) {
+Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
     ///IntermediteResource(中間リソース)
     
     std::vector<D3D12_SUBRESOURCE_DATA> subResources;
     //1. PrepareUploadを利用して、読み込んだデータからDirectX12用のSubresource(サブリソース)の配列を作成する(Subresourceは、MipMapの1枚1枚ぐらいのイメージでいると良い)
     DirectX::PrepareUpload(device.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subResources);
     //2. Subresourceの数を基に、コピー元となるIntermediateResourceに必要なサイズを計算する
-    uint64_t intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subResources.size()));
+    uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subResources.size()));
     //3. 計算したサイズでIntermediteResourceを作る
-    ID3D12Resource* intermediateResource = CreateBufferResource(device.Get(), intermediateSize);
+    Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(device.Get(), intermediateSize);
     
     ///データ転送をコマンドに積む
 
-    UpdateSubresources(commandList, texture, intermediateResource, 0, 0, UINT(subResources.size()), subResources.data());
+    UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subResources.size()), subResources.data());
     
     ///ResourceStateを変更し、IntermediateResourceを返す
 
@@ -45,7 +45,7 @@ ID3D12Resource* UploadTextureData(ID3D12Resource* texture, const DirectX::Scratc
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = texture;
+    barrier.Transition.pResource = texture.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;

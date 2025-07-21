@@ -4,17 +4,19 @@
 #include <cassert>
 
 #include <dxgidebug.h>
-#include "Sphere.h"
-#include "Sprite.h"
-#include "Obj.h"
-#include "Triangle.h"
+#include "../Sphere.h"
+#include "../Sprite.h"
+#include "../Obj.h"
+#include "../Triangle.h"
+
+#include "../D3D12ResourceUtil.h"
 
 void DrawManager::Initialize(
     ID3D12GraphicsCommandList* commandList,
     ID3D12CommandQueue* commandQueue,
     IDXGISwapChain4* swapChain,
     ID3D12Fence* fence,
-    const HANDLE &fenceEvent,
+    HANDLE &fenceEvent,
     ID3D12CommandAllocator* commandAllocator,
     ID3D12DescriptorHeap* srvDescriptorHeap,
     ID3D12RootSignature* rootSignature,
@@ -96,7 +98,7 @@ void DrawManager::PreDraw(
     ///ImGuiを描画する
 
     //描画用のDescriptorHeapの設定
-    ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap_ };
+    ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap_};
     commandList_->SetDescriptorHeaps(1, descriptorHeaps);
 }
 
@@ -137,7 +139,7 @@ void DrawManager::PostDraw(
     ///コマンドをキックする
 
     //GPUにコマンドリストの実行を行わせる
-    ID3D12CommandList* commandLists[] = { commandList_ };
+    ID3D12CommandList* commandLists[] = { commandList_};
     commandQueue_->ExecuteCommandLists(1, commandLists);
     //GPUとOSに画面の交換を行うよう通知する
     swapChain_->Present(1, 0);
@@ -223,16 +225,10 @@ void DrawManager::DrawTriangle(
 
 }
 
-
 void DrawManager::DrawSprite(
     D3D12_VIEWPORT& viewport,
     D3D12_RECT& scissorRect,
-    D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
-    D3D12_INDEX_BUFFER_VIEW& indexBufferView,
-    ID3D12Resource* materialResource,
-    ID3D12Resource* wvpResource,
-    ID3D12Resource* directionalLightResource,
-    D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
+    Sprite* sprite
 ) {
 
     // 1. ビューポートとシザー矩形の設定
@@ -252,42 +248,42 @@ void DrawManager::DrawSprite(
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     //VBVを設定
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
+    commandList_->IASetVertexBuffers(0, 1, &sprite->GetD3D12Resource()->vertexBufferView_);
     //IBVを設定
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetIndexBuffer(&sprite->GetD3D12Resource()->indexBufferView_);
 
     // 4. 定数バッファ（CBV）やライト用CBVの設定
 
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(0, sprite->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, sprite->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
-    commandList_->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(3, sprite->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
 
     // 5. テクスチャ用のDescriptor Table設定（SRV）
 
     /*テクスチャを貼ろう*/
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+    commandList_->SetGraphicsRootDescriptorTable(2, sprite->GetD3D12Resource()->textureHandle_);
 
     // 6. 描画
 
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawIndexedInstanced(6, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(static_cast<UINT>(sprite->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 
 }
 
 void DrawManager::DrawSphere(
     D3D12_VIEWPORT& viewport,
     D3D12_RECT& scissorRect,
-    Sphere &sphere
+    Sphere *sphere
 ) {
 
     /*三角形を表示しよう*/
@@ -296,9 +292,9 @@ void DrawManager::DrawSphere(
     //RootSignatureを設定。PSOに設定しているけど別途指定が必要
     commandList_->SetGraphicsRootSignature(rootSignature_);
     commandList_->SetPipelineState(graphicsPipelineState_); // PSOを設定
-    commandList_->IASetVertexBuffers(0, 1, &sphere.GetVertexBufferView()); // VBVを設定
+    commandList_->IASetVertexBuffers(0, 1, &sphere->GetD3D12Resource()->vertexBufferView_); // VBVを設定
     //IBVを設定
-    commandList_->IASetIndexBuffer(&sphere.GetIndexBufferView());
+    commandList_->IASetIndexBuffer(&sphere->GetD3D12Resource()->indexBufferView_);
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -307,33 +303,33 @@ void DrawManager::DrawSphere(
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, sphere.GetMaterialResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(0, sphere->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
     /*三角形を動かそう*/
 
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, sphere.GetWvpResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, sphere->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
-    commandList_->SetGraphicsRootConstantBufferView(3, sphere.GetDirectionalLightResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(3, sphere->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, sphere.GetTextureSrvHandleGPU());
+    commandList_->SetGraphicsRootDescriptorTable(2, sphere->GetD3D12Resource()->textureHandle_);
 
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawIndexedInstanced(sphere.GetIndexSize(), 1, 0, 0,0);
+    commandList_->DrawIndexedInstanced(static_cast<UINT>(sphere->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 
 }
 
 void DrawManager::DrawObj(
     D3D12_VIEWPORT& viewport,
     D3D12_RECT& scissorRect,
-    Obj & obj
+    Obj* obj
 ) {
 
     /*三角形を表示しよう*/
@@ -342,7 +338,7 @@ void DrawManager::DrawObj(
     //RootSignatureを設定。PSOに設定しているけど別途指定が必要
     commandList_->SetGraphicsRootSignature(rootSignature_);
     commandList_->SetPipelineState(graphicsPipelineState_); // PSOを設定
-    commandList_->IASetVertexBuffers(0, 1, &obj.GetVertexBufferView()); // VBVを設定
+    commandList_->IASetVertexBuffers(0, 1, &obj->GetVertexBufferView()); // VBVを設定
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -351,26 +347,72 @@ void DrawManager::DrawObj(
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, obj.GetMaterialResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(0, obj->GetMaterialResource()->GetGPUVirtualAddress());
 
     /*三角形を動かそう*/
 
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, obj.GetWvpResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, obj->GetWvpResource()->GetGPUVirtualAddress());
 
 
-    commandList_->SetGraphicsRootConstantBufferView(3, obj.GetDirectionalLightResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(3, obj->GetDirectionalLightResource()->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, obj.GetTextureSrvHandleGPU());
+    commandList_->SetGraphicsRootDescriptorTable(2, obj->GetTextureSrvHandleGPU());
 
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawInstanced(obj.GetModelDataVerticesSize(), 1, 0, 0);
+    commandList_->DrawInstanced(obj->GetModelDataVerticesSize(), 1, 0, 0);
+
+}
+
+void DrawManager::DrawByIndex(
+    D3D12_VIEWPORT& viewport,
+    D3D12_RECT& scissorRect,
+    D3D12ResourceUtil* resource
+) {
+
+    /*三角形を表示しよう*/
+    commandList_->RSSetViewports(1, &viewport); //viewportを設定
+    commandList_->RSSetScissorRects(1, &scissorRect); //Scirssorを設定
+    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
+    commandList_->SetGraphicsRootSignature(rootSignature_);
+    commandList_->SetPipelineState(graphicsPipelineState_); // PSOを設定
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_); // VBVを設定
+    //IBVを設定
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
+    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    /*三角形の色を変えよう*/
+
+    ///CBVを設定する
+
+    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+
+    /*三角形を動かそう*/
+
+    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+
+    commandList_->SetGraphicsRootConstantBufferView(3, resource->directionalLightResource_->GetGPUVirtualAddress());
+
+    /*テクスチャを貼ろう*/
+
+    ///DescriptorTableを設定する
+
+    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
+
+    /*三角形を表示しよう*/
+
+    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
+    commandList_->DrawIndexedInstanced(static_cast<UINT>(resource->indexDataList_.size()), 1, 0, 0, 0);
 
 }

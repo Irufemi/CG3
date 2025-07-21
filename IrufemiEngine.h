@@ -1,14 +1,17 @@
 #pragma once
 
 #include "D3DResourceLeakChecker.h"
-#include "AudioManager.h"
+#include "manager/InputManager.h"
+#include "manager/DrawManager.h"
+#include "manager/DebugUI.h"
+#include "manager/TextureManager.h"
+#include "manager/AudioManager.h"
 #include <memory>
 #include "Log.h"
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxcapi.h>
 #include <wrl.h>
-#include "InputManager.h"
 #include <dxgi1_6.h>
 
 // 前方宣言
@@ -38,72 +41,99 @@ private: // メンバ変数
     // --- Debug & Logging ---
 
     // リソース解放リークチェック
-    D3DResourceLeakChecker leakCheck;
+    D3DResourceLeakChecker leakCheck_{};
 
-    ID3D12Debug1* debugController = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Debug1> debugController_ = nullptr;
 
     // ログ
-    std::unique_ptr<Log> log = nullptr;
+    std::unique_ptr<Log> log_ = nullptr;
 
     // --- Window ---
 
-    HWND hwnd;
+    HWND hwnd_;
+
+    // 画面横幅
+    int32_t clientWidth_ = 0;
+
+    // 画面縦幅
+    int32_t clientHeight_ = 0;
+
+    //ビューポート
+    D3D12_VIEWPORT viewport = D3D12_VIEWPORT{};
+
+    //シザー矩形
+    D3D12_RECT scissorRect = D3D12_RECT{};
 
     // --- Manager ---
 
-    // AudioManager
-    std::unique_ptr< AudioManager>audioManager = nullptr;
-
     // InputManager
-    std::unique_ptr <InputManager> inputManager = nullptr;
+    std::unique_ptr <InputManager> inputManager_ = nullptr;
+
+    // DrawManager
+    std::unique_ptr <DrawManager> drawManager = nullptr;
+
+    // DebugUI
+    std::unique_ptr <DebugUI> ui = nullptr;
+
+    // TextureManager
+    std::unique_ptr <TextureManager> textureManager = nullptr;
+
+    // AudioManager
+    std::unique_ptr<AudioManager> audioManager_ = nullptr;
 
     // --- D3D Device & Core ---
 
-    Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
 
-    ID3D12CommandQueue* commandQueue = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_ = nullptr;
 
-    ID3D12CommandAllocator* commandAllocator = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_ = nullptr;
 
-    ID3D12GraphicsCommandList* commandList = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
 
     // --- SwapChain & Render Targets ---
 
-    DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc_{};
 
-    IDXGISwapChain4* swapChain = nullptr;
+    Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 
-    ID3D12Resource* swapChainResources[2] = { nullptr };
+    Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources[2] = { nullptr };
 
-    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc_{};
 
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
 
     // --- Descriptor Heaps ---
 
-    ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap = nullptr;
 
-    ID3D12DescriptorHeap* srvDescriptorHeap = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_ = nullptr;
 
-    ID3D12DescriptorHeap* dsvDescriptorHeap = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap = nullptr;
 
     // --- Depth & Pipeline State ---
 
-    ID3D12Resource* depthStencilResource = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = nullptr;
 
-    ID3D12RootSignature* rootSignature = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_ = nullptr;
 
-    ID3D12PipelineState* graphicsPipelineState = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;
 
     // --- Synchronization --
 
-    ID3D12Fence* fence = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
 
     uint64_t fenceValue = 0;
 
     HANDLE fenceEvent = nullptr;
 
 public: // メンバ関数
+    // コンストラクタ
+    IrufemiEngine() = default;
+
+    //デストラクタ
+    ~IrufemiEngine();
+
     /// <summary>
     ///  初期化
     /// </summary>
@@ -116,25 +146,32 @@ public: // メンバ関数
 
 public: // ゲッター
 
-    ID3D12GraphicsCommandList* GetCommandList() { return this->commandList; }
-    Microsoft::WRL::ComPtr<ID3D12Device> GetDevice() { return this->device; }
-    HWND& GetHwnd() { return this->hwnd; }
-    DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return this->swapChainDesc; }
-    D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return this->rtvDesc; }
-    ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return this->srvDescriptorHeap; }
-    ID3D12CommandQueue* GetCommandQueue() { return this->commandQueue; }
-    IDXGISwapChain4* GetSwapChain() { return this->swapChain; }
-    ID3D12Fence* GetFence() { return this->fence; }
+    ID3D12GraphicsCommandList* GetCommandList() { return this->commandList_.Get(); }
+    ID3D12Device* GetDevice() { return this->device_.Get(); }
+    HWND& GetHwnd() { return this->hwnd_; }
+    DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return this->swapChainDesc_; }
+    D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return this->rtvDesc_; }
+    ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return this->srvDescriptorHeap_.Get(); }
+    ID3D12CommandQueue* GetCommandQueue() { return this->commandQueue_.Get(); }
+    IDXGISwapChain4* GetSwapChain() { return this->swapChain.Get(); }
+    ID3D12Fence* GetFence() { return this->fence.Get(); }
     HANDLE& GetFenceEvent() { return this->fenceEvent; }
-    ID3D12CommandAllocator* GetCommandAllocator() { return this->commandAllocator; }
-    ID3D12RootSignature* GetRootSignature() { return this->rootSignature; }
-    ID3D12PipelineState* GetGraphicsPipelineState() { return this->graphicsPipelineState; }
-    ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return this->dsvDescriptorHeap; }
-    ID3D12Resource* GetSwapChainResources(UINT index) { return this->swapChainResources[index]; }
+    ID3D12CommandAllocator* GetCommandAllocator() { return this->commandAllocator_.Get(); }
+    ID3D12RootSignature* GetRootSignature() { return this->rootSignature_.Get(); }
+    ID3D12PipelineState* GetGraphicsPipelineState() { return this->graphicsPipelineState.Get(); }
+    ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return this->dsvDescriptorHeap.Get(); }
+    ID3D12Resource* GetSwapChainResources(UINT index) { return this->swapChainResources[index].Get(); }
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return this->rtvHandles[index]; }
     uint64_t& GetFenceValue() { return this->fenceValue; }
-    std::unique_ptr<AudioManager>& GetAudioManager() { return this->audioManager; }
-    std::unique_ptr<InputManager>& GetInputManager() { return this->inputManager; }
+    InputManager* GetInputManager() { return this->inputManager_.get(); }
+    DrawManager* GetDrawManager() { return this->drawManager.get(); }
+    DebugUI* GetDebugUI() { return this->ui.get(); }
+    AudioManager* GetAudioManager() { return this->audioManager_.get(); }
+    TextureManager* GetTextureManager() { return this->textureManager.get(); }
+    int32_t& GetClientWidth() { return this->clientWidth_; }
+    int32_t& GetClientHeight() { return this->clientHeight_; }
+    D3D12_VIEWPORT& GetViewport() { return this->viewport; };
+    D3D12_RECT& GetScissorRect() { return this->scissorRect; };
 
 public: // セッター
     void AddFenceValue(uint32_t index) { this->fenceValue += index; }

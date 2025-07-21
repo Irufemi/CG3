@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Sound.h" // 音声データクラス
+#include "../Sound.h" // 音声データクラス
 #include <map>
 #include <memory>
 #include <string>
@@ -22,6 +22,9 @@ private:
     // ロードした音声データをファイル名をキーにして保持するマップ
     std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
 
+    // 再生中の SourceVoice を一元管理
+    std::vector<IXAudio2SourceVoice*> activeVoices_;
+
     // カテゴリ名 → その中にあるファイル名リスト（ソート済み）
     std::map<std::string, std::vector<std::string>> categoryMap_;
 
@@ -29,7 +32,7 @@ public:
     // コンストラクタ
     AudioManager() = default;
     // デストラクタ
-    ~AudioManager() = default;
+    ~AudioManager();
 
     // オーディオエンジンの初期化・終了処理
     void Initialize();
@@ -40,7 +43,7 @@ public:
 
     // 指定フォルダから対応する音声ファイルをすべてロードする
     void LoadAllSoundsFromFolder(const std::string& folderPath);
-    
+
     // サブフォルダ単位でロードするオーバーロード版
     void LoadSoundsFromFolder(const std::string& folderPath, const std::string& category);
 
@@ -58,6 +61,7 @@ public:
         std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f);
 
     // 再生中のボイスを停止し、破棄する
-    void Stop(IXAudio2SourceVoice* voice);
+    void Stop(IXAudio2SourceVoice*& voice);
+    void StopAll(); // 追加: 全Voice停止（Finalize内で利用）
 
 };

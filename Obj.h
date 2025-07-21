@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Transform.h"
-#include "Material.h"
-#include "TransformationMatrix.h"
-#include "DirectionalLight.h"
-#include "ModelData.h"
-#include "VertexData.h"
-#include "Matrix4x4.h"
+#include "math/Transform.h"
+#include "math/Material.h"
+#include "math/TransformationMatrix.h"
+#include "math/DirectionalLight.h"
+#include "math/ModelData.h"
+#include "math/VertexData.h"
+#include "math/Matrix4x4.h"
 #include <d3d12.h>
 #include <string>
 #include "Camera.h"
@@ -53,14 +53,14 @@ protected: //メンバ変数
 
     DirectionalLight* directionalLightData_ = nullptr;
 
-    ID3D12Resource* vertexResource_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
 
     // 行列用定数バッファ
-    ID3D12Resource* wvpResource_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_ = nullptr;
     // 色用定数バッファ
-    ID3D12Resource* materialResource_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 
-    ID3D12Resource* directionalLightResource_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_ = nullptr;
 
     Texture texture{};
 
@@ -77,22 +77,22 @@ public: //メンバ関数
 
     //デストラクタ
     ~Obj() {
-        if (vertexResource_) { vertexResource_->Release(); vertexResource_ = nullptr; }
-        if (wvpResource_) { wvpResource_->Release(); wvpResource_ = nullptr; }
-        if (materialResource_) { materialResource_->Release(); materialResource_ = nullptr; }
-        if (directionalLightResource_) { directionalLightResource_->Release(); directionalLightResource_ = nullptr; }
-        if (device_) { device_.Reset(); device_ = nullptr; }
+        if (vertexResource_) { vertexResource_.Reset(); }
+        if (wvpResource_) { wvpResource_.Reset(); }
+        if (materialResource_) { materialResource_.Reset(); }
+        if (directionalLightResource_) { directionalLightResource_.Reset(); }
+        if (device_) { device_.Reset(); }
     }
 
     //初期化
-    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList, const std::string& filename = "plane.obj");
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const std::string& filename = "plane.obj");
 
     void Update(const char* objName = " ");
 
     D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() { return vertexBufferView_; }
-    ID3D12Resource* GetWvpResource() { return wvpResource_; }
-    ID3D12Resource* GetMaterialResource() { return materialResource_; }
-    ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource_; }
+    ID3D12Resource* GetWvpResource() { return wvpResource_.Get(); }
+    ID3D12Resource* GetMaterialResource() { return materialResource_.Get(); }
+    ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource_.Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureSrvHandleGPU() { return texture.GetTextureSrvHandleGPU(); }
     UINT GetModelDataVerticesSize() { return static_cast<UINT>(modelData_.vertices.size()); }
 };

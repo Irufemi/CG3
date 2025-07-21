@@ -1,22 +1,22 @@
 #include "TextureManager.h"
 
-#include "Function.h"
+#include "../function/Function.h"
 
 /*テクスチャを貼ろう*/
 
-#include "externals/DirectXTex/DirectXTex.h"
+#include "../externals/DirectXTex/DirectXTex.h"
 
 /*テクスチャを正しく配置しよう*/
 
 ///事前準備
 
-#include "externals/DirectXTex/d3dx12.h"
+#include "../externals/DirectXTex/d3dx12.h"
 
 #include <filesystem>
 
 uint32_t Texture::index_ = 0;
 
-void TextureManager::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList) {
+void TextureManager::Initialize(ID3D12Device* device, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList) {
     device_ = device;
     srvDescriptorHeap_ = srvDescriptorHeap;
     commandList_ = commandList;
@@ -36,7 +36,7 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
                 std::string fullPath = folderPath + "/" + filename;
 
                 std::shared_ptr<Texture> texture = std::make_shared<Texture>();
-                texture->Initialize(fullPath, device_.Get(), srvDescriptorHeap_, commandList_);
+                texture->Initialize(fullPath, device_, srvDescriptorHeap_, commandList_);
                 textures_[filename] = texture;
             }
         }

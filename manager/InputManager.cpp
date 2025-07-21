@@ -12,11 +12,11 @@ void InputManager::Initialize(WNDCLASS& wc, HWND& hwnd) {
     ///初期化(一度だけ行う処理)
 
     //DirectInputの初期化
-    HRESULT hr = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
+    HRESULT hr = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)directInput.GetAddressOf(), nullptr);
     assert(SUCCEEDED(hr));
 
     //キーボードデバイスの生成
-    hr = directInput->CreateDevice(GUID_SysKeyboard, &keybord, NULL);
+    hr = directInput->CreateDevice(GUID_SysKeyboard, keybord.GetAddressOf(), NULL);
     assert(SUCCEEDED(hr));
 
     //入力データ形式のセット

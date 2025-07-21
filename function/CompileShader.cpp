@@ -1,5 +1,5 @@
 #include "Function.h"
-#include "Log.h"
+#include "../Log.h"
 #include <filesystem>
 
 /*三角形を表示しよう*/
@@ -10,9 +10,9 @@ IDxcBlob* CompileShader(
     //Compilerに使用するProfile
     const wchar_t* profile,
     //初期化で生成したものを3つ
-    IDxcUtils* dxcUtils,
-    IDxcCompiler3* dxcCompiler,
-    IDxcIncludeHandler* includeHandler,
+    const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
+    const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
+    const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
     std::ostream& os
 ) {
 
@@ -47,7 +47,7 @@ IDxcBlob* CompileShader(
         &shaderSourceBuffer, // 読み込んだファイル
         arguments, // コンパイルオプション
         _countof(arguments), // コンパイルオプションの数
-        includeHandler, // includeが含まれた諸々
+        includeHandler.Get(), // includeが含まれた諸々
         IID_PPV_ARGS(&shaderResult) // コンパイル結果
     );
     //コンパイルエラーではなくdxcが起動できないなど致命的な状況
@@ -56,8 +56,8 @@ IDxcBlob* CompileShader(
     /// 3. 警告・エラーが出ていないか確認する
 
     //警告・エラーが出ていたらログに出して止める
-    Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
-    shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
+    IDxcBlobUtf8* shaderError = nullptr;
+    shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
     if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
         OutPutLog(os,shaderError->GetStringPointer());
         //警告・エラーダメゼッタイ

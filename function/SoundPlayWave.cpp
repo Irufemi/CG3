@@ -1,6 +1,6 @@
 #include <xaudio2.h>
 #include <cassert>
-#include "SoundData.h"
+#include "../math/SoundData.h"
 
 /*サウンド再生*/
 

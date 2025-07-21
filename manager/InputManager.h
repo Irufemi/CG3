@@ -4,12 +4,13 @@
 #define DIRECTINPUT_VERSION 0x0800 //DirectInputのバージョン指定
 #include <dinput.h>
 #include <array>
+#include <wrl.h>
 
 class InputManager {
+    
+    Microsoft::WRL::ComPtr<IDirectInput8> directInput = nullptr;
 
-    IDirectInput8* directInput = nullptr;
-
-    IDirectInputDevice8* keybord = nullptr;
+    Microsoft::WRL::ComPtr<IDirectInputDevice8> keybord = nullptr;
 
     std::array<BYTE, 256> key_ = {};
 

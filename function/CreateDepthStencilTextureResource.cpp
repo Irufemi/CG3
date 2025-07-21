@@ -2,7 +2,7 @@
 
 /*前後関係を正しくしよう*/
 
-ID3D12Resource* CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height) {
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height) {
 
     ///Resource/Heapの設定を行う
 
@@ -31,14 +31,14 @@ ID3D12Resource* CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<I
     ///Resourceの生成
 
     //Resourceの生成
-    ID3D12Resource* resource = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
     HRESULT hr = device->CreateCommittedResource(
         &heapProperties, //Heapの設定
         D3D12_HEAP_FLAG_NONE, //Heapの特殊な設定。特になし。
         &resourceDesc, //Resourceの設定
         D3D12_RESOURCE_STATE_DEPTH_WRITE, //深度値を書き込む状態にしておく
         &depthClearValue, //Clear最適値
-        IID_PPV_ARGS(&resource) //作成するResourceポインタへのポインタ
+        IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
     assert(SUCCEEDED(hr));
 

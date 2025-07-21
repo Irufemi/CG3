@@ -20,36 +20,36 @@
 /*三角形を表示しよう*/
 
 #include <dxcapi.h>
-#include "Vector4.h"
+#include "../math/Vector4.h"
 
 /*開発のUIを出そう*/
 
-#include "externals/imgui/imgui.h"
-#include "externals/imgui/imgui_impl_dx12.h"
-#include "externals/imgui/imgui_impl_win32.h"
+#include "../externals/imgui/imgui.h"
+#include "../externals/imgui/imgui_impl_dx12.h"
+#include "../externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 /*テクスチャを貼ろう*/
 
-#include "externals/DirectXTex/DirectXTex.h"
+#include "../externals/DirectXTex/DirectXTex.h"
 
 /*テクスチャを正しく配置しよう*/
 
 ///事前準備
 
-#include "externals/DirectXTex/d3dx12.h"
+#include "../externals/DirectXTex/d3dx12.h"
 
 #include <vector>
 
 /*objファイルを読んでみよう*/
 
-#include "ModelData.h"
-#include "MaterialData.h"
+#include "../math/ModelData.h"
+#include "../math/MaterialData.h"
 
 #include <wrl.h>
 
 /*サウンド再生*/
-#include "SoundData.h"
+#include "../math/SoundData.h"
 
 /*ウィンドウを作ろう*/
 
@@ -95,19 +95,19 @@ IDxcBlob* CompileShader(
     //Compilerに使用するProfile
     const wchar_t* profile,
     //初期化で生成したものを3つ
-    IDxcUtils* dxcUtils,
-    IDxcCompiler3* dxcCompiler,
-    IDxcIncludeHandler* includeHandler,
+    const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
+    const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
+    const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
     std::ostream& os
 );
 
 /*三角形の色を変えよう*/
 
-ID3D12Resource* CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes);
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes);
 
 /*開発用のUIを出そう*/
 
-ID3D12DescriptorHeap* CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
 /*テクスチャを貼ろう*/
 
@@ -117,21 +117,21 @@ DirectX::ScratchImage LoadTexture(const std::string& flilePath);
 
 ///DirectX12のTextureResourceを作る
 
-ID3D12Resource* CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const DirectX::TexMetadata& metadata);
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const DirectX::TexMetadata& metadata);
 
 //void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 
 /*テクスチャを正しく配置しよう*/
 
-ID3D12Resource* UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, ID3D12GraphicsCommandList* commandList);
+Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 /*前後関係を正しくしよう*/
 
-ID3D12Resource* CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height);
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height);
 
-D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
+D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
-D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
+D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 /*objjファイルを読んでみよう*/
 

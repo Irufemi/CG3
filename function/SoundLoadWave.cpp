@@ -1,6 +1,6 @@
-#include "SoundData.h"
-#include "RiffHeader.h"
-#include "FormatChunk.h"
+#include "../math/SoundData.h"
+#include "../math/RiffHeader.h"
+#include "../math/FormatChunk.h"
 #include <fstream>
 #include <cassert>
 
