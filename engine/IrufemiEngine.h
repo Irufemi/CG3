@@ -1,11 +1,11 @@
 #pragma once
 
-#include "D3DResourceLeakChecker.h"
-#include "manager/InputManager.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
-#include "manager/TextureManager.h"
-#include "manager/AudioManager.h"
+#include "../D3DResourceLeakChecker.h"
+#include "../manager/InputManager.h"
+#include "../manager/DrawManager.h"
+#include "../manager/DebugUI.h"
+#include "../manager/TextureManager.h"
+#include "../manager/AudioManager.h"
 #include <memory>
 #include "Log.h"
 #include <Windows.h>

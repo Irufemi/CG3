@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Sound.h" // 音声データクラス
+#include "../source/Sound.h" // 音声データクラス
 #include <map>
 #include <memory>
 #include <string>

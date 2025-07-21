@@ -1,6 +1,6 @@
 #pragma once
 
-#include "externals/imgui/imgui.h"
+#include "../externals/imgui/imgui.h"
 
 /// <summary>
 /// シーン名

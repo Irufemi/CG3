@@ -1,6 +1,6 @@
 #include "GameScene.h"
 
-#include "IrufemiEngine.h"
+#include "../engine/IrufemiEngine.h"
 
 #include <algorithm>
 

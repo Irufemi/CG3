@@ -4,9 +4,9 @@
 #include <array>
 #include <d3d12.h>
 
-#include "D3D12ResourceUtil.h"
-#include "Camera.h"
-#include "manager/TextureManager.h"
+#include "../source/D3D12ResourceUtil.h"
+#include "../camera/Camera.h"
+#include "../manager/TextureManager.h"
 #include <wrl.h>
 #include <memory>
 

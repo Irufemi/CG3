@@ -1,10 +1,10 @@
 #include "Sphere.h"
 
 #include <cmath>
-#include "externals/imgui/imgui.h"
+#include "../externals/imgui/imgui.h"
 
-#include "function/Function.h"
-#include "Math.h"
+#include "../function/Function.h"
+#include "../Math.h"
 #include <string>
 #include <algorithm>
 

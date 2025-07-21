@@ -3,9 +3,9 @@
 #include <d3d12.h>
 #include <vector>
 #include <cstdint>
-#include "manager/TextureManager.h"
-#include "D3D12ResourceUtil.h"
-#include "Camera.h"
+#include "../manager/TextureManager.h"
+#include "../source/D3D12ResourceUtil.h"
+#include "../camera/Camera.h"
 #include <wrl.h>
 #include <memory>
 

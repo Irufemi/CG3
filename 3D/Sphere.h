@@ -2,13 +2,13 @@
 
 #include <cstdint>
 
-#include "Camera.h"
-#include "manager/TextureManager.h"
+#include "../camera/Camera.h"
+#include "../manager/TextureManager.h"
 #include <vector>
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "D3D12ResourceUtil.h"
+#include "../source/D3D12ResourceUtil.h"
 
 
 

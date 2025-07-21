@@ -1,13 +1,13 @@
 #include "IrufemiEngine.h"
-#include "function/Function.h"
+#include "../function/Function.h"
 
 #include <cassert>
 #include <DbgHelp.h>
 #include <cstdint>
 #include <format>
 
-#include "math/VertexData.h"
-#include "D3D12ResourceUtil.h"
+#include "../math/VertexData.h"
+#include "../source/D3D12ResourceUtil.h"
 
 #pragma comment(lib,"Dbghelp.lib")
 #pragma comment(lib,"d3d12.lib")
