@@ -4,12 +4,12 @@
 #include <cassert>
 
 #include <dxgidebug.h>
-#include "../Sphere.h"
-#include "../Sprite.h"
-#include "../Obj.h"
-#include "../Triangle.h"
+#include "../3D/Sphere.h"
+#include "../2D/Sprite.h"
+#include "../3D/Obj.h"
+#include "../3D/Triangle.h"
 
-#include "../D3D12ResourceUtil.h"
+#include "../source/D3D12ResourceUtil.h"
 
 void DrawManager::Initialize(
     ID3D12GraphicsCommandList* commandList,

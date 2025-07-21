@@ -1,12 +1,12 @@
 #pragma once
 
 #include "IScene.h"
-#include "Triangle.h"
-#include "Sprite.h"
-#include "Sphere.h"
-#include "Obj.h"
-#include "Camera.h"
-#include "DebugCamera.h"
+#include "../3D/Triangle.h"
+#include "../2D/Sprite.h"
+#include "../3D/Sphere.h"
+#include "../3D/Obj.h"
+#include "../camera/Camera.h"
+#include "../camera/DebugCamera.h"
 
 #include <memory>
 

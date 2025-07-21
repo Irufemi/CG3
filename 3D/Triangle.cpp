@@ -1,6 +1,6 @@
 #include "Triangle.h"
-#include "Math.h"
-#include "function/Function.h"
+#include "../Math.h"
+#include "../function/Function.h"
 
 #include <algorithm>
 

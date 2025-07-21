@@ -22,9 +22,6 @@
     <Filter Include="manager">
       <UniqueIdentifier>{a9d3d353-c04a-423f-88de-abe14802e99a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="objects">
-      <UniqueIdentifier>{4f1e431d-95ac-4935-897d-9e448ee31593}</UniqueIdentifier>
-    </Filter>
     <Filter Include="function">
       <UniqueIdentifier>{fdffdddd-33bd-48e7-bc36-ea565a122c9f}</UniqueIdentifier>
     </Filter>
@@ -33,6 +30,18 @@
     </Filter>
     <Filter Include="Scene">
       <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3D">
+      <UniqueIdentifier>{1c90d707-2613-47d1-bd66-a7303fa8f90f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2D">
+      <UniqueIdentifier>{81443dc7-2f7f-4d80-9041-a390755139e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source">
+      <UniqueIdentifier>{817e58db-0464-4982-82fe-53fdfc4eca24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="camera">
+      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -61,36 +70,6 @@
     </ClCompile>
     <ClCompile Include="externals\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Triangle.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Sphere.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Obj.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Sound.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="DebugCamera.cpp">
-      <Filter>objects</Filter>
-    </ClCompile>
-    <ClCompile Include="Log.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
-    <ClCompile Include="IrufemiEngine.cpp">
-      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="manager\AudioManager.cpp">
       <Filter>manager</Filter>
@@ -156,11 +135,41 @@
     <ClCompile Include="function\WindowProc.cpp">
       <Filter>function</Filter>
     </ClCompile>
-    <ClCompile Include="GameScene.cpp">
+    <ClCompile Include="scene\GameScene.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
-    <ClCompile Include="TitleScene.cpp">
+    <ClCompile Include="scene\TitleScene.cpp">
       <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\IrufemiEngine.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\Log.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\Sprite.cpp">
+      <Filter>2D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\Obj.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\Sphere.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\Triangle.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Sound.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Texture.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="camera\Camera.cpp">
+      <Filter>camera</Filter>
+    </ClCompile>
+    <ClCompile Include="camera\DebugCamera.cpp">
+      <Filter>camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -187,39 +196,6 @@
     </ClInclude>
     <ClInclude Include="externals\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Sphere.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Sprite.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Triangle.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="D3D12ResourceUtil.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Obj.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Sound.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="DebugCamera.h">
-      <Filter>objects</Filter>
-    </ClInclude>
-    <ClInclude Include="Log.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="IrufemiEngine.h">
-      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="manager\AudioManager.h">
       <Filter>manager</Filter>
@@ -295,17 +271,50 @@
     <ClInclude Include="function\GetBackBufferIndex.h">
       <Filter>function</Filter>
     </ClInclude>
-    <ClInclude Include="IScene.h">
+    <ClInclude Include="scene\GameScene.h">
       <Filter>Scene</Filter>
     </ClInclude>
-    <ClInclude Include="GameScene.h">
+    <ClInclude Include="scene\IScene.h">
       <Filter>Scene</Filter>
     </ClInclude>
-    <ClInclude Include="TitleScene.h">
+    <ClInclude Include="scene\SceneName.h">
       <Filter>Scene</Filter>
     </ClInclude>
-    <ClInclude Include="SceneName.h">
+    <ClInclude Include="scene\TitleScene.h">
       <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\IrufemiEngine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\Log.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\Sprite.h">
+      <Filter>2D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\Obj.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\Sphere.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\Triangle.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="source\D3D12ResourceUtil.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Sound.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Texture.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="camera\Camera.h">
+      <Filter>camera</Filter>
+    </ClInclude>
+    <ClInclude Include="camera\DebugCamera.h">
+      <Filter>camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

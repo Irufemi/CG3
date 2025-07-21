@@ -4,13 +4,13 @@
 #include <memory>
 #include <d3d12.h>
 
-#include "IrufemiEngine.h"
+#include "./engine/IrufemiEngine.h"
 #include "externals/imgui/imgui.h"
 #include "function/GetBackBufferIndex.h"
-#include "IScene.h"
-#include "TitleScene.h"
-#include "GameScene.h"
-#include "SceneName.h"
+#include "./scene/IScene.h"
+#include "./scene/TitleScene.h"
+#include "./scene/GameScene.h"
+#include "./scene/SceneName.h"
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 1280;

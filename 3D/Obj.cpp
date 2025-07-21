@@ -1,7 +1,7 @@
 #include "Obj.h"
 
-#include "function/Function.h"
-#include "Math.h"
+#include "../function/Function.h"
+#include "../Math.h"
 
 void Obj::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const std::string& filename) {
 

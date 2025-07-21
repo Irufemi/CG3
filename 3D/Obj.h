@@ -1,16 +1,16 @@
 #pragma once
 
-#include "math/Transform.h"
-#include "math/Material.h"
-#include "math/TransformationMatrix.h"
-#include "math/DirectionalLight.h"
-#include "math/ModelData.h"
-#include "math/VertexData.h"
-#include "math/Matrix4x4.h"
+#include "../math/Transform.h"
+#include "../math/Material.h"
+#include "../math/TransformationMatrix.h"
+#include "../math/DirectionalLight.h"
+#include "../math/ModelData.h"
+#include "../math/VertexData.h"
+#include "../math/Matrix4x4.h"
 #include <d3d12.h>
 #include <string>
-#include "Camera.h"
-#include "Texture.h"
+#include "../camera/Camera.h"
+#include "../source/Texture.h"
 #include <wrl.h>
 
 //==========================

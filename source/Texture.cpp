@@ -1,10 +1,10 @@
 #include "Texture.h"
 
-#include "function/Function.h"
+#include "../function/Function.h"
 
-#include "externals/DirectXTex/DirectXTex.h"
+#include "../externals/DirectXTex/DirectXTex.h"
 
-#include "externals/DirectXTex/d3dx12.h"
+#include "../externals/DirectXTex/d3dx12.h"
 
 
 void Texture::Initialize(const std::string& filePath, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {

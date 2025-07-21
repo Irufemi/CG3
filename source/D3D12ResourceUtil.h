@@ -7,14 +7,14 @@
 #include <cstdint>
 #include <wrl.h>
 
-#include "math/Matrix4x4.h"
-#include "math/Transform.h"
-#include "math/VertexData.h"
-#include "math/Material.h"
-#include "math/TransformationMatrix.h"
-#include "math/DirectionalLight.h"
-#include "manager/TextureManager.h"
-#include "function/Function.h"
+#include "../math/Matrix4x4.h"
+#include "../math/Transform.h"
+#include "../math/VertexData.h"
+#include "../math/Material.h"
+#include "../math/TransformationMatrix.h"
+#include "../math/DirectionalLight.h"
+#include "../manager/TextureManager.h"
+#include "../function/Function.h"
 
 class D3D12ResourceUtil {
 public: //メンバ変数
