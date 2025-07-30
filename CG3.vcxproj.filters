@@ -43,6 +43,9 @@
     <Filter Include="camera">
       <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="audio">
+      <UniqueIdentifier>{93a356b9-f23a-4034-ab06-edadb43a2423}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -171,6 +174,12 @@
     <ClCompile Include="camera\DebugCamera.cpp">
       <Filter>camera</Filter>
     </ClCompile>
+    <ClCompile Include="3D\Particle.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Bgm.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -260,7 +269,6 @@
     <ClInclude Include="math\VertexData.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="D3DResourceLeakChecker.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="manager\VoiceCallback.h">
       <Filter>manager</Filter>
@@ -315,6 +323,18 @@
     </ClInclude>
     <ClInclude Include="camera\DebugCamera.h">
       <Filter>camera</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\D3DResourceLeakChecker.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\Particle.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Bgm.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="math\ObjModel.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -79,13 +79,13 @@ public: //メンバ関数
         Sphere* sphere
     );
 
-    void DrawObj(
+    void DrawByIndex(
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
-        Obj* obj
+        D3D12ResourceUtil* resource
     );
 
-    void DrawByIndex(
+    void DrawByVertex(
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
         D3D12ResourceUtil* resource

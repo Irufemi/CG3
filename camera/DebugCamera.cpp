@@ -11,7 +11,7 @@ void DebugCamera::Update() {
     Vector3 translate = camera_.GetTranslate();
 
     //前移動の入力があったら
-    if (input_->isKeyDown(DIK_1) != 0) {
+    if (input_->IsKeyDown('1') != 0) {
         const float speed = 1.0f;
 
         //カメラ移動ベクトル
@@ -22,7 +22,7 @@ void DebugCamera::Update() {
         translate = Math::Add(translate, move);
     }
     //後ろ移動の入力があったら
-    else if (input_->isKeyDown(DIK_2) != 0) {
+    else if (input_->IsKeyDown('2') != 0) {
         const float speed = -1.0f;
 
         //カメラ移動ベクトル
@@ -33,7 +33,7 @@ void DebugCamera::Update() {
         translate = Math::Add(translate, move);
     }
     //上移動の入力があったら
-    if (input_->isKeyDown(DIK_W) != 0) {
+    if (input_->IsKeyDown('W') != 0) {
         const float speed = 0.01f;
 
         //カメラ移動ベクトル
@@ -44,7 +44,7 @@ void DebugCamera::Update() {
         translate = Math::Add(translate, move);
     }
     //下移動の入力があったら
-    else if (input_->isKeyDown(DIK_S) != 0) {
+    else if (input_->IsKeyDown('S') != 0) {
         const float speed = -0.01f;
 
         //カメラ移動ベクトル
@@ -55,7 +55,7 @@ void DebugCamera::Update() {
         translate = Math::Add(translate, move);
     }
     //右移動の入力があったら
-    if (input_->isKeyDown(DIK_D) != 0) {
+    if (input_->IsKeyDown('D') != 0) {
         const float speed = 0.01f;
 
         //カメラ移動ベクトル
@@ -66,7 +66,7 @@ void DebugCamera::Update() {
         translate = Math::Add(translate, move);
     }
     //左移動の入力があったら
-    else if (input_->isKeyDown(DIK_A) != 0) {
+    else if (input_->IsKeyDown('A') != 0) {
         const float speed = -0.01f;
 
         //カメラ移動ベクトル
@@ -86,35 +86,35 @@ void DebugCamera::Update() {
     const float rotationSpeed = 0.02f;
 
     //X軸回り回転の入力があったら
-    if (input_->isKeyDown(DIK_Z) != 0) {
+    if (input_->IsKeyDown('Z') != 0) {
         //X軸回りの角度を計算する
         rotate.x += rotationSpeed;
 
     }
     //反対方向
-    else if (input_->isKeyDown(DIK_X) != 0) {
+    else if (input_->IsKeyDown('X') != 0) {
         //X軸回りの角度を計算する
         rotate.x -= rotationSpeed;
     }
     //Y軸回り回転の入力があったら
-    if (input_->isKeyDown(DIK_C) != 0) {
+    if (input_->IsKeyDown('C') != 0) {
         //Y軸回りの角度を計算する
         rotate.y += rotationSpeed;
 
     }
     //反対方向
-    else if (input_->isKeyDown(DIK_V) != 0) {
+    else if (input_->IsKeyDown('V') != 0) {
         //Y軸回りの角度を計算する
         rotate.y -= rotationSpeed;
     }
     //Z軸回り回転の入力があったら
-    if (input_->isKeyDown(DIK_B) != 0) {
+    if (input_->IsKeyDown('B') != 0) {
         //Z軸回りの角度を計算する
         rotate.z += rotationSpeed;
 
     }
     //反対方向
-    else if (input_->isKeyDown(DIK_N) != 0) {
+    else if (input_->IsKeyDown('N') != 0) {
         //Z軸回りの角度を計算する
         rotate.z -= rotationSpeed;
     }

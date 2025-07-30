@@ -5,10 +5,11 @@
 
 #include <algorithm>
 
-void Sprite::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, const std::string& textureName) {
+void Sprite::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
+    this->ui_ = ui;
 
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
@@ -71,6 +72,8 @@ void Sprite::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Came
 
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->materialData_->enableLighting = false;
+    resource_->materialData_->hasTexture = true;
+    resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
 
     //wvp
@@ -104,73 +107,26 @@ void Sprite::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Came
 
 void Sprite::Update() {
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
     std::string name = std::string("Sprite: ");
 
     //ImGui
 
     //カメラウィンドウを作り出す
     ImGui::Begin(name.c_str());
-    // scale
-    ImGui::DragFloat3("scale", &resource_->transform_.scale.x, 0.1f);
-    // rotate
-    ImGui::DragFloat3("rotate", &resource_->transform_.rotate.x, 0.1f);
-    // translate
-    ImGui::DragFloat3("translate", &resource_->transform_.translate.x, 0.1f);
-    //Color
-    ImGui::ColorEdit4("color", &resource_->materialData_->color.x);
+    
+    ui_->DebugTransform(resource_->transform_);
+    
+    ui_->DebugMaterialBy2D(resource_->materialData_);
 
-    std::vector<std::string> textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
 
-    if (!textureNames.empty()) {
-        selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, (int)textureNames.size() - 1);
-        if (ImGui::BeginCombo("Texture", textureNames[selectedTextureIndex_].c_str())) {
-            for (int i = 0; i < textureNames.size(); ++i) {
-                bool isSelected = (i == selectedTextureIndex_);
-                if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
-                    selectedTextureIndex_ = i;
-                    resource_->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]); // ★ここで更新
-                }
-            }
-            ImGui::EndCombo();
-        }
-    } else {
-        ImGui::Text("No textures found.");
-    }
-
-    ImGui::DragFloat3("UVTranslate", &resource_->uvTransform_.translate.x, 0.01f, -10.0f, 10.0f);
-    ImGui::DragFloat3("UVScale", &resource_->uvTransform_.scale.x, 0.01f, -10.0f, 10.0f);
-    ImGui::SliderAngle("UVRotate", &resource_->uvTransform_.rotate.z);
-
+    ui_->DebugUvTransform(resource_->uvTransform_);
 
     //入力終了
     ImGui::End();
 
-#endif // _DEBUG
-
-    resource_->vertexDataList_.clear();
-
-    //左下
-    resource_->vertexDataList_.push_back({ { 0.0f,360.0f,0.0f,1.0f }, { 0.0f,1.0f } });
-    //左上
-    resource_->vertexDataList_.push_back({ { 0.0f,0.0f,0.0f,1.0f  }, { 0.0f,0.0f} });
-    //右下
-    resource_->vertexDataList_.push_back({ { 640.0f,360.0f,0.0f,1.0f }, { 1.0f,1.0f } });
-    //右上
-    resource_->vertexDataList_.push_back({ { 640.0f,0.0f,0.0f,1.0f }, { 1.0f,0.0f } });
-
-    for (uint32_t i = 0; i < static_cast<uint32_t>(resource_->vertexDataList_.size()); ++i) {
-        resource_->vertexDataList_[i].normal.x = resource_->vertexDataList_[i].position.x;
-        resource_->vertexDataList_[i].normal.y = resource_->vertexDataList_[i].position.y;
-        resource_->vertexDataList_[i].normal.z = -1.0f;
-    }
-
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->enableLighting = false;
-    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+//#endif // _DEBUG
 
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
 
@@ -178,7 +134,7 @@ void Sprite::Update() {
 
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
 
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
     resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
 

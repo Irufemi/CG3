@@ -20,10 +20,10 @@ const int32_t kClientHeight = 720;
 const std::wstring kTitle = L"CG3_LE2B_11_スエヒロ_コウイチ";
 
 // シーン名表示配列
-static const char* SceneNameStrings[] = { 
+static const char* SceneNameStrings[] = {
     "Title",
     "InGame",
-    "End"
+    //"End"
 };
 
 //windowsアプリでのエントリーポint32_tイント(main関数)
@@ -76,9 +76,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     case SceneName::inGame:
                         scene = std::make_unique<GameScene>();
                         break;
-                    case SceneName::end:
-                        // EndScene を用意していればそこへ
-                        break;
+                        //case SceneName::end:
+                        //    // EndScene を用意していればそこへ
+                        //    break;
                     }
                     scene->Initialize(engine.get());
                 }

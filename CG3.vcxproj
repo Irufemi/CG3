@@ -100,8 +100,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClCompile Include="2D\Sprite.cpp" />
     <ClCompile Include="3D\Obj.cpp" />
+    <ClCompile Include="3D\Particle.cpp" />
     <ClCompile Include="3D\Sphere.cpp" />
     <ClCompile Include="3D\Triangle.cpp" />
+    <ClCompile Include="audio\Bgm.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -144,11 +146,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
     <ClInclude Include="3D\Obj.h" />
+    <ClInclude Include="3D\Particle.h" />
     <ClInclude Include="3D\Sphere.h" />
     <ClInclude Include="3D\Triangle.h" />
+    <ClInclude Include="audio\Bgm.h" />
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />
-    <ClInclude Include="D3DResourceLeakChecker.h" />
+    <ClInclude Include="engine\D3DResourceLeakChecker.h" />
     <ClInclude Include="engine\IrufemiEngine.h" />
     <ClInclude Include="engine\Log.h" />
     <ClInclude Include="externals\imgui\imconfig.h" />
@@ -176,6 +180,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Matrix3x3.h" />
     <ClInclude Include="math\Matrix4x4.h" />
     <ClInclude Include="math\ModelData.h" />
+    <ClInclude Include="math\ObjModel.h" />
     <ClInclude Include="math\RiffHeader.h" />
     <ClInclude Include="math\SoundData.h" />
     <ClInclude Include="math\Transform.h" />

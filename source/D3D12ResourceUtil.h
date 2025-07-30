@@ -127,13 +127,17 @@ public: //メンバ関数
 
     //ID3D12Resourceを生成する
     void CreateResource(ID3D12Device* device) {
-        vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
         char buf[256];
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
-        indexResource_ = CreateBufferResource(device, sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
+        if (!vertexDataList_.empty()) {
+            vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
+            snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
+            OutputDebugStringA(buf);
+        }
+        if (!indexDataList_.empty()) {
+            indexResource_ = CreateBufferResource(device, sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
+            snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
+            OutputDebugStringA(buf);
+        }
         materialResource_ = CreateBufferResource(device, sizeof(Material));
         snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
         OutputDebugStringA(buf);
@@ -147,8 +151,12 @@ public: //メンバ関数
 
     //バッファへの書き込みを開放
     void Map() {
-        vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
-        indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
+        if (vertexResource_) {
+            vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+        }
+        if (indexResource_) {
+            indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
+        }
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
         transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
         directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
@@ -156,11 +164,14 @@ public: //メンバ関数
 
     //バッファへの書き込みを閉鎖
     void UnMap() {
-        vertexResource_->Unmap(0, nullptr);
-        indexResource_->Unmap(0, nullptr);
+        if (vertexResource_) {
+            vertexResource_->Unmap(0, nullptr);
+        }
+        if (indexResource_) {
+            indexResource_->Unmap(0, nullptr);
+        }
         materialResource_->Unmap(0, nullptr);
         transformationResource_->Unmap(0, nullptr);
         directionalLightResource_->Unmap(0, nullptr);
     }
 };
-

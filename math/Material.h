@@ -11,13 +11,19 @@
 struct Material {
 
     Vector4 color;
+
     int32_t enableLighting = false;
 
-    /*UVTransform*//*UVTransform*/
-	
+    int32_t hasTexture = true;
+
+    // 0=Lightingなし, 1=Lambert, 2=HalfLambert(デフォルトはHalfLambertに設定)
+    int32_t lightingMode = 2;
+
+    /*UVTransform*/
+
     ///Alignmentを考慮して書き換え
 
-    float padding[3];
+    float padding;
 
     ///Materialの拡張
 

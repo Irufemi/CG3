@@ -1,49 +1,56 @@
 #pragma once
-
-#include <cstdint>
-#define DIRECTINPUT_VERSION 0x0800 //DirectInputのバージョン指定
-#include <dinput.h>
+#include <Windows.h>
+#include <Xinput.h>
 #include <array>
-#include <wrl.h>
+
+#pragma comment(lib, "Xinput.lib")
 
 class InputManager {
-    
-    Microsoft::WRL::ComPtr<IDirectInput8> directInput = nullptr;
+public:
 
-    Microsoft::WRL::ComPtr<IDirectInputDevice8> keybord = nullptr;
+    static const int KEY_COUNT = 256;
 
-    std::array<BYTE, 256> key_ = {};
+private:
 
-    std::array<BYTE, 256> preKey_ = {};
+    // キーボード（Win32 API）
+    std::array<BYTE, KEY_COUNT> currentKeys_;
+    std::array<BYTE, KEY_COUNT> previousKeys_;
+
+    // Xboxコントローラー（XInput）
+    XINPUT_STATE state_{};
+    XINPUT_STATE prevState_{};
+
+    // スティックのデッドゾーン
+    float deadZoneLeft_ = 0.2f;
+    float deadZoneRight_ = 0.2f;
 
 public:
-    //コンストラクタ
-    InputManager() {}
-    //デストラクタ
-    ~InputManager() {}
-    //初期化
-    void Initialize(WNDCLASS& wc, HWND& hwnd);
-    // 解放
-    void Finalize() {
-        directInput->Release();
-        keybord->Release();
-    }
-    //更新
+
+    InputManager() = default;
+    ~InputManager() = default;
+
+    void Initialize();
+
     void Update();
 
-    //
-    void GetHitKeyStateAll(char* keyStateSelf);
-    //
-    const std::array<BYTE, 256>& GetAllKey() const { return key_; }
+    // --- キーボード入力 ---
+    bool IsKeyDown(uint8_t key) const;
+    bool IsKeyUp(uint8_t key) const;
+    bool IsKeyPressed(uint8_t key) const;
+    bool IsKeyReleased(uint8_t key) const;
 
-    ///トリガー処理
+    // --- コントローラー入力 ---
+    bool IsButtonDown(WORD button) const;
+    bool IsButtonUp(WORD button) const;
+    bool IsButtonPressed(WORD button) const;
+    bool IsButtonReleased(WORD button) const;
 
-    //キーを押した状態か
-    bool isKeyDown(uint8_t key);
-    //キーを離した状態か
-    bool isKeyUp(uint8_t key);
-    //キーを押した瞬間か
-    bool isKeyPress(uint8_t key);
-    //キーを離した瞬間か
-    bool isKeyRelease(uint8_t key);
+    float GetLeftStickX() const;
+    float GetLeftStickY() const;
+    float GetRightStickX() const;
+    float GetRightStickY() const;
+
+    float GetLeftTrigger() const;
+    float GetRightTrigger() const;
+
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../D3DResourceLeakChecker.h"
+#include "D3DResourceLeakChecker.h"
 #include "../manager/InputManager.h"
 #include "../manager/DrawManager.h"
 #include "../manager/DebugUI.h"

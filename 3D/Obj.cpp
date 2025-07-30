@@ -1,113 +1,107 @@
 #include "Obj.h"
 
+#include "../source/Texture.h"
 #include "../function/Function.h"
 #include "../Math.h"
+#include "../manager/DrawManager.h"
+#include "../manager/TextureManager.h"
 
-void Obj::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const std::string& filename) {
+void Obj::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
 
     this->camera_ = camera;
-    this->device_ = device;
+    this->ui_ = ui;
 
-    /*objファイルを読んでみよう*/
+    objModel_ = LoadObjFileM("resources/obj", filename);
 
-    ///ModelDataを使う
+    textures_.clear();
+    resources_.clear();
 
-    modelData_ = LoadObjFile("resources", filename);
+    for (const auto& mesh : objModel_.meshes) {
 
-    //頂点リソースを作る
-    vertexResource_ = CreateBufferResource(device.Get(), sizeof(VertexData) * modelData_.vertices.size());
-    //頂点バッファ－ビューを作成する
-    vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress(); //リソースの先頭のアドレスから使う
-    vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * modelData_.vertices.size());//使用するリソースのサイズは頂点のサイズ
-    vertexBufferView_.StrideInBytes = sizeof(VertexData);//1頂点あたりのサイズ
+        auto res = std::make_unique<D3D12ResourceUtil>();
 
-    //頂点リソースにデータを書き込む
-    vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_)); //書き込むためのアドレスを取得
-    std::memcpy(vertexData_, modelData_.vertices.data(), sizeof(VertexData) * modelData_.vertices.size()); //頂点データをリソースにコピー
+        // 頂点バッファ
+        res->vertexResource_ = CreateBufferResource(device.Get(), sizeof(VertexData) * mesh.vertices.size());
+        res->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
+        res->vertexBufferView_.BufferLocation = res->vertexResource_->GetGPUVirtualAddress();
+        res->vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * mesh.vertices.size());
+        res->vertexBufferView_.StrideInBytes = sizeof(VertexData);
 
-    vertexResource_->Unmap(0, nullptr);
+        res->vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->vertexData_));
+        res->vertexDataList_ = mesh.vertices;
+        std::memcpy(res->vertexData_, mesh.vertices.data(), sizeof(VertexData) * mesh.vertices.size());
 
-    //マテリアル
-    materialResource_ = CreateBufferResource(device_.Get(), sizeof(Material));
+        // マテリアル
+        res->materialResource_ = CreateBufferResource(device.Get(), sizeof(Material));
+        res->materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->materialData_));
+        res->materialData_->color = mesh.material.color;
+        res->materialData_->enableLighting = mesh.material.enableLighting;
+        res->materialData_->hasTexture = true;
+        res->materialData_->lightingMode = 2;
+        res->materialData_->uvTransform = mesh.material.uvTransform; // すでに行列
 
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+        // WVP
+        res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
+        res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+        res->transformationResource_ = CreateBufferResource(device.Get(), sizeof(TransformationMatrix));
+        res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
+        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
 
-    materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    materialData_->enableLighting = false;
-    materialData_->uvTransform = Math::MakeIdentity4x4();
+        // テクスチャ
+        auto tex = std::make_unique<Texture>();
+        if (!mesh.material.textureFilePath.empty()) {
+            tex->Initialize(mesh.material.textureFilePath, device.Get(), srvDescriptorHeap, commandList);
+            res->textureHandle_ = tex->GetTextureSrvHandleGPU();
+        }
+        else if(!res->textureHandle_.ptr) {
+            res->materialData_->hasTexture = false;
+            // ダミー（白）テクスチャのSRVハンドルを取得
+            res->textureHandle_ = textureManager->GetWhiteTextureHandle();
+        }
 
-    materialResource_->Unmap(0, nullptr);
+        // ライト
+        res->directionalLightResource_ = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
+        res->directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->directionalLightData_));
+        res->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
+        res->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
+        res->directionalLightData_->intensity = 1.0f;
 
-    //wvp
-
-    worldMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-    wvpMatrix_ = Math::Multiply(worldMatrix_, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    wvpResource_ = CreateBufferResource(device_.Get(), sizeof(TransformationMatrix));
-
-    wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
-
-    *transformationData_ = { wvpMatrix_,worldMatrix_ };
-
-    wvpResource_->Unmap(0, nullptr);
-
-    texture.Initialize(modelData_.material.textureFilePath, device_.Get(), srvDescriptorHeap, commandList);
-
-    directionalLightResource_ = CreateBufferResource(device_.Get(), sizeof(DirectionalLight));
-
-    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
-
-    directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    directionalLightData_->intensity = 1.0f;
-
-    directionalLightResource_->Unmap(0, nullptr);
+        textures_.push_back(std::move(tex));
+        resources_.push_back(std::move(res));
+    }
 
 }
 
 void Obj::Update(const char* objName) {
-#ifdef _DEBUG
-
+//#ifdef _DEBUG
     std::string name = std::string("Obj: ") + objName;
-
     ImGui::Begin(name.c_str());
-    ImGui::DragFloat3("center", &transform_.translate.x, 0.05f);
-    ImGui::DragFloat3("scale", &transform_.scale.x, 0.05f);
-    ImGui::DragFloat3("rotate", &transform_.rotate.x, 0.05f);
-    ImGui::DragFloat3("translate", &transform_.translate.x, 0.05f);
-    ImGui::ColorEdit4("spriteColor", &materialData_->color.x);
-    ImGui::SliderInt("enableLighting", &materialData_->enableLighting, 0, 1);
 
-    ImGui::ColorEdit4("lightColor", &directionalLightData_->color.x);
-    ImGui::DragFloat3("lightDirection", &directionalLightData_->direction.x, 0.01f);
-    ImGui::DragFloat("intensity", &directionalLightData_->intensity, 0.01f);
-
+    for (size_t i = 0; i < resources_.size(); ++i) {
+        auto& res = resources_[i];
+        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
+        if (ImGui::TreeNode(meshLabel.c_str())) {
+            ui_->DebugTransform(res->transform_);
+            ui_->DebugMaterialBy3D(res->materialData_);
+            ui_->DebugDirectionalLight(res->directionalLightData_);
+            ui_->DebugUvTransform(res->uvTransform_);
+            ImGui::TreePop();
+        }
+    }
     ImGui::End();
+//#endif
 
-#endif // _DEBUG
-
-    worldMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-    wvpMatrix_ = Math::Multiply(worldMatrix_, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
-
-    *transformationData_ = { wvpMatrix_,worldMatrix_ };
-
-    wvpResource_->Unmap(0, nullptr);
-
-    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
-
-    /*directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    directionalLightData_->intensity = 1.0f;*/
-    directionalLightData_->direction = Math::Normalize(directionalLightData_->direction);
-
-    directionalLightData_->direction = Math::Normalize(directionalLightData_->direction);
-
-    directionalLightResource_->Unmap(0, nullptr);
+    for (auto& res : resources_) {
+        res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
+        res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
+        res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
+        res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
+    }
 }
 
-
+void Obj::Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) {
+    for (auto& res : resources_) {
+        drawManager->DrawByVertex(viewport, scissorRect, res.get());
+    }
+}

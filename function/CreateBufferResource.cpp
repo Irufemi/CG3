@@ -3,7 +3,7 @@
 /*三角形の色を変えよう*/
 
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes) {
-
+    
     ///BufferResourceを生成する
 
     //頂点リソース用のヒープを生成

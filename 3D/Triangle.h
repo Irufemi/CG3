@@ -7,6 +7,7 @@
 #include "../source/D3D12ResourceUtil.h"
 #include "../camera/Camera.h"
 #include "../manager/TextureManager.h"
+#include "../manager/DebugUI.h"
 #include <wrl.h>
 #include <memory>
 
@@ -26,12 +27,14 @@ protected: //メンバ変数
 
     TextureManager* textureManager_ = nullptr;
 
+    DebugUI* ui_ = nullptr;
+
 public: //メンバ関数
     //デストラクタ
     ~Triangle() = default;
 
     //初期化
-    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, const std::string& textureName = "uvChecker.png");
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
     //更新
     void Update(const char* triangleName = "");
 

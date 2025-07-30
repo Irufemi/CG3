@@ -1,92 +1,89 @@
 #include "InputManager.h"
+#include <cmath>
 
-#include <cassert>
-
-#pragma comment(lib,"dinput8.lib")
-#pragma comment(lib,"dxguid.lib")
-
-void InputManager::Initialize(WNDCLASS& wc, HWND& hwnd) {
-
-    /*入力デバイス*/
-
-    ///初期化(一度だけ行う処理)
-
-    //DirectInputの初期化
-    HRESULT hr = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)directInput.GetAddressOf(), nullptr);
-    assert(SUCCEEDED(hr));
-
-    //キーボードデバイスの生成
-    hr = directInput->CreateDevice(GUID_SysKeyboard, keybord.GetAddressOf(), NULL);
-    assert(SUCCEEDED(hr));
-
-    //入力データ形式のセット
-    hr = keybord->SetDataFormat(&c_dfDIKeyboard); //標準形式
-    assert(SUCCEEDED(hr));
-
-    //排他制御レベルのセット
-    hr = keybord->SetCooperativeLevel(
-        hwnd,
-        DISCL_FOREGROUND //画面が手前にある場合のみ入力を受け付ける
-        | DISCL_NONEXCLUSIVE //デバイスをこのアプリだけで専有しない
-        | DISCL_NOWINKEY //Windowsキーを無効にする
-    );
-    assert(SUCCEEDED(hr));
-
+void InputManager::Initialize() {
+    currentKeys_.fill(0);
+    previousKeys_.fill(0);
+    ZeroMemory(&state_, sizeof(XINPUT_STATE));
+    ZeroMemory(&prevState_, sizeof(XINPUT_STATE));
 }
 
 void InputManager::Update() {
+    // 前回の状態を保存
+    previousKeys_ = currentKeys_;
+    prevState_ = state_;
 
-    //preKeyにkeyの情報をコピー
-    memcpy(preKey_.data(), key_.data(), 256);
+    // --- キーボード入力をWin32 APIで取得 ---
+    GetKeyboardState(currentKeys_.data());
 
-    /*入力デバイス*/
-
-    ///グラフィックスコマンド
-
-    ///更新処理(毎フレーム行う)
-
-    //キーボード情報の取得開始
-    keybord->Acquire();
-
-    //全キーの入力状態を取得する
-    keybord->GetDeviceState(sizeof(key_), key_.data());
-
-}
-
-void InputManager::GetHitKeyStateAll(char* keyStateBuf) {
-    memcpy(keyStateBuf, key_.data(), size(key_));
-}
-
-///トリガー処理
-
-//キーを押した状態か
-bool InputManager::isKeyDown(uint8_t keyCode) {
-    if (key_[keyCode] != 0) {
-        return true;
+    // --- Xboxコントローラー入力を取得 ---
+    ZeroMemory(&state_, sizeof(XINPUT_STATE));
+    DWORD result = XInputGetState(0, &state_);
+    if (result != ERROR_SUCCESS) {
+        ZeroMemory(&state_, sizeof(XINPUT_STATE)); // 接続なし
     }
-    return false;
 }
 
-//キーを離した状態か
-bool InputManager::isKeyUp(uint8_t keyCode) {
-    if (key_[keyCode] == 0) {
-        return true;
-    }
-    return false;
+#pragma region キーボード処理
+bool InputManager::IsKeyDown(uint8_t key) const {
+    return (currentKeys_[key] & 0x80) != 0;
 }
 
-//キーを押した瞬間か
-bool InputManager::isKeyPress(uint8_t keyCode) {
-    if (preKey_[keyCode] == 0 && key_[keyCode] != 0) {
-        return true;
-    }
-    return false;
+bool InputManager::IsKeyUp(uint8_t key) const {
+    return !(currentKeys_[key] & 0x80);
 }
 
-//キーを離した瞬間か
-bool InputManager::isKeyRelease(uint8_t keyCode) {
-    if (preKey_[keyCode] != 0 && key_[keyCode] == 0) {
-        return true;
-    }
-    return false;
+bool InputManager::IsKeyPressed(uint8_t key) const {
+    return !(previousKeys_[key] & 0x80) && (currentKeys_[key] & 0x80);
 }
+
+bool InputManager::IsKeyReleased(uint8_t key) const {
+    return (previousKeys_[key] & 0x80) && !(currentKeys_[key] & 0x80);
+}
+#pragma endregion
+
+#pragma region コントローラー処理
+bool InputManager::IsButtonDown(WORD button) const {
+    return (state_.Gamepad.wButtons & button) != 0;
+}
+
+bool InputManager::IsButtonUp(WORD button) const {
+    return !(state_.Gamepad.wButtons & button);
+}
+
+bool InputManager::IsButtonPressed(WORD button) const {
+    return !(prevState_.Gamepad.wButtons & button) && (state_.Gamepad.wButtons & button);
+}
+
+bool InputManager::IsButtonReleased(WORD button) const {
+    return (prevState_.Gamepad.wButtons & button) && !(state_.Gamepad.wButtons & button);
+}
+
+float InputManager::GetLeftStickX() const {
+    float norm = (float)state_.Gamepad.sThumbLX / 32767.0f;
+    return (std::fabs(norm) < deadZoneLeft_) ? 0.0f : norm;
+}
+
+float InputManager::GetLeftStickY() const {
+    float norm = (float)state_.Gamepad.sThumbLY / 32767.0f;
+    return (std::fabs(norm) < deadZoneLeft_) ? 0.0f : norm;
+}
+
+float InputManager::GetRightStickX() const {
+    float norm = (float)state_.Gamepad.sThumbRX / 32767.0f;
+    return (std::fabs(norm) < deadZoneRight_) ? 0.0f : norm;
+}
+
+float InputManager::GetRightStickY() const {
+    float norm = (float)state_.Gamepad.sThumbRY / 32767.0f;
+    return (std::fabs(norm) < deadZoneRight_) ? 0.0f : norm;
+}
+
+float InputManager::GetLeftTrigger() const {
+    return state_.Gamepad.bLeftTrigger / 255.0f;
+}
+
+float InputManager::GetRightTrigger() const {
+    return state_.Gamepad.bRightTrigger / 255.0f;
+}
+#pragma endregion

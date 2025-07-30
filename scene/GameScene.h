@@ -1,14 +1,16 @@
 #pragma once
 
 #include "IScene.h"
+
+#include <memory>
+
 #include "../3D/Triangle.h"
 #include "../2D/Sprite.h"
 #include "../3D/Sphere.h"
 #include "../3D/Obj.h"
+#include "../audio/Bgm.h"
 #include "../camera/Camera.h"
 #include "../camera/DebugCamera.h"
-
-#include <memory>
 
 //BGM
 #include <xaudio2.h>
@@ -16,6 +18,7 @@
 // 前方宣言
 
 class IrufemiEngine;
+
 
 /// <summary>
 /// ゲーム
@@ -29,8 +32,8 @@ private: // メンバ変数
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera = nullptr;
 
-    std::unique_ptr<Triangle>  triangle = nullptr;
-    bool isActiveTriangle = false;
+    std::unique_ptr<Obj> obj = nullptr;
+    bool isActiveObj = false;
 
     std::unique_ptr<Sprite> sprite = nullptr;
     bool isActiveSprite = false;
@@ -38,17 +41,22 @@ private: // メンバ変数
     std::unique_ptr<Sphere> sphere = nullptr;
     bool isActiveSphere = true;
 
-    std::unique_ptr<Obj> obj = nullptr;
-    bool isActiveObj = false;
+    std::unique_ptr<Obj> utashTeapot = nullptr;
+    bool isActiveUtashTeapot = false;
 
-    // BGM
-    IXAudio2SourceVoice* bgmVoice = nullptr;
-    // BGMVolume
-    float bgmVolume = 0.01f;
-    // カテゴリの初期選択インデックス
-    int selectedCat = 0;   
-    // トラックの初期選択インデックス
-    int selectedTrack = 0;   
+    std::unique_ptr<Obj> stanfordBunny = nullptr;
+    bool isActiveStanfordBunny = false;
+
+    std::unique_ptr<Obj> multiMesh = nullptr;
+    bool isActiveMultiMesh = false;
+
+    std::unique_ptr<Obj> multiMaterial = nullptr;
+    bool isActiveMultiMaterial = false;
+
+    std::unique_ptr<Obj> suzanne = nullptr;
+    bool isActiveSuzanne = false;
+    
+    std::unique_ptr<Bgm> bgm = nullptr;
 
     int loadTexture = false;
 
@@ -63,8 +71,7 @@ private: // メンバ変数
 public: // メンバ関数
 
     // デストラクタ
-    ~GameScene() {
-    }
+    ~GameScene() {}
 
     /// <summary>
     /// 初期化

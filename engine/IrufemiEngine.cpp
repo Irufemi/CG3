@@ -89,14 +89,14 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     ///DebugLayer(デバッグレイヤー)
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
         //さらにGPU側でもチェックを行うようにする
         debugController_->SetEnableGPUBasedValidation(TRUE);
     }
-#endif
+//#endif
 
     /*ウィンドウを作ろう*/
 
@@ -165,7 +165,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
 
     inputManager_ = std::make_unique<InputManager>();
-    inputManager_->Initialize(wc, hwnd_);
+    inputManager_->Initialize();
 
     // 生成が完了したのでuseAdapterを解放
     if (useAdapter) { useAdapter.Reset(); }
@@ -180,7 +180,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     ///エラー・警告、即ち停止
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
     Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
     if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
         //ヤバイエラー時に止まる
@@ -213,7 +213,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         //解放
         infoQueue.Reset();
     }
-#endif
+//#endif
 
     /*画面の色を変えよう*/
 
@@ -664,15 +664,16 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     );
 
     textureManager = std::make_unique <TextureManager>();
-    textureManager->Initialize(device_.Get(), srvDescriptorHeap_.Get(), commandList_.Get());
+    textureManager->Initialize(device_.Get(), srvDescriptorHeap_.Get(), commandList_.Get(),commandQueue_.Get());
     textureManager->LoadAllFromFolder("resources/");
+
+    ui->SetTextureManager(textureManager.get());
 }
 
 void IrufemiEngine::Finalize() {
 
     // 入力系の解放
     if (inputManager_) {
-        inputManager_->Finalize();
         inputManager_.reset();
     }
     // サウンド
@@ -722,9 +723,9 @@ void IrufemiEngine::Finalize() {
     swapChain.Reset();
     device_.Reset();
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
     debugController_.Reset();
-#endif
+//#endif
 
     if (hwnd_) {
         CloseWindow(hwnd_);

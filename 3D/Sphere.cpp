@@ -9,10 +9,11 @@
 #include <algorithm>
 
 //初期化
-void Sphere::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, const std::string& textureName) {
+void Sphere::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
+    this->ui_ = ui;
 
     // D3D12ResourceUtilの生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
@@ -107,6 +108,8 @@ void Sphere::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Came
 
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->materialData_->enableLighting = true;
+    resource_->materialData_->hasTexture = true;
+    resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
 
     //transformationMatrix
@@ -144,47 +147,25 @@ void Sphere::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Came
 void Sphere::Update(const char* sphereName) {
 
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 
     std::string name = std::string("Sphere: ") + sphereName;
 
     ImGui::Begin(name.c_str());
-    ImGui::DragFloat3("center", &resource_->transform_.translate.x, 0.05f);
-    ImGui::DragFloat3("scale", &resource_->transform_.scale.x, 0.05f);
-    ImGui::DragFloat3("rotate", &resource_->transform_.rotate.x, 0.05f);
-    ImGui::DragFloat3("translate", &resource_->transform_.translate.x, 0.05f);
-    ImGui::ColorEdit4("spriteColor", &resource_->materialData_->color.x);
-    ImGui::SliderInt("enableLighting", &resource_->materialData_->enableLighting, 0, 1);
 
+    ui_->DebugTransform(resource_->transform_);
 
+    ui_->DebugMaterialBy3D(resource_->materialData_);
 
-    std::vector<std::string> textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
 
-    if (!textureNames.empty()) {
-        selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, (int)textureNames.size() - 1);
-        if (ImGui::BeginCombo("Texture", textureNames[selectedTextureIndex_].c_str())) {
-            for (int i = 0; i < textureNames.size(); ++i) {
-                bool isSelected = (i == selectedTextureIndex_);
-                if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
-                    selectedTextureIndex_ = i;
-                    resource_->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
-                }
-            }
-            ImGui::EndCombo();
-        }
-    }
-    else {
-        ImGui::Text("No textures found.");
-    }
+    ui_->DebugUvTransform(resource_->uvTransform_);
 
-    ImGui::ColorEdit4("lightColor", &resource_->directionalLightData_->color.x);
-    ImGui::DragFloat3("lightDirection", &resource_->directionalLightData_->direction.x, 0.01f);
-    ImGui::DragFloat("intensity", &resource_->directionalLightData_->intensity, 0.01f);
+    ui_->DebugDirectionalLight(resource_->directionalLightData_);
 
     ImGui::End();
 
-#endif // _DEBUG
+//#endif // _DEBUG
 
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
 
@@ -192,12 +173,8 @@ void Sphere::Update(const char* sphereName) {
 
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
 
-
-
-    /*directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLightData_->intensity = 1.0f;*/
+    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
     resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
 
-    
 }
