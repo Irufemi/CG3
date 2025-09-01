@@ -181,3 +181,11 @@ void TextureManager::CreateWhiteDummyTexture(ID3D12Device* device, ID3D12Descrip
 
     whiteTextureHandle = srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 }
+
+uint32_t TextureManager::GetSRVIndex()const {
+    return Texture::GetStaticSRVIndex();
+}
+
+void TextureManager::AddSRVIndex() {
+    Texture::AddStaticSRVIndex();
+}

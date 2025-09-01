@@ -46,10 +46,29 @@
     <Filter Include="audio">
       <UniqueIdentifier>{93a356b9-f23a-4034-ab06-edadb43a2423}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene\title">
+      <UniqueIdentifier>{8ba1e22a-fc8f-4e8d-a612-611d7405c6ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\inGame">
+      <UniqueIdentifier>{62ac11a7-2011-4dff-bbbf-e314a999acb5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\result">
+      <UniqueIdentifier>{43bce2a8-ec40-4e23-aed1-47df7fff3385}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\charaSelect">
+      <UniqueIdentifier>{2f2417b2-0679-4a03-8354-02682a715fb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="math\shape">
+      <UniqueIdentifier>{db73c282-9948-4cb1-b261-ea9cfae1d8a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="function\engine">
+      <UniqueIdentifier>{77f986a2-7b66-4700-af13-e47264222676}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="Object3d.hlsli" />
+    <None Include="Particle.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -89,61 +108,6 @@
     <ClCompile Include="manager\TextureManager.cpp">
       <Filter>manager</Filter>
     </ClCompile>
-    <ClCompile Include="Math.cpp" />
-    <ClCompile Include="function\CompileShader.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\ConvertString.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\CreateBufferResource.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\CreateDepthStencilTextureResource.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\CreateDescriptorHeap.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\CreateTextureResurce.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\GetBackBufferIndex.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\GetDescriptorHandle.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\LoadMaterialTemplateFile.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\LoadObjFile.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\LoadTexture.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\SoundLoadWave.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\SoundPlayWave.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\SoundUnload.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\UploadTextureData.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\WindowProc.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\GameScene.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\TitleScene.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
     <ClCompile Include="engine\IrufemiEngine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -153,13 +117,13 @@
     <ClCompile Include="2D\Sprite.cpp">
       <Filter>2D</Filter>
     </ClCompile>
-    <ClCompile Include="3D\Obj.cpp">
+    <ClCompile Include="3D\ObjClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
-    <ClCompile Include="3D\Sphere.cpp">
+    <ClCompile Include="3D\SphereClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
-    <ClCompile Include="3D\Triangle.cpp">
+    <ClCompile Include="3D\TriangleClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
     <ClCompile Include="source\Sound.cpp">
@@ -174,11 +138,83 @@
     <ClCompile Include="camera\DebugCamera.cpp">
       <Filter>camera</Filter>
     </ClCompile>
-    <ClCompile Include="3D\Particle.cpp">
+    <ClCompile Include="3D\ParticleClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
     <ClCompile Include="audio\Bgm.cpp">
       <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\SceneManager.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\TitleScene.cpp">
+      <Filter>Scene\title</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\GameScene.cpp">
+      <Filter>Scene\inGame</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\result\ResultScene.cpp">
+      <Filter>Scene\result</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\charaSelect\CharaSelectScene.cpp">
+      <Filter>Scene\charaSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="function\CompileShader.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\ConvertString.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\CreateBufferResource.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\CreateDepthStencilTextureResource.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\CreateDescriptorHeap.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\CreateTextureResurce.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\GetBackBufferIndex.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\GetDescriptorHandle.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\LoadMaterialTemplateFile.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\LoadObjFile.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\LoadTexture.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\SoundLoadWave.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\SoundPlayWave.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\SoundUnload.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\UploadTextureData.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="function\WindowProc.cpp">
+      <Filter>function\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="math\Vector3 .cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Ease.cpp">
+      <Filter>function</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Math.cpp">
+      <Filter>function</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -269,26 +305,13 @@
     <ClInclude Include="math\VertexData.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="Math.h" />
     <ClInclude Include="manager\VoiceCallback.h">
       <Filter>manager</Filter>
-    </ClInclude>
-    <ClInclude Include="function\Function.h">
-      <Filter>function</Filter>
-    </ClInclude>
-    <ClInclude Include="function\GetBackBufferIndex.h">
-      <Filter>function</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\GameScene.h">
-      <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="scene\IScene.h">
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="scene\SceneName.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\TitleScene.h">
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="engine\IrufemiEngine.h">
@@ -300,13 +323,13 @@
     <ClInclude Include="2D\Sprite.h">
       <Filter>2D</Filter>
     </ClInclude>
-    <ClInclude Include="3D\Obj.h">
+    <ClInclude Include="3D\ObjClass.h">
       <Filter>3D</Filter>
     </ClInclude>
-    <ClInclude Include="3D\Sphere.h">
+    <ClInclude Include="3D\SphereClass.h">
       <Filter>3D</Filter>
     </ClInclude>
-    <ClInclude Include="3D\Triangle.h">
+    <ClInclude Include="3D\TriangleClass.h">
       <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="source\D3D12ResourceUtil.h">
@@ -327,7 +350,7 @@
     <ClInclude Include="engine\D3DResourceLeakChecker.h">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="3D\Particle.h">
+    <ClInclude Include="3D\ParticleClass.h">
       <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="audio\Bgm.h">
@@ -335,6 +358,54 @@
     </ClInclude>
     <ClInclude Include="math\ObjModel.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\SceneManager.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\TitleScene.h">
+      <Filter>Scene\title</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\GameScene.h">
+      <Filter>Scene\inGame</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\result\ResultScene.h">
+      <Filter>Scene\result</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\charaSelect\CharaSelectScene.h">
+      <Filter>Scene\charaSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\AABB.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\Ball.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\LinePrimitive.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\Plane.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\Sphere.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\Spring.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\Triangle.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Function.h">
+      <Filter>function\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="function\GetBackBufferIndex.h">
+      <Filter>function\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Ease.h">
+      <Filter>function</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Math.h">
+      <Filter>function</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -345,5 +416,7 @@
   <ItemGroup>
     <FxCompile Include="Object3d.PS.hlsl" />
     <FxCompile Include="Object3d.VS.hlsl" />
+    <FxCompile Include="Particle.PS.hlsl" />
+    <FxCompile Include="Particle.VS.hlsl" />
   </ItemGroup>
 </Project>

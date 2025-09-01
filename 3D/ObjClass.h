@@ -20,7 +20,7 @@ class TextureManager;
 // https://creativecommons.org/publicdomain/zero/1.0/deed.ja
 //==========================
 
-class Obj {
+class ObjClass {
 protected: //メンバ変数
 
     ObjModel objModel_;
@@ -41,7 +41,7 @@ protected: //メンバ変数
 public: //メンバ関数
 
     //デストラクタ
-    ~Obj() = default;
+    ~ObjClass() = default;
 
     //初期化
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename = "plane.obj");

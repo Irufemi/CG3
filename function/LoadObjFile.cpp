@@ -4,7 +4,7 @@
 #include "../math/Vector3.h"
 #include "../math/Vector2.h"
 #include "../math/Matrix4x4.h"
-#include "../Math.h"
+#include "../function/Math.h"
 #include <vector>
 #include <fstream>
 #include <sstream>

@@ -1,9 +1,36 @@
 #pragma once
 
-#include "math/Vector3.h"
-#include "math/Matrix4x4.h"
+#include "../math/Vector2.h"
+#include "../math/Vector3.h"
+#include "../math/Matrix4x4.h"
+
+//前方宣言
+struct Segment;
+struct Ray;
+struct Line;
+struct Sphere;
+struct Plane;
+struct Triangle;
+struct AABB;
+struct OBB;
 
 namespace Math {
+
+#pragma region 2次元ベクトル関数
+
+    // 加算
+    Vector2 Add(const Vector2& a, const Vector2& b);
+
+    // スカラー倍
+    Vector2 Multiply(const float scalar, const Vector2 vector);
+
+    Vector2 Normalize(Vector2 vector);
+
+    Vector2 Bezier(const Vector2& p0, const Vector2& p1, const Vector2& p2, float t);
+
+    Vector2 CatmullRom(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3, float t);
+
+#pragma endregion
 
 #pragma region 3次元ベクトル関数
 
@@ -61,6 +88,44 @@ namespace Math {
     /// <param name="b"></param>
     /// <returns></returns>
     Vector3 Cross(const Vector3& a, const Vector3& b);
+    
+    /// <summary>
+    /// 正射影ベクトルを求める(v1をv2へ投影する(ベクトル射影))
+    /// </summary>
+    /// <param name="v1"></param>
+    /// <param name="v2"></param>
+    /// <returns></returns>
+    Vector3 Project(const Vector3& v1, const Vector3& v2);
+
+    /// <summary>
+    /// 点と線分の距離を求める
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="segment"></param>
+    /// <returns></returns>
+    Vector3 ClosestPoint(const Vector3& point, const Segment& segment);
+
+    /// <summary>
+    /// 点と直線の距離を求める
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="ray"></param>
+    /// <returns></returns>
+    Vector3 ClosestPoint(const Vector3& point, const Ray& ray);
+
+    /// <summary>
+    /// 点と半直線の距離を求める
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="line"></param>
+    /// <returns></returns>
+    Vector3 ClosestPoint(const Vector3& point, const Line& line);
+
+    //ベジェ曲線
+    Vector3 Bezier(const Vector3& p0, const Vector3& p1, const Vector3& p2, float t);
+
+    //スプライン曲線
+    Vector3 CatmullRom(const Vector3& p0, const Vector3& p1, const Vector3& p2, const Vector3& p3, float t);
 
 #pragma endregion
 
@@ -209,6 +274,109 @@ namespace Math {
     Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);
 
 #pragma endregion
+
+#pragma region 衝突判定
+
+    /// <summary>
+    /// 球と球の衝突判定
+    /// </summary>
+    /// <param name="s1_center"></param>
+    /// <param name="s1_radius"></param>
+    /// <param name="s2_center"></param>
+    /// <param name="s2_radius"></param>
+    /// <returns></returns>
+    bool IsCollision(const Vector3& s1_center, const float& s1_radius, const Vector3& s2_center, const float& s2_radius);
+
+    /// <summary>
+    /// 球と球の衝突判定
+    /// </summary>
+    /// <param name="s1"></param>
+    /// <param name="s2"></param>
+    /// <returns></returns>
+    bool IsCollision(const Sphere& s1, const Sphere& s2);
+
+    /// <summary>
+    /// 球と平面の衝突判定
+    /// </summary>
+    /// <param name="sphere"></param>
+    /// <param name="plane"></param>
+    /// <returns></returns>
+    bool IsCollision(const Sphere& sphere, const Plane& plane);
+
+    /// <summary>
+    /// 線分と平面の衝突判定
+    /// </summary>
+    /// <param name="segment"></param>
+    /// <param name="plane"></param>
+    /// <returns></returns>
+    bool IsCollision(const Segment& segment, const Plane& plane);
+
+    /// <summary>
+    /// 半直線と平面の衝突判定
+    /// </summary>
+    /// <param name="ray"></param>
+    /// <param name="plane"></param>
+    /// <returns></returns>
+    bool IsCollision(const Ray& ray, const Plane& plane);
+
+    /// <summary>
+    /// 直線と平面の衝突判定
+    /// </summary>
+    /// <param name="line"></param>
+    /// <param name="plane"></param>
+    /// <returns></returns>
+    bool IsCollision(const Line& line, const Plane& plane);
+
+    /// <summary>
+    /// 三角形と線分の衝突判定
+    /// </summary>
+    /// <param name="triangle"></param>
+    /// <param name="segment"></param>
+    /// <returns></returns>
+    bool IsCollision(const Triangle& triangle, const Segment& segment);
+
+    /// <summary>
+    /// AABBとAABBの衝突判定
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    bool IsCollision(const AABB& a, const AABB& b);
+
+    /// <summary>
+    /// AABBと球の衝突判定
+    /// </summary>
+    /// <param name="aabb"></param>
+    /// <param name="sphere"></param>
+    /// <returns></returns>
+    bool IsCollision(const AABB& aabb, const Sphere& sphere);
+
+    /// <summary>
+    /// AABBと線分の衝突判定
+    /// </summary>
+    /// <param name="aabb"></param>
+    /// <param name="plaane"></param>
+    /// <returns></returns>
+    bool IsCollision(const AABB& aabb, const Segment& segment);
+
+    /// <summary>
+    /// AABBと半直線の衝突判定
+    /// </summary>
+    /// <param name="aabb"></param>
+    /// <param name="plaane"></param>
+    /// <returns></returns>
+    bool IsCollision(const AABB& aabb, const Ray& ray);
+
+    /// <summary>
+    /// AABBと直線の衝突判定
+    /// </summary>
+    /// <param name="aabb"></param>
+    /// <param name="plaane"></param>
+    /// <returns></returns>
+    bool IsCollision(const AABB& aabb, const Line& line);
+
+#pragma endregion
+    Vector3 Perpendicular(const Vector3& vector);
 
 
 }

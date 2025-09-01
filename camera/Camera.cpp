@@ -29,7 +29,7 @@ void Camera::Initialize(int window_width,int window_height) {
 //更新
 void Camera::Update(const char *cameraName) {
 
-//#ifdef _DEBUG
+#ifdef _DEBUG
 
     std::string name = std::string("Camera: ") + cameraName;
 
@@ -47,7 +47,7 @@ void Camera::Update(const char *cameraName) {
     //値に応じて行列も更新
     UpdateMatrix();
 
-//#endif // _DEBUG
+#endif // _DEBUG
 
 }
 

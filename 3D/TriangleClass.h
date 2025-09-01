@@ -4,6 +4,7 @@
 #include <array>
 #include <d3d12.h>
 
+#include "../math/shape/Triangle.h"
 #include "../source/D3D12ResourceUtil.h"
 #include "../camera/Camera.h"
 #include "../manager/TextureManager.h"
@@ -12,12 +13,12 @@
 #include <memory>
 
 
-class Triangle {
+class TriangleClass {
 protected: //メンバ変数
+
+    Triangle info_{};
     
     std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
-
-    bool isRotateY_ = true;
 
     int selectedTextureIndex_ = 0;
 
@@ -31,7 +32,7 @@ protected: //メンバ変数
 
 public: //メンバ関数
     //デストラクタ
-    ~Triangle() = default;
+    ~TriangleClass() = default;
 
     //初期化
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
@@ -40,6 +41,9 @@ public: //メンバ関数
 
     //ゲッター
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
+
+    // Triangleの情報を取得
+    Triangle GetInfo() const { return info_; }
     
 };
 

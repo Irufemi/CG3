@@ -89,14 +89,14 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     ///DebugLayer(デバッグレイヤー)
 
-//#ifdef _DEBUG
+#ifdef _DEBUG
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
         //さらにGPU側でもチェックを行うようにする
         debugController_->SetEnableGPUBasedValidation(TRUE);
     }
-//#endif
+#endif
 
     /*ウィンドウを作ろう*/
 
@@ -180,7 +180,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     ///エラー・警告、即ち停止
 
-//#ifdef _DEBUG
+#ifdef _DEBUG
     Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
     if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
         //ヤバイエラー時に止まる
@@ -213,7 +213,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         //解放
         infoQueue.Reset();
     }
-//#endif
+#endif
 
     /*画面の色を変えよう*/
 
@@ -363,6 +363,34 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; //SRVを使う
     descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; //offsetを自動計算
 
+    /*たくさんの板ポリを出そう*/
+
+    /// RootSignatureの変更
+
+    D3D12_DESCRIPTOR_RANGE descriptorRangeForInstacing[1] = {};
+    descriptorRangeForInstacing[0].BaseShaderRegister = 0; //0からは始まる
+    descriptorRangeForInstacing[0].NumDescriptors = 1; //数は1つ
+    descriptorRangeForInstacing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; //SRVを使う
+    descriptorRangeForInstacing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; //offsetを自動計算
+
+    ///DescriptorTable
+
+    D3D12_ROOT_PARAMETER rootParametersForInstacing[3] = {};
+    rootParametersForInstacing[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
+    rootParametersForInstacing[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
+    rootParametersForInstacing[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
+    rootParametersForInstacing[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; //CBVを使う
+    rootParametersForInstacing[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //VertexShaderで使う
+    rootParametersForInstacing[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
+    rootParametersForInstacing[1].DescriptorTable.pDescriptorRanges = descriptorRangeForInstacing; //Tableの中身の配列を指定
+    rootParametersForInstacing[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForInstacing); //Tableで利用する数
+    rootParametersForInstacing[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; //descriptorTableを使う
+    rootParametersForInstacing[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
+    rootParametersForInstacing[2].DescriptorTable.pDescriptorRanges = descriptorRange; //Tableの中身の配列を指定
+    rootParametersForInstacing[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange); //Tableで利用する数
+
+    /*テクスチャを貼ろう*/
+
     ///DescriptorTable
 
     D3D12_ROOT_PARAMETER rootParameters[4] = {};
@@ -372,6 +400,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //VertexShaderで使う
     rootParameters[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
+
+    /*テクスチャを貼ろう*/
+
+    ///DescriptorTable
+
     rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; //descriptorTableを使う
     rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange; //Tableの中身の配列を指定
@@ -406,8 +439,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     ///RootParameter
 
-    descriptionRootSignature.pParameters = rootParameters; //ルートパラメータ配列へのポインタ
-    descriptionRootSignature.NumParameters = _countof(rootParameters); //配列の長さ
+    descriptionRootSignature.pParameters = rootParametersForInstacing; //ルートパラメータ配列へのポインタ
+    descriptionRootSignature.NumParameters = _countof(rootParametersForInstacing); //配列の長さ
 
     ///register(解説)
 
@@ -532,10 +565,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ///ShaderをCompileする
 
     //Shaderをコンパイルする
-    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(vertexShaderBlob != nullptr);
 
-    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"Particle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(pixelShaderBlob != nullptr);
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
@@ -723,9 +756,9 @@ void IrufemiEngine::Finalize() {
     swapChain.Reset();
     device_.Reset();
 
-//#ifdef _DEBUG
+#ifdef _DEBUG
     debugController_.Reset();
-//#endif
+#endif
 
     if (hwnd_) {
         CloseWindow(hwnd_);

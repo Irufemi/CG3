@@ -38,4 +38,7 @@ public:
 
     // ハンドル取得用
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() { return whiteTextureHandle; }
+
+    uint32_t GetSRVIndex()const;
+    void AddSRVIndex();
 };

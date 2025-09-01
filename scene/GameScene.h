@@ -4,10 +4,11 @@
 
 #include <memory>
 
-#include "../3D/Triangle.h"
+#include "../3D/TriangleClass.h"
 #include "../2D/Sprite.h"
-#include "../3D/Sphere.h"
-#include "../3D/Obj.h"
+#include "../3D/SphereClass.h"
+#include "../3D/ObjClass.h"
+#include "../3D/ParticleClass.h"
 #include "../audio/Bgm.h"
 #include "../camera/Camera.h"
 #include "../camera/DebugCamera.h"
@@ -32,30 +33,36 @@ private: // メンバ変数
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera = nullptr;
 
-    std::unique_ptr<Obj> obj = nullptr;
+    /*std::unique_ptr<ObjClass> obj = nullptr;
     bool isActiveObj = false;
 
     std::unique_ptr<Sprite> sprite = nullptr;
     bool isActiveSprite = false;
 
-    std::unique_ptr<Sphere> sphere = nullptr;
+    std::unique_ptr<TriangleClass> triangle = nullptr;
+    bool isActiveTriangle = false;
+
+    std::unique_ptr<SphereClass> sphere = nullptr;
     bool isActiveSphere = true;
 
-    std::unique_ptr<Obj> utashTeapot = nullptr;
+    std::unique_ptr<ObjClass> utashTeapot = nullptr;
     bool isActiveUtashTeapot = false;
 
-    std::unique_ptr<Obj> stanfordBunny = nullptr;
+    std::unique_ptr<ObjClass> stanfordBunny = nullptr;
     bool isActiveStanfordBunny = false;
 
-    std::unique_ptr<Obj> multiMesh = nullptr;
+    std::unique_ptr<ObjClass> multiMesh = nullptr;
     bool isActiveMultiMesh = false;
 
-    std::unique_ptr<Obj> multiMaterial = nullptr;
+    std::unique_ptr<ObjClass> multiMaterial = nullptr;
     bool isActiveMultiMaterial = false;
 
-    std::unique_ptr<Obj> suzanne = nullptr;
-    bool isActiveSuzanne = false;
-    
+    std::unique_ptr<ObjClass> suzanne = nullptr;
+    bool isActiveSuzanne = false;*/
+
+    std::unique_ptr<ParticleClass> particle = nullptr;
+    bool isActiveParticle = false;
+
     std::unique_ptr<Bgm> bgm = nullptr;
 
     int loadTexture = false;

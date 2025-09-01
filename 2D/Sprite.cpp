@@ -1,6 +1,6 @@
 #include "Sprite.h"
 
-#include "../Math.h"
+#include "../function/Math.h"
 #include "../function/Function.h"
 
 #include <algorithm>
@@ -107,7 +107,7 @@ void Sprite::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Came
 
 void Sprite::Update() {
 
-//#ifdef _DEBUG
+#ifdef _DEBUG
     std::string name = std::string("Sprite: ");
 
     //ImGui
@@ -126,7 +126,7 @@ void Sprite::Update() {
     //入力終了
     ImGui::End();
 
-//#endif // _DEBUG
+#endif // _DEBUG
 
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
 

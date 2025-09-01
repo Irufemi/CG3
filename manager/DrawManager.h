@@ -8,8 +8,9 @@
 
 // 前方宣言
 class Sprite;
-class Sphere;
-class Obj;
+class SphereClass;
+class ObjClass;
+class ParticleClass;
 class D3D12ResourceUtil;
 
 //描画のCommandListを積む順番
@@ -76,7 +77,13 @@ public: //メンバ関数
     void DrawSphere(
         D3D12_VIEWPORT& viewport,
         D3D12_RECT& scissorRect,
-        Sphere* sphere
+        SphereClass* sphere
+    );
+
+    void DrawParticle(
+        D3D12_VIEWPORT& viewport,
+        D3D12_RECT& scissorRect,
+        ParticleClass* resource
     );
 
     void DrawByIndex(

@@ -14,6 +14,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include "../manager/TextureManager.h"
 
 void DebugUI::Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device, HWND& hwnd, DXGI_SWAP_CHAIN_DESC1& swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap) {
 
@@ -108,6 +109,16 @@ void DebugUI::DebugTransform(Transform& transform) {
     }
 }
 
+void DebugUI::TextTransform(Transform& transform,const char* name) {
+    std::string header = std::string("transform") + name;
+    if (ImGui::CollapsingHeader(header.c_str())) {
+        ImGui::Text("scale: (%.2f, %.2f, %.2f)", transform.scale.x, transform.scale.y, transform.scale.z);
+        ImGui::Text("rotate: (%.2f, %.2f, %.2f)", transform.rotate.x, transform.rotate.y, transform.rotate.z);
+        ImGui::Text("translate: (%.2f, %.2f, %.2f)", transform.translate.x, transform.translate.y, transform.translate.z);
+    }
+}
+
+
 // Material
 void DebugUI::DebugMaterialBy3D(Material* materialData) {
     if (ImGui::CollapsingHeader("material")) {
@@ -127,7 +138,7 @@ void DebugUI::DebugMaterialBy3D(Material* materialData) {
 
 // Material
 void DebugUI::DebugMaterialBy2D(Material* materialData) {
-    if (ImGui::CollapsingHeader("material")) {
+    if (ImGui::TreeNodeEx("material")) {
         ImGui::ColorEdit4("spriteColor", &materialData->color.x);
     }
 }
@@ -173,5 +184,13 @@ void DebugUI::DebugUvTransform(Transform& uvTransform) {
         ImGui::DragFloat3("UVTranslate", &uvTransform.translate.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat3("UVScale", &uvTransform.scale.x, 0.01f, -10.0f, 10.0f);
         ImGui::SliderAngle("UVRotate", &uvTransform.rotate.z);
+    }
+}
+
+// Sphere
+void DebugUI::DebugSphereInfo(Sphere& sphere) {
+    if (ImGui::CollapsingHeader("info")) {
+        ImGui::DragFloat3("Center", &sphere.center.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat("radius", &sphere.radius, 0.01f, -10.0f, 10.0f);
     }
 }

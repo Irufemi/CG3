@@ -4,10 +4,11 @@
 #include <cassert>
 
 #include <dxgidebug.h>
-#include "../3D/Sphere.h"
+#include "../3D/SphereClass.h"
 #include "../2D/Sprite.h"
-#include "../3D/Obj.h"
-#include "../3D/Triangle.h"
+#include "../3D/ObjClass.h"
+#include "../3D/TriangleClass.h"
+#include "../3D/ParticleClass.h"
 
 #include "../source/D3D12ResourceUtil.h"
 
@@ -283,7 +284,7 @@ void DrawManager::DrawSprite(
 void DrawManager::DrawSphere(
     D3D12_VIEWPORT& viewport,
     D3D12_RECT& scissorRect,
-    Sphere *sphere
+    SphereClass *sphere
 ) {
 
     /*三角形を表示しよう*/
@@ -323,6 +324,47 @@ void DrawManager::DrawSphere(
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
     commandList_->DrawIndexedInstanced(static_cast<UINT>(sphere->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
+
+}
+
+void DrawManager::DrawParticle(
+    D3D12_VIEWPORT& viewport,
+    D3D12_RECT& scissorRect,
+    ParticleClass* resource
+) {
+
+    /*三角形を表示しよう*/
+    commandList_->RSSetViewports(1, &viewport); //viewportを設定
+    commandList_->RSSetScissorRects(1, &scissorRect); //Scirssorを設定
+    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
+    commandList_->SetGraphicsRootSignature(rootSignature_);
+    commandList_->SetPipelineState(graphicsPipelineState_); // PSOを設定
+    commandList_->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_); // VBVを設定
+    //IBVを設定
+    commandList_->IASetIndexBuffer(&resource->GetD3D12Resource()->indexBufferView_);
+    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    /*三角形の色を変えよう*/
+
+    ///CBVを設定する
+
+    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+
+    commandList_->SetGraphicsRootDescriptorTable(1, resource->GetInstancingSrvHandleGPU());
+
+    /*テクスチャを貼ろう*/
+
+    ///DescriptorTableを設定する
+
+    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->GetD3D12Resource()->textureHandle_);
+
+    /*三角形を表示しよう*/
+
+    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
+    commandList_->DrawIndexedInstanced(static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()), resource->GetInstanceCount(), 0, 0, 0);
 
 }
 
@@ -416,3 +458,4 @@ void DrawManager::DrawByVertex(
     commandList_->DrawInstanced(static_cast<UINT>(resource->vertexDataList_.size()), 1, 0, 0);
 
 }
+

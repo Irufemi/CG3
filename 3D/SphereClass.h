@@ -10,11 +10,12 @@
 #include <wrl.h>
 #include <memory>
 #include "../source/D3D12ResourceUtil.h"
+#include "../math/shape/Sphere.h"
 
-
-
-class Sphere {
+class SphereClass {
 protected: //メンバ変数
+
+    Sphere info_{};
 
     const float pi_ = 3.141592654f;
 
@@ -45,10 +46,10 @@ protected: //メンバ変数
 
 public: //メンバ関数
     // コンストラクタ
-    Sphere() {};
+    SphereClass() {};
 
     // デストラクタ
-    ~Sphere() = default;
+    ~SphereClass() = default;
 
     // 初期化
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
@@ -58,5 +59,8 @@ public: //メンバ関数
 
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
     void AddRotateY(float value) { this->resource_->transform_.rotate.y += value; }
+
+    // Sphereの情報を取得
+    Sphere GetInfo() const { return info_; }
 };
 

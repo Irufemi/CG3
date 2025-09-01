@@ -1,12 +1,12 @@
-#include "Obj.h"
+#include "ObjClass.h"
 
 #include "../source/Texture.h"
 #include "../function/Function.h"
-#include "../Math.h"
+#include "../function/Math.h"
 #include "../manager/DrawManager.h"
 #include "../manager/TextureManager.h"
 
-void Obj::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
+void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
 
     this->camera_ = camera;
     this->ui_ = ui;
@@ -72,8 +72,8 @@ void Obj::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera*
 
 }
 
-void Obj::Update(const char* objName) {
-//#ifdef _DEBUG
+void ObjClass::Update(const char* objName) {
+#ifdef _DEBUG
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
 
@@ -89,7 +89,7 @@ void Obj::Update(const char* objName) {
         }
     }
     ImGui::End();
-//#endif
+#endif
 
     for (auto& res : resources_) {
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
@@ -100,7 +100,7 @@ void Obj::Update(const char* objName) {
     }
 }
 
-void Obj::Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) {
+void ObjClass::Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) {
     for (auto& res : resources_) {
         drawManager->DrawByVertex(viewport, scissorRect, res.get());
     }

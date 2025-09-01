@@ -3,13 +3,17 @@
 #include <dxgi1_6.h>
 #include <wrl.h>
 
-#include "../manager/TextureManager.h"
+
 #include "../source/D3D12ResourceUtil.h"
+#include "../math/shape/Sphere.h"
+
+// 前方宣言
+class TextureManager;
 
 class DebugUI{
 private: // メンバ変数
 
-    // ポインタ参照
+    // ポインタ参照(非所有)
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 
@@ -38,6 +42,8 @@ public: // メンバ関数
     // Transform
     void DebugTransform(Transform& transform);
 
+    void TextTransform(Transform& transform, const char* name = "");
+
     // Material
     void DebugMaterialBy3D(Material* material);
 
@@ -52,5 +58,8 @@ public: // メンバ関数
 
     // UvTransform
     void DebugUvTransform(Transform& uvTransform);
+
+    // Sphere
+    void DebugSphereInfo(Sphere& sphere);
 };
 

@@ -6,7 +6,7 @@
 #include "Matrix4x4.h"
 #include "VertexData.h"
 #include "ModelData.h"
-#include "../Math.h"
+#include "../function/Math.h"
 #include <string>
 #include <vector>
 

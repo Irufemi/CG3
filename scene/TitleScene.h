@@ -2,10 +2,6 @@
 
 #include "IScene.h"
 
-// 前方宣言
-
-class IrufemiEngine;
-
 /// <summary>
 /// タイトル
 /// </summary>
@@ -26,6 +22,9 @@ public: // メンバ関数
     /// 描画
     /// </summary>
     void Draw() override;
+
+private: // メンバ変数
+    IrufemiEngine* engine_ = nullptr;
 
 };
 
