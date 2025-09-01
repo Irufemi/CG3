@@ -48,6 +48,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 #include <wrl.h>
 
+#include "../math/ObjModel.h"
+
+
 /*サウンド再生*/
 #include "../math/SoundData.h"
 
@@ -138,6 +141,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<
 ///　ModelData構造体と読み込み関数
 
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+
+ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
+
+// f行の頂点データを安全にパースする関数例
+bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
 
 /// MaterialData構造体と読み込み関数
 

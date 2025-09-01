@@ -27,5 +27,9 @@ public:
     //ゲッター
 
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureSrvHandleGPU() { return textureSrvHandleGPU_; }
+
+    static uint32_t GetStaticSRVIndex() { return index_; }
+
+    static void AddStaticSRVIndex() { index_++; }
 };
 

@@ -13,6 +13,13 @@ struct Material
 	
 	int32_t enableLighting;
 	
+	int32_t hasTexture;
+	
+	 // 0=Lightingなし, 1=Lambert, 2=HalfLambert
+	int32_t lightingMode;
+	
+	float padding;
+	
 	/*UVTransform*/
 	
 	///Materialの拡張
@@ -82,23 +89,59 @@ PixelShaderOutput main(VertexShaderOutput input)
 	if (gMaterial.enableLighting != 0) //Lightingする場合
 	{
 	
-		/*HalfLambert*/
-		
-		///HalfLambertを実装する
-		
-		//HalfLambert
-		float NdotL = dot(normalize(input.normal), -gDirectionalLight.direction);
-		float cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
-		
-		//float cos = saturate(dot(normalize(input.normal), -gDirectionalLight.direction));
-		//output.color = gMaterial.color * textureColor * gDirectionalLight.color * cos * gDirectionalLight.intensity;
+		float cos = 1.0f;
 	
-		/*BlendMode*/
+		if (gMaterial.lightingMode == 0)
+		{
+			if (gMaterial.hasTexture == 1)
+			{
+				output.color = gMaterial.color * textureColor;
+			}
+			else
+			{
+				output.color = gMaterial.color;
+				output.color.a = 1.0f;
+			}
+		}
+		else
+		{
+			if (gMaterial.lightingMode == 1)
+			{
+				cos = saturate(dot(normalize(input.normal), -gDirectionalLight.direction));
+				output.color = gMaterial.color * textureColor * gDirectionalLight.color * cos * gDirectionalLight.intensity;
+			}
+			else if (gMaterial.lightingMode == 2)
+			{
 		
-		/// PixelShaderを書き換える
+			/*HalfLambert*/
 		
-		output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
-		output.color.a = gMaterial.color.a * textureColor.a;
+			///HalfLambertを実装する
+		
+			//HalfLambert
+				float NdotL = dot(normalize(input.normal), -gDirectionalLight.direction);
+				cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
+		
+			}
+			
+			if (gMaterial.hasTexture == 1)
+			{
+				/*BlendMode*/
+		
+				/// PixelShaderを書き換える
+		
+				output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
+				output.color.a = gMaterial.color.a * textureColor.a;
+			}
+			else
+			{
+				output.color.rgb = gMaterial.color.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
+				output.color.a = 1.0f;
+			}
+			
+		}
+		
+		
+		
 		
 		/*2値抜き*/
 		
@@ -111,14 +154,20 @@ PixelShaderOutput main(VertexShaderOutput input)
 		}
 	}
 	else
-	{ //Lightingしない場合、前回までと同じ計算
-
-		/*三角形の色を変えよう*/
+	{ 
 	
-		output.color = gMaterial.color * textureColor;
+		if (gMaterial.hasTexture == 1)
+		{
+			output.color = gMaterial.color * textureColor;
+		}
+		else
+		{
+			output.color = gMaterial.color;
+			output.color.a = 1.0f;
+		}
+		
 	}
 	
-	//output.color = gMaterial.color;
 	return output;
 }
 

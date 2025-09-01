@@ -1,14 +1,17 @@
 #pragma once
 
 #include "IScene.h"
-#include "../3D/Triangle.h"
-#include "../2D/Sprite.h"
-#include "../3D/Sphere.h"
-#include "../3D/Obj.h"
-#include "../camera/Camera.h"
-#include "../camera/DebugCamera.h"
 
 #include <memory>
+
+#include "../3D/TriangleClass.h"
+#include "../2D/Sprite.h"
+#include "../3D/SphereClass.h"
+#include "../3D/ObjClass.h"
+#include "../3D/ParticleClass.h"
+#include "../audio/Bgm.h"
+#include "../camera/Camera.h"
+#include "../camera/DebugCamera.h"
 
 //BGM
 #include <xaudio2.h>
@@ -16,6 +19,7 @@
 // 前方宣言
 
 class IrufemiEngine;
+
 
 /// <summary>
 /// ゲーム
@@ -29,26 +33,37 @@ private: // メンバ変数
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera = nullptr;
 
-    std::unique_ptr<Triangle>  triangle = nullptr;
-    bool isActiveTriangle = false;
+    /*std::unique_ptr<ObjClass> obj = nullptr;
+    bool isActiveObj = false;
 
     std::unique_ptr<Sprite> sprite = nullptr;
     bool isActiveSprite = false;
 
-    std::unique_ptr<Sphere> sphere = nullptr;
+    std::unique_ptr<TriangleClass> triangle = nullptr;
+    bool isActiveTriangle = false;
+
+    std::unique_ptr<SphereClass> sphere = nullptr;
     bool isActiveSphere = true;
 
-    std::unique_ptr<Obj> obj = nullptr;
-    bool isActiveObj = false;
+    std::unique_ptr<ObjClass> utashTeapot = nullptr;
+    bool isActiveUtashTeapot = false;
 
-    // BGM
-    IXAudio2SourceVoice* bgmVoice = nullptr;
-    // BGMVolume
-    float bgmVolume = 0.01f;
-    // カテゴリの初期選択インデックス
-    int selectedCat = 0;   
-    // トラックの初期選択インデックス
-    int selectedTrack = 0;   
+    std::unique_ptr<ObjClass> stanfordBunny = nullptr;
+    bool isActiveStanfordBunny = false;
+
+    std::unique_ptr<ObjClass> multiMesh = nullptr;
+    bool isActiveMultiMesh = false;
+
+    std::unique_ptr<ObjClass> multiMaterial = nullptr;
+    bool isActiveMultiMaterial = false;
+
+    std::unique_ptr<ObjClass> suzanne = nullptr;
+    bool isActiveSuzanne = false;*/
+
+    std::unique_ptr<ParticleClass> particle = nullptr;
+    bool isActiveParticle = false;
+
+    std::unique_ptr<Bgm> bgm = nullptr;
 
     int loadTexture = false;
 
@@ -63,8 +78,7 @@ private: // メンバ変数
 public: // メンバ関数
 
     // デストラクタ
-    ~GameScene() {
-    }
+    ~GameScene() {}
 
     /// <summary>
     /// 初期化
