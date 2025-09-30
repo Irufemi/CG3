@@ -71,7 +71,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }*/
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(),engine_->GetTextureManager(),engine_->GetDebugUI());
+        particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(),engine_->GetTextureManager(),engine_->GetDebugUI(),"circle.png");
     }
 
     bgm = std::make_unique<Bgm>();

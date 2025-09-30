@@ -17,13 +17,8 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     // 書き込むためのアドレスを取得
     instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&instancingData));
 
-    numInstance = 0; // 描画すべきインスタンス数
-
     // 単位行列を書きこんでおく
     for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-        if (particles[index].lifeTime <= particles[index].currentTime) { // 生存時間を過ぎていたら更新せず描画対象にしない
-            continue;
-        }
 
         // 位置と速度を[-1,1]でランダムに初期化
         particles[index] = MakeNewParticle(randomEngine);
@@ -129,11 +124,6 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
 
 void ParticleClass::Update(const char* particleName) {
 
-    // 速度を反映させる
-    for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-        particles[index].transform.translate += particles[index].velocity * kDeltatime;
-    }
-
 #ifdef _DEBUG
     std::string name = std::string("Particle: ") + particleName;
 
@@ -161,12 +151,26 @@ void ParticleClass::Update(const char* particleName) {
 
 #endif // _DEBUG
 
+    numInstance = 0; // 描画すべきインスタンス数
+
+
     for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
+
+        if (particles[index].lifeTime <= particles[index].currentTime) { // 生存時間を過ぎていたら更新せず描画対象にしない
+            continue;
+        }
+
+        float alpha = 1.0f - (particles[index].currentTime / particles[index].lifeTime);
         Matrix4x4 worldMatrix = Math::MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
         Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        instancingData[index].WVP = worldViewProjectionMatrix;
-        instancingData[index].world = worldMatrix;
-        instancingData[index].color = particles[index].color;
+        particles[index].transform.translate += particles[index].velocity * kDeltatime;  // 速度を反映させる
+        particles[index].currentTime += kDeltatime; // 経過時間を足す
+        instancingData[numInstance].WVP = worldViewProjectionMatrix;
+        instancingData[numInstance].world = worldMatrix;
+        instancingData[numInstance].color = particles[index].color;
+        instancingData[numInstance].color.w = alpha;
+
+        numInstance++; // 生きているParticleの数を1つカウントする
     }
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);

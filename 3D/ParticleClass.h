@@ -68,7 +68,7 @@ public: // メンバ関数
 
     //ゲッター
     D3D12ResourceUtilParticle* GetD3D12Resource() { return this->resource_.get(); }
-    int32_t GetInstanceCount() const { return this->kNumMaxInstance; }
+    int32_t GetInstanceCount() const { return this->numInstance; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvHandleGPU; }
 };
 
