@@ -192,6 +192,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\shape\AABB.h" />
     <ClInclude Include="math\shape\Ball.h" />
     <ClInclude Include="math\shape\LinePrimitive.h" />
+    <ClInclude Include="math\shape\Particle.h" />
+    <ClInclude Include="math\shape\ParticleForGPU.h" />
     <ClInclude Include="math\shape\Plane.h" />
     <ClInclude Include="math\shape\Sphere.h" />
     <ClInclude Include="math\shape\Spring.h" />

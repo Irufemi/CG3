@@ -7,7 +7,7 @@
 #include <cmath>
 #include <string>
 
-#include "../Math.h"
+#include "../function/Math.h"
 
 //コンストラクタ
 Camera::Camera() {}
