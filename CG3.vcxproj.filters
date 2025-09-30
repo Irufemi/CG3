@@ -407,6 +407,12 @@
     <ClInclude Include="function\Math.h">
       <Filter>function</Filter>
     </ClInclude>
+    <ClInclude Include="math\shape\Particle.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="math\shape\ParticleForGPU.h">
+      <Filter>math\shape</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">

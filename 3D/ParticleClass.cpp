@@ -10,14 +10,21 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     this->textureManager_ = textureManager;
     this->ui_ = ui;
 
-    // InstancingようのTransformationMatrixリソースを作る
-    instancingResource = CreateBufferResource(device.Get(), sizeof(TransformationMatrix) * kNumInstance);
+    randomEngine.seed(seedGenerator());
+
+    // InstancingようのParticleForGPUリソースを作る
+    instancingResource = CreateBufferResource(device.Get(), sizeof(ParticleForGPU) * kNumMaxInstance);
     // 書き込むためのアドレスを取得
     instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&instancingData));
+
     // 単位行列を書きこんでおく
-    for (uint32_t index = 0; index < kNumInstance; ++index) {
+    for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
+
+        // 位置と速度を[-1,1]でランダムに初期化
+        particles[index] = MakeNewParticle(randomEngine);
         instancingData[index].WVP = Math::MakeIdentity4x4();
         instancingData[index].world = Math::MakeIdentity4x4();
+        instancingData[index].color = particles[index].color;
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC instancingDesc{};
@@ -26,19 +33,13 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     instancingDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     instancingDesc.Buffer.FirstElement = 0;
     instancingDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-    instancingDesc.Buffer.NumElements = kNumInstance;
-    instancingDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
+    instancingDesc.Buffer.NumElements = kNumMaxInstance;
+    instancingDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
     const uint32_t descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     textureManager_->AddSRVIndex();
     instancingSrvHandleCPU = GetCPUDescriptorHandle(srvDescriptorHeap.Get(), descriptorSizeSRV, textureManager_->GetSRVIndex());
     instancingSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptorHeap.Get(), descriptorSizeSRV, textureManager_->GetSRVIndex());
     device->CreateShaderResourceView(instancingResource.Get(), &instancingDesc, instancingSrvHandleCPU);
-
-    for (uint32_t index = 0; index < kNumInstance; ++index) {
-        transforms[index].scale = { 1.0f,1.0f,1.0f };
-        transforms[index].rotate = { 0.0f,0.0f,0.0f };
-        transforms[index].translate = { index * 0.1f,index * 0.1f,index * 0.1f };
-    }
 
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtilParticle>();
@@ -137,11 +138,11 @@ void ParticleClass::Update(const char* particleName) {
 
     if (ImGui::CollapsingHeader("InstanceTransform")) {
 
-        for (uint32_t index = 0; index < kNumInstance; ++index) {
+        for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
             char buf[2];
             buf[0] = '0' + static_cast<char>(index);
             buf[1] = '\0';
-            ui_->TextTransform(transforms[index], buf);
+            ui_->TextTransform(particles[index].transform, buf);
         }
     }
 
@@ -150,13 +151,44 @@ void ParticleClass::Update(const char* particleName) {
 
 #endif // _DEBUG
 
-    for (uint32_t index = 0; index < kNumInstance; ++index) {
-        Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transforms[index].scale, transforms[index].rotate, transforms[index].translate);
+    numInstance = 0; // 描画すべきインスタンス数
+
+
+    for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
+
+        if (particles[index].lifeTime <= particles[index].currentTime) { // 生存時間を過ぎていたら更新せず描画対象にしない
+            continue;
+        }
+
+        float alpha = 1.0f - (particles[index].currentTime / particles[index].lifeTime);
+        Matrix4x4 worldMatrix = Math::MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
         Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        instancingData[index].WVP = worldViewProjectionMatrix;
-        instancingData[index].world = worldMatrix;
+        particles[index].transform.translate += particles[index].velocity * kDeltatime;  // 速度を反映させる
+        particles[index].currentTime += kDeltatime; // 経過時間を足す
+        instancingData[numInstance].WVP = worldViewProjectionMatrix;
+        instancingData[numInstance].world = worldMatrix;
+        instancingData[numInstance].color = particles[index].color;
+        instancingData[numInstance].color.w = alpha;
+
+        numInstance++; // 生きているParticleの数を1つカウントする
     }
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
+}
+
+Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine) {
+    std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
+    std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
+    Particle particle;
+    particle.transform.scale = { 1.0f,1.0f,1.0f };
+    particle.transform.rotate = { 0.0f,0.0f,0.0f };
+    particle.transform.translate = { distribution(randomEngine),distribution(randomEngine) ,distribution(randomEngine) };
+    particle.velocity = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
+    particle.color = { distColor(randomEngine),distColor(randomEngine),distColor(randomEngine) ,1.0f };
+    particle.lifeTime = distTime(randomEngine);
+    particle.currentTime = 0.0f;
+
+    return particle;
 }

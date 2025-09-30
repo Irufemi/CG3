@@ -4,23 +4,17 @@
 
 /*三角形を動かそう*/
 
-struct TransformationMatrix
+struct ParticleForGPU
 {
 	float32_t4x4 WVP;
 	
 	/*LambertianReflectance*/
 	
 	float32_t4x4 World;
+	
+	float32_t4 color;
 };
-StructuredBuffer<TransformationMatrix> gTransformationMatrices : register(t0);
-
-/*三角形を表示しよう*/
-
-//struct VertexShaderOutput
-//{
-//	float32_t4 position : SV_POSITION;
-
-//};
+StructuredBuffer<ParticleForGPU> gParticle : register(t0);
 
 struct VertexShaderInput
 {
@@ -47,7 +41,7 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanced : SV_Instanc
 	
 	/*三角形を動かそう*/
 	
-	output.position = mul(input.position, gTransformationMatrices[instanced].WVP);
+	output.position = mul(input.position, gParticle[instanced].WVP);
 	
 	/*テクスチャを貼ろう*/
 	
@@ -60,7 +54,7 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanced : SV_Instanc
 	
 	///法線の座標系を変換してPixelShaderに送る
 	
-	output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrices[instanced].World));
+	output.color = gParticle[instanced].color;
 	
 	/*三角形を表示しよう*/
 

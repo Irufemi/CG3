@@ -71,7 +71,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }*/
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(),engine_->GetTextureManager(),engine_->GetDebugUI());
+        particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(),engine_->GetTextureManager(),engine_->GetDebugUI(),"circle.png");
     }
 
     bgm = std::make_unique<Bgm>();
@@ -206,7 +206,8 @@ void GameScene::Draw() {
 
     // 3D
 
-    /*if (isActiveObj) {
+    /*
+    if (isActiveObj) {
         obj->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
     }
     if (isActiveTriangle) {
@@ -229,7 +230,9 @@ void GameScene::Draw() {
     }
     if (isActiveSuzanne) {
         suzanne->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
-    }*/
+    }
+    */
+
     if (isActiveParticle) {
         engine_->GetDrawManager()->DrawParticle(engine_->GetViewport(), engine_->GetScissorRect(), particle.get());
     }

@@ -511,17 +511,17 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     /// BlendModeの設定(NormalBlend)
 
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
-    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+   /* blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;*/
 
     /*いろいろなBlend*/
 
     ///加算合成(AddBlend)
 
-    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;*/
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
 
     /// 減算合成(逆減算合成)(SubtractBlend)
 
@@ -585,7 +585,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     //Depthの機能を有効化する
     depthStencilDesc.DepthEnable = true;
     //書き込みします
-    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
     //比較関数はLessEqual。つまり、近ければ描画される
     depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
