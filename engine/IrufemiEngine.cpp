@@ -19,7 +19,7 @@ IrufemiEngine::~IrufemiEngine() { Finalize(); }
 
 // 初期化
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight) {
-    
+
     clientWidth_ = clientWidth;
     clientHeight_ = clientHeight;
 
@@ -149,7 +149,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     for (size_t i = 0; i < _countof(featureLevels); ++i) {
         //採用したアダプターでデバイスを生成
         hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(device_.GetAddressOf()));
-        
+
         //指定した機能レベルでデバイスが生成できたかを確認
         if (SUCCEEDED(hr)) {
             //生成できたのでログ出力を行ってループを抜ける
@@ -373,27 +373,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     descriptorRangeForInstacing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; //SRVを使う
     descriptorRangeForInstacing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; //offsetを自動計算
 
-    ///DescriptorTable
-
-    D3D12_ROOT_PARAMETER rootParametersForInstacing[3] = {};
-    rootParametersForInstacing[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
-    rootParametersForInstacing[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
-    rootParametersForInstacing[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
-    rootParametersForInstacing[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; //CBVを使う
-    rootParametersForInstacing[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //VertexShaderで使う
-    rootParametersForInstacing[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
-    rootParametersForInstacing[1].DescriptorTable.pDescriptorRanges = descriptorRangeForInstacing; //Tableの中身の配列を指定
-    rootParametersForInstacing[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForInstacing); //Tableで利用する数
-    rootParametersForInstacing[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; //descriptorTableを使う
-    rootParametersForInstacing[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
-    rootParametersForInstacing[2].DescriptorTable.pDescriptorRanges = descriptorRange; //Tableの中身の配列を指定
-    rootParametersForInstacing[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange); //Tableで利用する数
-
     /*テクスチャを貼ろう*/
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[4] = {};
+    D3D12_ROOT_PARAMETER rootParameters[5] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -419,6 +403,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     rootParameters[3].Descriptor.ShaderRegister = 1; //レジスタ番号1を使う
 
 
+    rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+    rootParameters[4].DescriptorTable.pDescriptorRanges = descriptorRangeForInstacing;
+    rootParameters[4].DescriptorTable.NumDescriptorRanges = 1;
+
     /*テクスチャを貼ろう*/
 
     ///Samplerの設定
@@ -439,8 +428,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     ///RootParameter
 
-    descriptionRootSignature.pParameters = rootParametersForInstacing; //ルートパラメータ配列へのポインタ
-    descriptionRootSignature.NumParameters = _countof(rootParametersForInstacing); //配列の長さ
+    descriptionRootSignature.pParameters = rootParameters; //ルートパラメータ配列へのポインタ
+    descriptionRootSignature.NumParameters = _countof(rootParameters); //配列の長さ
 
     ///register(解説)
 
@@ -499,135 +488,62 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     inputLayoutDesc.pInputElementDescs = inputElementDescs;
     inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-    ///BlendStateの設定を行う
-
-    //BlendStateの設定
-    D3D12_BLEND_DESC blendDesc{};
-    //すべての色要素を書き込む
-    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-    /*BlendMode*/
-
-    /// BlendModeの設定(NormalBlend)
-
-    blendDesc.RenderTarget[0].BlendEnable = TRUE;
-   /* blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;*/
-
-    /*いろいろなBlend*/
-
-    ///加算合成(AddBlend)
-
-    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
-
-    /// 減算合成(逆減算合成)(SubtractBlend)
-
-    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;*/
-
-    /// 乗算合成(MultiplyBlend)
-
-    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;*/
-
-    /// スクリーン合成(ScreenBlend)
-
-    /*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;*/
-
-    /*BlendMode*/
-
-    /// BlendModeの設定(NormalBlend)
-
-    // ここからの下3行はα値のブレンド設定で基本的に使わない。書いてある通りにしておけばいい。
-    // 参考にするのであれば下記のリンクを参照
-    // https://learn.microsoft.com/ja-jp/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-
-
-    ///RasterizerStateの設定を行う
-
-    //RasterizerStateの設定
-    D3D12_RASTERIZER_DESC rasterizerDesc{};
-    //裏面(時計回り)を表示しない
-    rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-    //三角形の中を塗りつぶす
-    rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
     ///ShaderをCompileする
 
     //Shaderをコンパイルする
-    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(vertexShaderBlob != nullptr);
 
-    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"Particle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(pixelShaderBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> particleVSBlob = CompileShader(L"Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(particleVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> particlePSBlob = CompileShader(L"Particle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(particlePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
     if (dxcCompiler) { dxcCompiler.Reset(); }
     if (includeHandler) { includeHandler.Reset(); }
 
-    /*前後関係を正しくしよう*/
-
-    ///DepthStencilStateの設定を行う
-
-    //DepthStencilStateの設定
-    D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-    //Depthの機能を有効化する
-    depthStencilDesc.DepthEnable = true;
-    //書き込みします
-    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-    //比較関数はLessEqual。つまり、近ければ描画される
-    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
     /*三角形を表示しよう*/
 
     ///PSOを生成する
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-    graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get(); // RootSignature
-    graphicsPipelineStateDesc.InputLayout = inputLayoutDesc; // InputLayout
-    graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),vertexShaderBlob->GetBufferSize() }; // VertexShader
-    graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize() }; // PixelShader
+    PSOManager::ShaderSet objectShaders{
+        vertexShaderBlob,  // ← そのまま所有権を渡す（ComPtrは参照カウント）
+        pixelShaderBlob
+    };
 
-    // 生成が完了したのでvertexShaderBlobを解放
+    PSOManager::ShaderSet particleShaders{
+        particleVSBlob,
+        particlePSBlob
+    };
+
+    // 入力レイアウトは既存の inputLayoutDesc
+    psoManager_.Initialize(
+        device_.Get(),
+        rootSignature_.Get(),
+        inputLayoutDesc,
+        /*RTV*/ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, // 既存と同じ
+        /*DSV*/ DXGI_FORMAT_D24_UNORM_S8_UINT,   // 既存と同じ
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,  // 既存と同じ
+        objectShaders,
+        particleShaders     // パーティクルは未使用なら空
+    );
+
+    //実際に生成
+    // 不透明（深度書き込みあり）
+    psoManager_.Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable);
+
+    // 生成が完了したのでShaderBlobを解放
     if (vertexShaderBlob) { vertexShaderBlob.Reset(); }
     if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
-
-    /*前後関係を正しくしよう*/
-
-    ///DepthStencilStateの設定を行う
-
-    //DepthStencilの設定
-    graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-    graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-    /*三角形を表示しよう*/
-
-    ///PSOを生成する
-
-    graphicsPipelineStateDesc.BlendState = blendDesc; // BlendState
-    graphicsPipelineStateDesc.RasterizerState = rasterizerDesc; // RasterizerState
-    //書き込むRTVの情報
-    graphicsPipelineStateDesc.NumRenderTargets = 1;
-    graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    //利用するトロポジ(形状)のタイプ。三角形
-    graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    //どのように画面に色を打ち込むかの設定(気にしなくて良い)
-    graphicsPipelineStateDesc.SampleDesc.Count = 1;
-    graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-    //実際に生成
-    hr = device_->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(graphicsPipelineState.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    if (particleVSBlob) { particleVSBlob.Reset(); }
+    if (particlePSBlob) { particlePSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -677,7 +593,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     scissorRect.left = 0;
     scissorRect.right = clientWidth_;
     scissorRect.top = 0;
-    scissorRect.bottom = clientHeight;
+    scissorRect.bottom = clientHeight_;
 
     ui = std::make_unique <DebugUI>();
     ui->Initialize(commandList_.Get(), device_.Get(), hwnd_, swapChainDesc_, rtvDesc_, srvDescriptorHeap_.Get());
@@ -692,12 +608,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         fenceEvent,
         commandAllocator_.Get(),
         srvDescriptorHeap_.Get(),
-        rootSignature_.Get(),
-        graphicsPipelineState.Get()
+        rootSignature_.Get()
     );
 
     textureManager = std::make_unique <TextureManager>();
-    textureManager->Initialize(device_.Get(), srvDescriptorHeap_.Get(), commandList_.Get(),commandQueue_.Get());
+    textureManager->Initialize(device_.Get(), srvDescriptorHeap_.Get(), commandList_.Get(), commandQueue_.Get());
     textureManager->LoadAllFromFolder("resources/");
 
     ui->SetTextureManager(textureManager.get());
@@ -741,7 +656,6 @@ void IrufemiEngine::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
-    graphicsPipelineState.Reset();
     rootSignature_.Reset();
     depthStencilResource.Reset();
     rtvDescriptorHeap.Reset();
@@ -767,4 +681,16 @@ void IrufemiEngine::Finalize() {
 
     // COM解放
     CoUninitialize();
+}
+
+void IrufemiEngine::ApplyPSO() {
+    auto* pso = psoManager_.Get(currentBlend_, currentDepth_);
+    assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyParticlePSO() {
+    auto* pso = psoManager_.GetParticle(currentBlend_, currentDepth_);
+    assert(pso && "Particle PSO is null. Check particle shader setup.");
+    if (pso) { drawManager->BindPSO(pso); }
 }

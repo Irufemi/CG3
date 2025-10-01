@@ -33,7 +33,7 @@ private: // メンバ変数
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera = nullptr;
 
-    /*std::unique_ptr<ObjClass> obj = nullptr;
+    std::unique_ptr<ObjClass> obj = nullptr;
     bool isActiveObj = false;
 
     std::unique_ptr<Sprite> sprite = nullptr;
@@ -58,7 +58,7 @@ private: // メンバ変数
     bool isActiveMultiMaterial = false;
 
     std::unique_ptr<ObjClass> suzanne = nullptr;
-    bool isActiveSuzanne = false;*/
+    bool isActiveSuzanne = false;
 
     std::unique_ptr<ParticleClass> particle = nullptr;
     bool isActiveParticle = false;

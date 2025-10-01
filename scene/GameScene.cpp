@@ -21,7 +21,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera->Initialize(engine->GetInputManager());
     debugMode = false;
 
-   /* isActiveObj = false;
+    isActiveObj = false;
     isActiveSprite = false;
     isActiveTriangle = false;
     isActiveSphere = false;
@@ -29,11 +29,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     isActiveUtashTeapot = false;
     isActiveMultiMesh = false;
     isActiveMultiMaterial = false;
-    isActiveSuzanne = false;*/
+    isActiveSuzanne = false;
     isActiveParticle = true;
 
 
-    /*if (isActiveObj) {
+    if (isActiveObj) {
         obj = std::make_unique <ObjClass>();
         obj->Initialize(engine_->GetDevice(), camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager());
     }
@@ -68,7 +68,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     if (isActiveSuzanne) {
         suzanne = std::make_unique <ObjClass>();
         suzanne->Initialize(engine_->GetDevice(), camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "suzanne.obj");
-    }*/
+    }
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
         particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(),engine_->GetTextureManager(),engine_->GetDebugUI(),"circle.png");
@@ -83,7 +83,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
     ImGui::Begin("Activation");
-    /*ImGui::Checkbox("Obj", &isActiveObj);
+    ImGui::Checkbox("Obj", &isActiveObj);
     ImGui::Checkbox("Sprite", &isActiveSprite);
     ImGui::Checkbox("Triangle", &isActiveTriangle);
     ImGui::Checkbox("Sphere", &isActiveSphere);
@@ -91,7 +91,7 @@ void GameScene::Update() {
     ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny);
     ImGui::Checkbox("MultiMesh", &isActiveMultiMesh);
     ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial);
-    ImGui::Checkbox("Suzanne", &isActiveSuzanne);*/
+    ImGui::Checkbox("Suzanne", &isActiveSuzanne);
     ImGui::Checkbox("Particle", &isActiveParticle);
     ImGui::End();
 
@@ -116,7 +116,7 @@ void GameScene::Update() {
 
     // 3D
 
-    /*if (isActiveObj) {
+    if (isActiveObj) {
         if (!obj) {
             obj = std::make_unique<ObjClass>();
             obj->Initialize(engine_->GetDevice(), camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager());
@@ -171,7 +171,7 @@ void GameScene::Update() {
             suzanne->Initialize(engine_->GetDevice(), camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "suzanne.obj");
         }
         suzanne->Update("Suzanne");
-    }*/
+    }
     if (isActiveParticle) {
         if(!particle){
             particle = std::make_unique <ParticleClass>();
@@ -182,13 +182,13 @@ void GameScene::Update() {
 
     // 2D
 
-    /*if (isActiveSprite) {
+    if (isActiveSprite) {
         if (!sprite) {
             sprite = std::make_unique<Sprite>();
             sprite->Initialize(engine_->GetDevice(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
         sprite->Update();
-    }*/
+    }
 
    
 
@@ -206,7 +206,10 @@ void GameScene::Draw() {
 
     // 3D
 
-    /*
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplyPSO();
+    
     if (isActiveObj) {
         obj->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
     }
@@ -231,15 +234,22 @@ void GameScene::Draw() {
     if (isActiveSuzanne) {
         suzanne->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
     }
-    */
+    
+    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->ApplyParticlePSO();
 
     if (isActiveParticle) {
         engine_->GetDrawManager()->DrawParticle(engine_->GetViewport(), engine_->GetScissorRect(), particle.get());
     }
 
     // 2D
+    
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplyPSO();
 
-    /*if (isActiveSprite) {
+    if (isActiveSprite) {
         engine_->GetDrawManager()->DrawSprite(engine_->GetViewport(), engine_->GetScissorRect(), sprite.get());
-    }*/
+    }
 }

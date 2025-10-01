@@ -216,6 +216,9 @@
     <ClCompile Include="function\Math.cpp">
       <Filter>function</Filter>
     </ClCompile>
+    <ClCompile Include="engine\PSOManager.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -412,6 +415,12 @@
     </ClInclude>
     <ClInclude Include="math\shape\ParticleForGPU.h">
       <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\PSOManager.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="math\BlendMode.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -6,6 +6,8 @@
 #include "../manager/DebugUI.h"
 #include "../manager/TextureManager.h"
 #include "../manager/AudioManager.h"
+#include "PSOManager.h"
+#include "../math/BlendMode.h"
 #include <memory>
 #include "Log.h"
 #include <Windows.h>
@@ -17,24 +19,11 @@
 // 前方宣言
 
 class IrufemiEngine {
-public: // メンバ列挙型
 
-    enum class BlendMode {
-        // !< ブレンドなし
-        kBlendModeNone,
-        // !< 通常のブレンド。デフォルト。 Src * SrcA + Dest * (1 - SrcA)
-        kBlendModeNormal,
-        // !< 加算。 Src * SrcA + Dest * 1
-        kBlendModeAdd,
-        // !< 減算。 Dest * 1 - Src * SrcA
-        kBlendModeSubtract,
-        // !< 乗算。 Src * 0 + Dest * Src
-        kBlendModeMultiply,
-        // !< スクリーン。 Src * (1 - Dest) + dest * 1
-        kBlendModeScreen,
-        // 利用してはいけない
-        kCountOfBlendMode,
-    };
+public:
+    // 状態（現在のブレンドと深度書き込み）
+    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;               // 既定：通常α
+    PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable; // 既定：深度Write無効（透過系）
 
 private: // メンバ変数
 
@@ -117,8 +106,6 @@ private: // メンバ変数
 
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_ = nullptr;
 
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;
-
     // --- Synchronization --
 
     Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
@@ -126,6 +113,9 @@ private: // メンバ変数
     uint64_t fenceValue = 0;
 
     HANDLE fenceEvent = nullptr;
+
+    // ★追加：PSO 管理インスタンス
+    PSOManager psoManager_{};
 
 public: // メンバ関数
     // コンストラクタ
@@ -158,7 +148,6 @@ public: // ゲッター
     HANDLE& GetFenceEvent() { return this->fenceEvent; }
     ID3D12CommandAllocator* GetCommandAllocator() { return this->commandAllocator_.Get(); }
     ID3D12RootSignature* GetRootSignature() { return this->rootSignature_.Get(); }
-    ID3D12PipelineState* GetGraphicsPipelineState() { return this->graphicsPipelineState.Get(); }
     ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return this->dsvDescriptorHeap.Get(); }
     ID3D12Resource* GetSwapChainResources(UINT index) { return this->swapChainResources[index].Get(); }
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return this->rtvHandles[index]; }
@@ -172,8 +161,17 @@ public: // ゲッター
     int32_t& GetClientHeight() { return this->clientHeight_; }
     D3D12_VIEWPORT& GetViewport() { return this->viewport; };
     D3D12_RECT& GetScissorRect() { return this->scissorRect; };
+    PSOManager* GetPSOManager() { return &psoManager_; }
 
 public: // セッター
     void AddFenceValue(uint32_t index) { this->fenceValue += index; }
+
+    // セッター（引数なし描画のためのプリセット切替）
+    void SetBlend(BlendMode m) { currentBlend_ = m; }
+    void SetDepthWrite(PSOManager::DepthWrite w) { currentDepth_ = w; }
+
+    // 状態からPSOを適用してBind（引数なしで使うやつ）
+    void ApplyPSO();
+    void ApplyParticlePSO();
 };
 
