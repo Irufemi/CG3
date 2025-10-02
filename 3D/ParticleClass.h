@@ -6,9 +6,11 @@
 #include "../manager/DebugUI.h"
 #include "../math/shape/Particle.h"
 #include "../math/shape/ParticleForGPU.h"
+#include "../function/Math.h"
 #include <wrl.h>
 #include <memory>
 #include <cstdint>
+#include <numbers>
 
 #include <random>
 
@@ -32,6 +34,9 @@ private: // メンバ変数
 
     std::unique_ptr<D3D12ResourceUtilParticle> resource_ = nullptr;
 
+    Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix({0});
+    Matrix4x4 billbordMatrix_{};
+
     int selectedTextureIndex_ = 0;
 
     // デルタタイム
@@ -39,6 +44,7 @@ private: // メンバ変数
 
     std::random_device seedGenerator;
     std::mt19937 randomEngine;
+
     // ポインタ参照
 
     Camera* camera_ = nullptr;
@@ -46,6 +52,10 @@ private: // メンバ変数
     TextureManager* textureManager_ = nullptr;
 
     DebugUI* ui_ = nullptr;
+
+    bool useBillbord_ = true;
+
+    bool isUpdate_ = true;
 
 public: // メンバ関数
 

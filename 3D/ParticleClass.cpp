@@ -10,6 +10,9 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     this->textureManager_ = textureManager;
     this->ui_ = ui;
 
+    useBillbord_ = true;
+    isUpdate_ = true;
+
     randomEngine.seed(seedGenerator());
 
     // InstancingようのParticleForGPUリソースを作る
@@ -17,13 +20,28 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     // 書き込むためのアドレスを取得
     instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&instancingData));
 
+    /// カメラの回転を適用する
+    billbordMatrix_ = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+    billbordMatrix_.m[3][0] = 0.0f;
+    billbordMatrix_.m[3][1] = 0.0f;
+    billbordMatrix_.m[3][2] = 0.0f;
+
     // 単位行列を書きこんでおく
     for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-
         // 位置と速度を[-1,1]でランダムに初期化
         particles[index] = MakeNewParticle(randomEngine);
-        instancingData[index].WVP = Math::MakeIdentity4x4();
-        instancingData[index].world = Math::MakeIdentity4x4();
+        Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particles[index].transform.scale);
+        Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particles[index].transform.translate);
+        Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
+        if (useBillbord_) {
+             worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
+        }
+        else {
+             worldMatrix = Math::MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
+        }
+        Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+        instancingData[index].world = worldMatrix;
+        instancingData[index].WVP = worldViewProjectionMatrix;
         instancingData[index].color = particles[index].color;
     }
 
@@ -132,6 +150,10 @@ void ParticleClass::Update(const char* particleName) {
     //ウィンドウを作り出す
     ImGui::Begin(name.c_str());
 
+    ImGui::Checkbox("update", &isUpdate_);
+
+    ImGui::Checkbox("useBillbord", &useBillbord_);
+
     ui_->DebugMaterialBy3D(resource_->materialData_);
 
     ui_->DebugUvTransform(resource_->uvTransform_);
@@ -151,6 +173,12 @@ void ParticleClass::Update(const char* particleName) {
 
 #endif // _DEBUG
 
+    /// カメラの回転を適用する
+    billbordMatrix_ = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+    billbordMatrix_.m[3][0] = 0.0f;
+    billbordMatrix_.m[3][1] = 0.0f;
+    billbordMatrix_.m[3][2] = 0.0f;
+
     numInstance = 0; // 描画すべきインスタンス数
 
 
@@ -160,13 +188,24 @@ void ParticleClass::Update(const char* particleName) {
             continue;
         }
 
+        if (isUpdate_) {
+            particles[index].currentTime += kDeltatime; // 経過時間を足す
+            particles[index].transform.translate += particles[index].velocity * kDeltatime;  // 速度を反映させる
+        }
+
         float alpha = 1.0f - (particles[index].currentTime / particles[index].lifeTime);
-        Matrix4x4 worldMatrix = Math::MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
+        Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particles[index].transform.scale);
+        Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particles[index].transform.translate);
+        Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
+        if(useBillbord_){
+            worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
+        }
+        else {
+            worldMatrix = Math::MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
+        }
         Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        particles[index].transform.translate += particles[index].velocity * kDeltatime;  // 速度を反映させる
-        particles[index].currentTime += kDeltatime; // 経過時間を足す
-        instancingData[numInstance].WVP = worldViewProjectionMatrix;
         instancingData[numInstance].world = worldMatrix;
+        instancingData[numInstance].WVP = worldViewProjectionMatrix;
         instancingData[numInstance].color = particles[index].color;
         instancingData[numInstance].color.w = alpha;
 
