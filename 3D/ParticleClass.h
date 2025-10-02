@@ -17,7 +17,7 @@
 #include <random>
 
 
-class ParticleClass{
+class ParticleClass {
 private: // メンバ変数
 
     static inline const uint32_t kNumMaxInstance_ = 100; // 最大インスタンス数
@@ -36,7 +36,7 @@ private: // メンバ変数
 
     std::unique_ptr<D3D12ResourceUtilParticle> resource_ = nullptr;
 
-    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix({0});
+    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix({ 0 });
     Matrix4x4 billbordMatrix_{};
 
     int selectedTextureIndex_ = 0;
@@ -78,7 +78,7 @@ public: // メンバ関数
     /// </summary>
     void Draw();
 
-    Particle MakeNewParticle(std::mt19937& randomEngine);
+    Particle MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
 
     std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
 
