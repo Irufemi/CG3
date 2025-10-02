@@ -7,6 +7,7 @@
 #include "../math/shape/Particle.h"
 #include "../math/shape/ParticleForGPU.h"
 #include "../math/Emitter.h"
+#include "../math/AccelerationField.h"
 #include "../function/Math.h"
 #include <wrl.h>
 #include <memory>
@@ -48,6 +49,8 @@ private: // メンバ変数
     std::mt19937 randomEngine_;
 
     Emitter emitter_{};
+
+    AccelerationField accelerationField_{};
 
     // ポインタ参照
 

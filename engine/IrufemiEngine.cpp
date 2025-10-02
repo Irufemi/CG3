@@ -381,6 +381,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
+
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; //VertexShaderで使う
     rootParameters[1].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う

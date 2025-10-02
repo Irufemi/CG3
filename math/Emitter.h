@@ -12,4 +12,5 @@ struct Emitter {
     float frequency;
     //<! 頻度用時刻
     float frequencyTime;
+
 };

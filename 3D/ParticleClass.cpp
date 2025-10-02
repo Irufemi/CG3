@@ -29,6 +29,10 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     emitter_.transform.rotate = { 0.0f,0.0f,0.0f };
     emitter_.transform.scale = { 1.0f,1.0f,1.0f };
 
+    accelerationField_.acceleration = { 15.0f,0.0f,0.0f };
+    accelerationField_.area.min = { -1.0f,-1.0f,-1.0f };
+    accelerationField_.area.max = { 1.0f,1.0f,1.0f };
+
     // 単位行列を書きこんでおく
     particles_.clear();
     for (uint32_t i = 0; i < kNumMaxInstance_; ++i) {
@@ -216,6 +220,10 @@ void ParticleClass::Update(const char* particleName) {
         }
 
         if (numInstance_ < kNumMaxInstance_) {
+
+            if (Math::IsCollision(accelerationField_.area, (*particleIterator).transform.translate)) {
+                (*particleIterator).velocity += accelerationField_.acceleration * kDeltatime_;
+            }
 
             if (isUpdate_) {
                 particleIterator->currentTime += kDeltatime_; // 経過時間を足す
