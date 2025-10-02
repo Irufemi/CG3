@@ -227,6 +227,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\BlendMode.h" />
     <ClInclude Include="math\ChunkHeader.h" />
     <ClInclude Include="math\DirectionalLight.h" />
+    <ClInclude Include="math\Emitter.h" />
     <ClInclude Include="math\FormatChunk.h" />
     <ClInclude Include="math\Material.h" />
     <ClInclude Include="math\MaterialData.h" />
