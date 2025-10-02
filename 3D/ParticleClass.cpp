@@ -19,17 +19,20 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     instancingResource_ = CreateBufferResource(device.Get(), sizeof(ParticleForGPU) * kNumMaxInstance_);
     // 書き込むためのアドレスを取得
     instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
-    
+
 
     // countが3コのemitterを作成しておく
     emitter_.count = 3;
     emitter_.frequency = 0.5f; // 0.5秒ごとに発生
     emitter_.frequencyTime = 0.0f; // 発生頻度用の時刻、0で初期化
+    emitter_.transform.translate = { 0.0f,0.0f,0.0f };
+    emitter_.transform.rotate = { 0.0f,0.0f,0.0f };
+    emitter_.transform.scale = { 1.0f,1.0f,1.0f };
 
     // 単位行列を書きこんでおく
     particles_.clear();
     for (uint32_t i = 0; i < kNumMaxInstance_; ++i) {
-        particles_.push_back(MakeNewParticle(randomEngine_));
+        particles_.push_back(MakeNewParticle(randomEngine_,emitter_.transform.translate));
     }
 
     /// カメラの回転を適用する
@@ -167,6 +170,8 @@ void ParticleClass::Update(const char* particleName) {
 
     ImGui::Checkbox("useBillbord", &useBillbord_);
 
+    ImGui::DragFloat3("EmitterTranslate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
+
     ui_->DebugMaterialBy3D(resource_->materialData_);
 
     ui_->DebugUvTransform(resource_->uvTransform_);
@@ -193,7 +198,7 @@ void ParticleClass::Update(const char* particleName) {
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
             emitter_.frequencyTime -= emitter_.frequency; // 余計に過ぎた時間も加味して頻度計算する
         }
-   }
+    }
 
     /// カメラの回転を適用する
     billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
@@ -243,14 +248,15 @@ void ParticleClass::Update(const char* particleName) {
 
 }
 
-Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine) {
+Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
     std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
     std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
     std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
     Particle particle;
     particle.transform.scale = { 1.0f,1.0f,1.0f };
     particle.transform.rotate = { 0.0f,0.0f,0.0f };
-    particle.transform.translate = { distribution(randomEngine),distribution(randomEngine) ,distribution(randomEngine) };
+    Vector3 randomTranslate = { distribution(randomEngine),distribution(randomEngine) ,distribution(randomEngine) };
+    particle.transform.translate = translate + randomTranslate;
     particle.velocity = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
     particle.color = { distColor(randomEngine),distColor(randomEngine),distColor(randomEngine) ,1.0f };
     particle.lifeTime = distTime(randomEngine);
@@ -259,12 +265,10 @@ Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine) {
     return particle;
 }
 
-
-
 std::list<Particle> ParticleClass::Emit(const Emitter& emitter, std::mt19937& randomEngine) {
     std::list<Particle> particles;
     for (uint32_t count = 0; count < emitter.count; ++count) {
-        particles.push_back(MakeNewParticle(randomEngine));
+        particles.push_back(MakeNewParticle(randomEngine,emitter.transform.translate));
     }
     return particles;
 }
