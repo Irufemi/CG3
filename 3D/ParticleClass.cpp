@@ -36,7 +36,7 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     // 単位行列を書きこんでおく
     particles_.clear();
     for (uint32_t i = 0; i < kNumMaxInstance_; ++i) {
-        particles_.push_back(MakeNewParticle(randomEngine_,emitter_.transform.translate));
+        particles_.push_back(MakeNewParticle(randomEngine_, emitter_.transform.translate));
     }
 
     /// カメラの回転を適用する
@@ -276,7 +276,7 @@ Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Vector
 std::list<Particle> ParticleClass::Emit(const Emitter& emitter, std::mt19937& randomEngine) {
     std::list<Particle> particles;
     for (uint32_t count = 0; count < emitter.count; ++count) {
-        particles.push_back(MakeNewParticle(randomEngine,emitter.transform.translate));
+        particles.push_back(MakeNewParticle(randomEngine, emitter.transform.translate));
     }
     return particles;
 }
