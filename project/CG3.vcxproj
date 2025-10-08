@@ -164,6 +164,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="audio\Bgm.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
+    <ClCompile Include="function\ExportDump.cpp" />
+    <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
     <ClCompile Include="engine\Log.cpp" />
@@ -176,22 +178,17 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
     <ClCompile Include="function\CompileShader.cpp" />
-    <ClCompile Include="function\ConvertString.cpp" />
-    <ClCompile Include="function\CreateBufferResource.cpp" />
     <ClCompile Include="function\CreateDepthStencilTextureResource.cpp" />
     <ClCompile Include="function\CreateDescriptorHeap.cpp" />
     <ClCompile Include="function\CreateTextureResurce.cpp" />
     <ClCompile Include="function\Ease.cpp" />
     <ClCompile Include="function\GetBackBufferIndex.cpp" />
-    <ClCompile Include="function\GetDescriptorHandle.cpp" />
     <ClCompile Include="function\LoadMaterialTemplateFile.cpp" />
     <ClCompile Include="function\LoadObjFile.cpp" />
-    <ClCompile Include="function\LoadTexture.cpp" />
     <ClCompile Include="function\Math.cpp" />
     <ClCompile Include="function\SoundLoadWave.cpp" />
     <ClCompile Include="function\SoundPlayWave.cpp" />
     <ClCompile Include="function\SoundUnload.cpp" />
-    <ClCompile Include="function\UploadTextureData.cpp" />
     <ClCompile Include="engine\Input\GamePad.cpp" />
     <ClCompile Include="engine\Input\Keyboard.cpp" />
     <ClCompile Include="main.cpp">
@@ -212,6 +209,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="scene\title\TitleScene.cpp" />
     <ClCompile Include="source\Sound.cpp" />
     <ClCompile Include="source\Texture.cpp" />
+    <ClCompile Include="function\StringUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
@@ -286,6 +284,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="source\D3D12ResourceUtil.h" />
     <ClInclude Include="source\Sound.h" />
     <ClInclude Include="source\Texture.h" />
+    <ClInclude Include="function\StringUtility.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

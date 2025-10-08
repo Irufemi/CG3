@@ -172,12 +172,6 @@
     <ClCompile Include="function\CompileShader.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
-    <ClCompile Include="function\ConvertString.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\CreateBufferResource.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
     <ClCompile Include="function\CreateDepthStencilTextureResource.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
@@ -190,16 +184,10 @@
     <ClCompile Include="function\GetBackBufferIndex.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
-    <ClCompile Include="function\GetDescriptorHandle.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
     <ClCompile Include="function\LoadMaterialTemplateFile.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
     <ClCompile Include="function\LoadObjFile.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\LoadTexture.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
     <ClCompile Include="function\SoundLoadWave.cpp">
@@ -209,9 +197,6 @@
       <Filter>Engine\function</Filter>
     </ClCompile>
     <ClCompile Include="function\SoundUnload.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\UploadTextureData.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
     <ClCompile Include="math\Vector3 .cpp">
@@ -246,6 +231,15 @@
     </ClCompile>
     <ClCompile Include="engine\WinApp\WinApp.cpp">
       <Filter>Engine\winApp</Filter>
+    </ClCompile>
+    <ClCompile Include="function\StringUtility.cpp">
+      <Filter>Engine\function</Filter>
+    </ClCompile>
+    <ClCompile Include="source\D3D12ResourceUtil.cpp">
+      <Filter>Engine\source</Filter>
+    </ClCompile>
+    <ClCompile Include="function\ExportDump.cpp">
+      <Filter>Engine\function</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -464,6 +458,9 @@
     </ClInclude>
     <ClInclude Include="engine\WinApp\WinApp.h">
       <Filter>Engine\winApp</Filter>
+    </ClInclude>
+    <ClInclude Include="function\StringUtility.h">
+      <Filter>Engine\function</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

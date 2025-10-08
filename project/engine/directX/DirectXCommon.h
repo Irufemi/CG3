@@ -12,8 +12,10 @@
 #include <vector>
 #include <unordered_map>
 #include <fstream>
+#include <chrono>
 
 #include "../PSOManager.h"
+#include "externals/DirectXTex/DirectXTex.h"
 
 // 前方宣言
 class Log;
@@ -26,17 +28,25 @@ public:
 
     void Finalize();
 
-
-    // 1つ目の塊でやってること
-    void First(HWND hwnd, int32_t w, int32_t h);
-
-    // 2つ目の塊でやってること
-    void Second();
-
-    // 3つ目の塊でやってること
-    void Third();
+    // 初期化
+    void Initialize(HWND hwnd, int32_t w, int32_t h);
 
     void SetLog(Log* log) { log_ = log; }
+
+    /*三角形の色を変えよう*/
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes); 
+
+    Microsoft::WRL::ComPtr<ID3D12Resource>  UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages);
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
+    
+    static DirectX::ScratchImage LoadTexture(const std::string& flilePath);
+
+    // FPS固定初期化
+    void InitializeFixFPS();
+    // FPS固定更新
+    void UpdateFixFPS();
 
 public: // ゲッター
 
@@ -61,6 +71,31 @@ public: // ゲッター
     int32_t& GetClientWidth() { return this->clientWidth_; }
     int32_t& GetClientHeight() { return this->clientHeight_; }
     PSOManager* GetPSOManager() { return psoManager_.get(); }
+    static D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
+    static D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetRTVCPUDescriptorHandle(uint32_t index);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index);
+
+private: 
+
+    /*開発用のUIを出そう*/
+
+    /// <summary>
+    /// デスクリプタ生成
+    /// </summary>
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
+    /// <summary>
+    /// 指定番号のCPUデスクリプタハンドルを取得する
+    /// </summary>
+    static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
+
+    /// <summary>
+    /// 指定番号のGPUデスクリプタハンドルを取得する
+    /// </summary>
+    static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 private:
 
@@ -81,6 +116,11 @@ private:
     D3D12_RECT scissorRect_ = D3D12_RECT{};
 
     // --- D3D Device & Core ---
+
+    //DXGIファクトリー
+    Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;
+
+    Microsoft::WRL::ComPtr<ID3D12Debug1> debugController_ = nullptr;
 
     Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
 
@@ -104,11 +144,17 @@ private:
 
     // --- Descriptor Heaps ---
 
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap_ = nullptr;
 
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_ = nullptr;
+    static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_;
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_ = nullptr;
+
+    static uint32_t descriptorSizeSRV;
+
+    uint32_t descriptorSizeRTV{};
+
+    uint32_t descriptorSizeDSV{};
 
     // --- Depth & Pipeline State ---
 
@@ -127,11 +173,10 @@ private:
     // Log(ポインタ参照)
     Log* log_ = nullptr;
 
-    // ★追加：PSO 管理インスタンス
+    // PSO 管理インスタンス
     std::unique_ptr<PSOManager> psoManager_ = nullptr;
 
-    //DXGIファクトリー
-    Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;
-
-    Microsoft::WRL::ComPtr<ID3D12Debug1> debugController_ = nullptr;
+    // 記録時間(FPS固定用)
+    std::chrono::steady_clock::time_point  reference_;
 };
+

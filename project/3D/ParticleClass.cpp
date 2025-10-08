@@ -3,9 +3,11 @@
 #include "Math.h"
 #include "../externals/imgui/imgui.h"
 
+#include "engine/directX/DirectXCommon.h"
+
 #include <algorithm>
 
-void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
@@ -17,7 +19,7 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     randomEngine_.seed(seedGenerator_());
 
     // InstancingようのParticleForGPUリソースを作る
-    instancingResource_ = CreateBufferResource(device.Get(), sizeof(ParticleForGPU) * kNumMaxInstance_);
+    instancingResource_ = resource_->GetDirectXCommon()->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance_);
     // 書き込むためのアドレスを取得
     instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
 
@@ -70,11 +72,11 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     instancingDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
     instancingDesc.Buffer.NumElements = kNumMaxInstance_;
     instancingDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
-    const uint32_t descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    const uint32_t descriptorSizeSRV = resource_->GetDirectXCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     textureManager_->AddSRVIndex();
-    instancingSrvHandleCPU_ = GetCPUDescriptorHandle(srvDescriptorHeap.Get(), descriptorSizeSRV, textureManager_->GetSRVIndex());
-    instancingSrvHandleGPU_ = GetGPUDescriptorHandle(srvDescriptorHeap.Get(), descriptorSizeSRV, textureManager_->GetSRVIndex());
-    device->CreateShaderResourceView(instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
+    instancingSrvHandleCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(textureManager_->GetSRVIndex());
+    instancingSrvHandleGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(textureManager_->GetSRVIndex());
+    resource_->GetDirectXCommon()->GetDevice()->CreateShaderResourceView(instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
 
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtilParticle>();
@@ -102,7 +104,7 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     resource_->indexDataList_.push_back(2);
 
     // リソースのメモリを確保
-    resource_->CreateResource(device.Get());
+    resource_->CreateResource();
 
     // 書き込めるようにする
     resource_->Map();

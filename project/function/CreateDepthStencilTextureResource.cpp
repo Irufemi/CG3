@@ -1,4 +1,5 @@
 #include "Function.h"
+#include <cassert>
 
 /*前後関係を正しくしよう*/
 
