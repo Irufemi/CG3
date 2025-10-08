@@ -35,7 +35,7 @@ public: //メンバ関数
     ~Sprite() = default;
 
     //初期化
-    void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
+    void Initialize(Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
     //更新
     void Update();
 

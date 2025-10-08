@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-void TriangleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+void TriangleClass::Initialize(Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
@@ -32,7 +32,7 @@ void TriangleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& devic
     resource_->indexDataList_.push_back(2); //　右下
 
     // リソースのメモリを確保
-    resource_->CreateResource(device.Get());
+    resource_->CreateResource();
 
     // 書き込めるようにする
     resource_->Map();

@@ -9,6 +9,11 @@
 #include "../externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// ImGuiWindowFlags_NoDocking が未定義の場合は定義する
+#ifndef ImGuiWindowFlags_NoDocking
+#define ImGuiWindowFlags_NoDocking (1 << 13)
+#endif
+
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -193,4 +198,26 @@ void DebugUI::DebugSphereInfo(Sphere& sphere) {
         ImGui::DragFloat3("Center", &sphere.center.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat("radius", &sphere.radius, 0.01f, -10.0f, 10.0f);
     }
+}
+
+// FPS/FrameTime オーバーレイ
+void DebugUI::FPSDebug() {
+    ImGuiIO& io = ImGui::GetIO();
+    const float fps = io.Framerate;
+    const float frameMs = (fps > 0.0f) ? (1000.0f / fps) : 0.0f;
+
+    ImGui::SetNextWindowBgAlpha(0.35f);
+    ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoFocusOnAppearing |
+        ImGuiWindowFlags_NoNav;
+
+    ImGui::Begin("Performance", nullptr, flags);
+    ImGui::Text("FPS: %.1f", fps);
+    ImGui::Text("Frame: %.2f ms", frameMs);
+    ImGui::End();
 }

@@ -61,5 +61,8 @@ public: // メンバ関数
 
     // Sphere
     void DebugSphereInfo(Sphere& sphere);
+
+    // FPS/FrameTime オーバーレイ
+    void FPSDebug();
 };
 
