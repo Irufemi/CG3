@@ -3,6 +3,7 @@
 #include "../SceneManager.h"
 #include "../SceneName.h"
 #include "../../engine/IrufemiEngine.h"
+#include "../../externals/imgui/imgui.h"
 
 #include <algorithm>
 
@@ -77,7 +78,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(),engine_->GetTextureManager(),engine_->GetDebugUI(),"circle.png");
+        particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
     }
 
     bgm = std::make_unique<Bgm>();
@@ -187,9 +188,9 @@ void GameScene::Update() {
         fence_->Update("Fence");
     }
     if (isActiveParticle) {
-        if(!particle){
+        if (!particle) {
             particle = std::make_unique <ParticleClass>();
-            particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(),camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            particle->Initialize(engine_->GetDevice(), engine_->GetSrvDescriptorHeap(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
         particle->Update();
     }
@@ -204,7 +205,7 @@ void GameScene::Update() {
         sprite->Update();
     }
 
-   
+
 
     //エンターキーが押されていたら
     if (PressedVK(VK_RETURN)) {
@@ -223,7 +224,7 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
-    
+
     if (isActiveObj) {
         obj->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
     }
@@ -251,7 +252,7 @@ void GameScene::Draw() {
     if (isActiveFence_) {
         fence_->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
     }
-    
+
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
@@ -261,7 +262,7 @@ void GameScene::Draw() {
     }
 
     // 2D
-    
+
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();

@@ -1,10 +1,11 @@
 #include "TriangleClass.h"
 #include "../function/Math.h"
 #include "../function/Function.h"
+#include "../externals/imgui/imgui.h"
 
 #include <algorithm>
 
-void TriangleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>&device,Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+void TriangleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
 
     this->camera_ = camera;
     this->textureManager_ = textureManager;
@@ -107,7 +108,7 @@ void TriangleClass::Update(const char* triangleName) {
 
     //カメラウィンドウを作り出す
     ImGui::Begin(name.c_str());
-    
+
     ui_->DebugTransform(resource_->transform_);
 
     ui_->DebugMaterialBy3D(resource_->materialData_);
@@ -129,7 +130,7 @@ void TriangleClass::Update(const char* triangleName) {
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-    
+
     resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
 }
 

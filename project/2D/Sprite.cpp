@@ -2,6 +2,7 @@
 
 #include "../function/Math.h"
 #include "../function/Function.h"
+#include "../externals/imgui/imgui.h"
 
 #include <algorithm>
 
@@ -135,9 +136,9 @@ void Sprite::Update() {
 
     //カメラウィンドウを作り出す
     ImGui::Begin(name.c_str());
-    
+
     ui_->DebugTransform(resource_->transform_);
-    
+
     ui_->DebugMaterialBy2D(resource_->materialData_);
 
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);

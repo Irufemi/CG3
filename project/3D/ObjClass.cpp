@@ -5,6 +5,7 @@
 #include "../function/Math.h"
 #include "../manager/DrawManager.h"
 #include "../manager/TextureManager.h"
+#include "../externals/imgui/imgui.h"
 
 void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
 
@@ -52,8 +53,7 @@ void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Ca
         if (!mesh.material.textureFilePath.empty()) {
             tex->Initialize(mesh.material.textureFilePath, device.Get(), srvDescriptorHeap, commandList);
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
-        }
-        else if(!res->textureHandle_.ptr) {
+        } else if (!res->textureHandle_.ptr) {
             res->materialData_->hasTexture = false;
             // ダミー（白）テクスチャのSRVハンドルを取得
             res->textureHandle_ = textureManager->GetWhiteTextureHandle();

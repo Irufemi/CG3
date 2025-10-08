@@ -1,4 +1,5 @@
 #include "Function.h"
+#include "../externals/DirectXTex/d3dx12.h"
 
 /*テクスチャを貼ろう*/
 
@@ -26,7 +27,7 @@
 [[nodiscard]] //戻り値を破棄しないように
 Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
     ///IntermediteResource(中間リソース)
-    
+
     std::vector<D3D12_SUBRESOURCE_DATA> subResources;
     //1. PrepareUploadを利用して、読み込んだデータからDirectX12用のSubresource(サブリソース)の配列を作成する(Subresourceは、MipMapの1枚1枚ぐらいのイメージでいると良い)
     DirectX::PrepareUpload(device.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subResources);
@@ -34,11 +35,11 @@ Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::C
     uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subResources.size()));
     //3. 計算したサイズでIntermediteResourceを作る
     Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(device.Get(), intermediateSize);
-    
+
     ///データ転送をコマンドに積む
 
     UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subResources.size()), subResources.data());
-    
+
     ///ResourceStateを変更し、IntermediateResourceを返す
 
     //Textureへの転送後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへResourceStateを変更する
