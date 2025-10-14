@@ -58,6 +58,9 @@ public: // メンバ関数
     // Transform
     void DebugTransform(Transform& transform);
 
+    void DebugTransform2D(Transform& transform);
+
+
     void TextTransform(Transform& transform, const char* name = "");
 
     // Material

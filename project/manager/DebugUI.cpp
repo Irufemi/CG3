@@ -116,6 +116,20 @@ void DebugUI::DebugTransform(Transform& transform) {
     }
 }
 
+// transform
+void DebugUI::DebugTransform2D(Transform& transform) {
+    if (ImGui::CollapsingHeader("transform")) {
+        ImGui::DragFloat2("scale", &transform.scale.x, 0.05f);
+        ImGui::DragFloat("rotate", &transform.rotate.z, 0.05f);
+        ImGui::DragFloat2("translate", &transform.translate.x, 0.05f);
+        static bool rotate = false;
+        ImGui::Checkbox("Rotate", &rotate);
+        if (rotate) {
+            transform.rotate.z += static_cast<float>(0.05f / std::numbers::pi);
+        }
+    }
+}
+
 void DebugUI::TextTransform(Transform& transform,const char* name) {
     std::string header = std::string("transform") + name;
     if (ImGui::CollapsingHeader(header.c_str())) {

@@ -7,15 +7,16 @@
 #include <cstdint>
 #include <format>
 
-#include "../math/VertexData.h"
-#include "../source/D3D12ResourceUtil.h"
+#include "math/VertexData.h"
+#include "source/D3D12ResourceUtil.h"
+#include "2D/Sprite.h"
 
-#include "../scene/IScene.h"
-#include "../scene/title/TitleScene.h"
-#include "../scene/inGame/GameScene.h"
-#include "../scene/result/ResultScene.h"
-#include "../scene/SceneName.h"
-#include "../externals/imgui/imgui.h"
+#include "scene/IScene.h"
+#include "scene/title/TitleScene.h"
+#include "scene/inGame/GameScene.h"
+#include "scene/result/ResultScene.h"
+#include "scene/SceneName.h"
+#include "externals/imgui/imgui.h"
 
 #pragma comment(lib,"Dbghelp.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -65,10 +66,12 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // UI
     ui = std::make_unique <DebugUI>();
     ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
+    Sprite::SetDebugUI(ui.get());
 
     // 描画
     drawManager = std::make_unique<DrawManager>();
     drawManager->Initialize(dxCommon_.get());
+    Sprite::SetDrawManager(drawManager.get());
 
     // テクスチャ
 
@@ -76,6 +79,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     textureManager->Initialize(dxCommon_.get());
     textureManager->LoadAllFromFolder("resources/");
     ui->SetTextureManager(textureManager.get());
+    Sprite::SetTextureManager(textureManager.get());
 
 }
 
@@ -141,7 +145,7 @@ void IrufemiEngine::Execute() {
         // ImGui
         ui->FrameStart();
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
         ui->FPSDebug();
 
@@ -211,5 +215,10 @@ void IrufemiEngine::ApplyPSO() {
 void IrufemiEngine::ApplyParticlePSO() {
     auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_);
     assert(pso && "Particle PSO is null. Check particle shader setup.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySpritePSO() {
+    auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
     if (pso) { drawManager->BindPSO(pso); }
 }
