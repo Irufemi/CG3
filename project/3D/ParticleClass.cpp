@@ -161,7 +161,7 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap
 
 void ParticleClass::Update(const char* particleName) {
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     std::string name = std::string("Particle: ") + particleName;
 
     //ImGui

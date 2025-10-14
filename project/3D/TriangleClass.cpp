@@ -101,7 +101,7 @@ void TriangleClass::Initialize(Camera* camera, TextureManager* textureManager, D
 
 void TriangleClass::Update(const char* triangleName) {
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     std::string name = std::string("Triangle: ") + triangleName;
 
     //ImGui

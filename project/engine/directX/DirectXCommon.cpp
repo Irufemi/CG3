@@ -47,7 +47,7 @@ void DirectXCommon::Finalize() {
     swapChain_.Reset();
     device_.Reset();
 
-#ifdef _DEBUG
+#if defined(_DEBUG)
     debugController_.Reset();
 #endif
 
@@ -466,6 +466,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> particlePSBlob = CompileShader(L"resources/shaders/Particle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(particlePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> spriteVSBlob = CompileShader(L"resources/shaders/Object2D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(spriteVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> spritePSBlob = CompileShader(L"resources/shaders/Object2D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(spritePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -488,6 +494,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         particlePSBlob
     };
 
+    PSOManager::ShaderSet spriteShaders{
+        spriteVSBlob,
+        spritePSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -497,7 +508,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         /*DSV*/ DXGI_FORMAT_D24_UNORM_S8_UINT,   // 既存と同じ
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,  // 既存と同じ
         objectShaders,
-        particleShaders     // パーティクルは未使用なら空
+        particleShaders,     // パーティクルは未使用なら空
+        spriteShaders
     );
 
     //実際に生成

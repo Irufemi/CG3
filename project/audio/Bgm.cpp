@@ -8,7 +8,7 @@ Bgm::~Bgm() {
     Stop();
 }
 
-void Bgm::Initialize(AudioManager* audioManager){
+void Bgm::Initialize(AudioManager* audioManager) {
     this->audioManager_ = audioManager;
 }
 
@@ -45,6 +45,7 @@ void Bgm::SetVolume(float volume) {
 }
 
 void Bgm::Update() {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
     ImGui::Begin("Audio Settings");
 
@@ -86,4 +87,7 @@ void Bgm::Update() {
     }
 
     ImGui::End();
+
+#endif // _DEBUG
+
 }

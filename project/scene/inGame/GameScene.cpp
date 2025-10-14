@@ -34,14 +34,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveParticle = true;
 
-
     if (isActiveObj) {
         obj = std::make_unique <ObjClass>();
         obj->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager());
     }
     if (isActiveSprite) {
         sprite = std::make_unique <Sprite>();
-        sprite->Initialize(camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+        sprite->Initialize(camera.get());
     }
     if (isActiveTriangle) {
         triangle = std::make_unique <TriangleClass>();
@@ -89,6 +88,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void GameScene::Update() {
 
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+
     ImGui::Begin("Activation");
     ImGui::Checkbox("Obj", &isActiveObj);
     ImGui::Checkbox("Sprite", &isActiveSprite);
@@ -118,6 +119,8 @@ void GameScene::Update() {
         camera->Update("Camera");
 
     }
+
+#endif // _DEBUG
 
     // BGM
     bgm->Update();
@@ -200,7 +203,7 @@ void GameScene::Update() {
     if (isActiveSprite) {
         if (!sprite) {
             sprite = std::make_unique<Sprite>();
-            sprite->Initialize(camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            sprite->Initialize(camera.get());
         }
         sprite->Update();
     }
@@ -265,9 +268,9 @@ void GameScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplyPSO();
+    engine_->ApplySpritePSO();
 
     if (isActiveSprite) {
-        engine_->GetDrawManager()->DrawSprite(sprite.get());
+        sprite->Draw();
     }
 }

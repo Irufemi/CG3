@@ -17,7 +17,8 @@ void PSOManager::Initialize(
     DXGI_FORMAT dsvFormat,
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
     ShaderSet objectShaders,
-    ShaderSet particleShaders)
+    ShaderSet particleShaders,
+    ShaderSet spriteShaders)
 {
     device_ = device;
     rootSig_ = rootSig;
@@ -31,6 +32,7 @@ void PSOManager::Initialize(
     topology_ = topology; // 三角形トポロジ固定（既存）
     objectShaders_ = objectShaders; // 既存 VS/PS（Object3D）
     particleShaders_ = particleShaders; // パーティクル VS/PS（あれば）
+    spriteShaders_ = spriteShaders;
 
 
     cache_.clear();
@@ -71,6 +73,60 @@ ID3D12PipelineState* PSOManager::GetParticle(BlendMode blend, DepthWrite depth)
     if (!p) { return nullptr; }            // ★追加
     cache_[key] = p;
     return p.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
+    // Sprite用シェーダが未設定なら Object 用にフォールバック
+    const ShaderSet& shaders = (spriteShaders_.vsBlob && spriteShaders_.psBlob)
+        ? spriteShaders_
+        : objectShaders_;
+
+    // キャッシュキー（Sprite識別のために XOR で種を追加）
+    constexpr uint64_t kSpriteTag = 0x535052544B4559ull; // "SPR TKEY"
+    Key key{ static_cast<uint64_t>(Hash(shaders, blend, depth) ^ kSpriteTag) };
+
+    auto it = cache_.find(key);
+    if (it != cache_.end()) { return it->second.Get(); }
+
+    // PSO 構築（Rasterizer.Cull=None に固定）
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.VS = { shaders.vsBlob ? shaders.vsBlob->GetBufferPointer() : nullptr,
+                shaders.vsBlob ? shaders.vsBlob->GetBufferSize() : 0 };
+    desc.PS = { shaders.psBlob ? shaders.psBlob->GetBufferPointer() : nullptr,
+                shaders.psBlob ? shaders.psBlob->GetBufferSize() : 0 };
+    desc.InputLayout = inputLayout_;
+    desc.PrimitiveTopologyType = topology_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.DSVFormat = dsvFormat_;
+    desc.SampleMask = UINT_MAX;
+    desc.SampleDesc.Count = 1;
+
+    // Blend / Depth
+    desc.BlendState = MakeBlend(blend);
+    desc.DepthStencilState = MakeDepth(depth);
+
+    // Rasterizer（ここで CullMode = NONE）
+    D3D12_RASTERIZER_DESC rast{};
+    rast.FillMode = D3D12_FILL_MODE_SOLID;
+    rast.CullMode = D3D12_CULL_MODE_NONE; // ← 要件
+    rast.FrontCounterClockwise = FALSE;
+    rast.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+    rast.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+    rast.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+    rast.DepthClipEnable = TRUE;
+    rast.MultisampleEnable = FALSE;
+    rast.AntialiasedLineEnable = FALSE;
+    rast.ForcedSampleCount = 0;
+    rast.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+    desc.RasterizerState = rast;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr));
+    cache_.emplace(key, pso);
+    return pso.Get();
 }
 
 void PSOManager::ClearCache() { cache_.clear(); }
