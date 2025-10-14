@@ -74,7 +74,7 @@ void ObjClass::Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHea
 }
 
 void ObjClass::Update(const char* objName) {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
 

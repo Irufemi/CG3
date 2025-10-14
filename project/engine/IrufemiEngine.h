@@ -142,5 +142,6 @@ public: // セッター
     // 状態からPSOを適用してBind（引数なしで使うやつ）
     void ApplyPSO();
     void ApplyParticlePSO();
+    void ApplySpritePSO();
 };
 

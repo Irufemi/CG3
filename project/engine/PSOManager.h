@@ -34,7 +34,8 @@ public:
         DXGI_FORMAT dsvFormat,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
         ShaderSet objectShaders,         // 既存：Object3D.VS/PS など
-        ShaderSet particleShaders = {}   // パーティクル専用 VS/PS（なければ空でOK）
+        ShaderSet particleShaders = {}, // パーティクル専用 VS/PS（なければ空でOK）
+        ShaderSet spriteShaders = {}
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
@@ -42,6 +43,8 @@ public:
 
     // パーティクル用シェーダで取得（未指定なら既存の objectShaders にフォールバック）
     ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth);
+
+    ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth);
 
     void ClearCache();
 
@@ -60,6 +63,7 @@ private:
 
     ShaderSet objectShaders_{};
     ShaderSet particleShaders_{};
+    ShaderSet spriteShaders_{};
 
     struct Key {
         uint64_t hash;

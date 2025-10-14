@@ -35,7 +35,7 @@ void Camera::Initialize(int window_width,int window_height) {
 //更新
 void Camera::Update(const char *cameraName) {
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
     std::string name = std::string("Camera: ") + cameraName;
 

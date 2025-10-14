@@ -150,7 +150,7 @@ void SphereClass::Initialize(Camera* camera, TextureManager* textureManager, Deb
 void SphereClass::Update(const char* sphereName) {
 
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
     std::string name = std::string("Sphere: ") + sphereName;
 
