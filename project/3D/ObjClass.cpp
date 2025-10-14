@@ -6,8 +6,9 @@
 #include "../manager/DrawManager.h"
 #include "../manager/TextureManager.h"
 #include "../externals/imgui/imgui.h"
+#include "engine/directX/DirectXCommon.h"
 
-void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
+void ObjClass::Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
 
     this->camera_ = camera;
     this->ui_ = ui;
@@ -22,7 +23,7 @@ void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Ca
         auto res = std::make_unique<D3D12ResourceUtil>();
 
         // 頂点バッファ
-        res->vertexResource_ = CreateBufferResource(device.Get(), sizeof(VertexData) * mesh.vertices.size());
+        res->vertexResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(VertexData) * mesh.vertices.size());
         res->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
         res->vertexBufferView_.BufferLocation = res->vertexResource_->GetGPUVirtualAddress();
         res->vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * mesh.vertices.size());
@@ -33,7 +34,7 @@ void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Ca
         std::memcpy(res->vertexData_, mesh.vertices.data(), sizeof(VertexData) * mesh.vertices.size());
 
         // マテリアル
-        res->materialResource_ = CreateBufferResource(device.Get(), sizeof(Material));
+        res->materialResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(Material));
         res->materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->materialData_));
         res->materialData_->color = mesh.material.color;
         res->materialData_->enableLighting = mesh.material.enableLighting;
@@ -44,14 +45,14 @@ void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Ca
         // WVP
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
         res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        res->transformationResource_ = CreateBufferResource(device.Get(), sizeof(TransformationMatrix));
+        res->transformationResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(TransformationMatrix));
         res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
         *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
 
         // テクスチャ
         auto tex = std::make_unique<Texture>();
         if (!mesh.material.textureFilePath.empty()) {
-            tex->Initialize(mesh.material.textureFilePath, device.Get(), srvDescriptorHeap, commandList);
+            tex->Initialize(mesh.material.textureFilePath, srvDescriptorHeap, commandList);
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
         } else if (!res->textureHandle_.ptr) {
             res->materialData_->hasTexture = false;
@@ -60,7 +61,7 @@ void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Ca
         }
 
         // ライト
-        res->directionalLightResource_ = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
+        res->directionalLightResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(DirectionalLight));
         res->directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->directionalLightData_));
         res->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
         res->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
@@ -73,7 +74,7 @@ void ObjClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device>& device, Ca
 }
 
 void ObjClass::Update(const char* objName) {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
 
@@ -102,6 +103,6 @@ void ObjClass::Update(const char* objName) {
 
 void ObjClass::Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) {
     for (auto& res : resources_) {
-        drawManager->DrawByVertex(viewport, scissorRect, res.get());
+        drawManager->DrawByVertex(res.get());
     }
 }

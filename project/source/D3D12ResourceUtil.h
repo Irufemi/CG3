@@ -16,6 +16,9 @@
 #include "../manager/TextureManager.h"
 #include "../function/Function.h"
 
+// 前方宣言
+class DirectXCommon;
+
 class D3D12ResourceUtil {
 public: //メンバ変数
 
@@ -108,72 +111,29 @@ public: //メンバ変数
 
 #pragma endregion
 
+#pragma region 外部参照
+
+    static DirectXCommon* dxCommon_;
+
+#pragma endregion
+
+
 public: //メンバ関数
+
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
     //デストラクタ
-    ~D3D12ResourceUtil() {
-        char buf[256];
-        snprintf(buf, sizeof(buf), "[D3D12ResourceUtil] Destruct: vertex=%p, index=%p, material=%p, trans=%p, light=%p\n",
-            vertexResource_.Get(), indexResource_.Get(), materialResource_.Get(), transformationResource_.Get(), directionalLightResource_.Get());
-        OutputDebugStringA(buf);
-
-        UnMap();
-        if (vertexResource_) { vertexResource_.Reset(); }
-        if (indexResource_) { indexResource_.Reset(); }
-        if (materialResource_) { materialResource_.Reset(); }
-        if (transformationResource_) { transformationResource_.Reset(); }
-        if (directionalLightResource_) { directionalLightResource_.Reset(); }
-    }
-
+    ~D3D12ResourceUtil();
 
     //ID3D12Resourceを生成する
-    void CreateResource(ID3D12Device* device) {
-        char buf[256];
-        if (!vertexDataList_.empty()) {
-            vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
-            snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
-            OutputDebugStringA(buf);
-        }
-        if (!indexDataList_.empty()) {
-            indexResource_ = CreateBufferResource(device, sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-            snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
-            OutputDebugStringA(buf);
-        }
-        materialResource_ = CreateBufferResource(device, sizeof(Material));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
-        transformationResource_ = CreateBufferResource(device, sizeof(TransformationMatrix));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", transformationResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
-        directionalLightResource_ = CreateBufferResource(device, sizeof(DirectionalLight));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", directionalLightResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
-    }
+    void CreateResource();
 
     //バッファへの書き込みを開放
-    void Map() {
-        if (vertexResource_) {
-            vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
-        }
-        if (indexResource_) {
-            indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
-        }
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
-        directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
-    }
+    void Map();
 
     //バッファへの書き込みを閉鎖
-    void UnMap() {
-        if (vertexResource_) {
-            vertexResource_->Unmap(0, nullptr);
-        }
-        if (indexResource_) {
-            indexResource_->Unmap(0, nullptr);
-        }
-        materialResource_->Unmap(0, nullptr);
-        transformationResource_->Unmap(0, nullptr);
-        directionalLightResource_->Unmap(0, nullptr);
-    }
+    void UnMap();
 };
 
 class D3D12ResourceUtilParticle {
@@ -240,58 +200,26 @@ public: //メンバ変数
 
 #pragma endregion
 
+#pragma region 外部参照
+
+    static DirectXCommon* dxCommon_;
+
+#pragma endregion
+
 public: //メンバ関数
+
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
     //デストラクタ
-    ~D3D12ResourceUtilParticle() {
-        char buf[256];
-        snprintf(buf, sizeof(buf), "[D3D12ResourceUtil] Destruct: vertex=%p, index=%p, material=%p\n",
-            vertexResource_.Get(), indexResource_.Get(), materialResource_.Get());
-        OutputDebugStringA(buf);
-
-        UnMap();
-        if (vertexResource_) { vertexResource_.Reset(); }
-        if (indexResource_) { indexResource_.Reset(); }
-        if (materialResource_) { materialResource_.Reset(); }
-    }
-
+    ~D3D12ResourceUtilParticle();
 
     //ID3D12Resourceを生成する
-    void CreateResource(ID3D12Device* device) {
-        char buf[256];
-        if (!vertexDataList_.empty()) {
-            vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
-            snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
-            OutputDebugStringA(buf);
-        }
-        if (!indexDataList_.empty()) {
-            indexResource_ = CreateBufferResource(device, sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-            snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
-            OutputDebugStringA(buf);
-        }
-        materialResource_ = CreateBufferResource(device, sizeof(Material));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
-    }
+    void CreateResource();
 
     //バッファへの書き込みを開放
-    void Map() {
-        if (vertexResource_) {
-            vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
-        }
-        if (indexResource_) {
-            indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
-        }
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
+    void Map();
 
     //バッファへの書き込みを閉鎖
-    void UnMap() {
-        if (vertexResource_) {
-            vertexResource_->Unmap(0, nullptr);
-        }
-        if (indexResource_) {
-            indexResource_->Unmap(0, nullptr);
-        }
-        materialResource_->Unmap(0, nullptr);
-    }
+    void UnMap();
 };

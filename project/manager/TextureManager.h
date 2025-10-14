@@ -6,13 +6,13 @@
 #include <memory>
 #include <d3d12.h>
 
+// 前方宣言
+class DirectXCommon;
+
 
 class TextureManager {
 private:
-    ID3D12Device* device_ = nullptr;
-    ID3D12DescriptorHeap* srvDescriptorHeap_ = nullptr;
-    ID3D12GraphicsCommandList* commandList_ = nullptr;
-    ID3D12CommandQueue* commandQueue_ = nullptr;
+    DirectXCommon* dxCommon_ = nullptr;
 
     std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
 
@@ -21,12 +21,9 @@ private:
 
 public:
     ~TextureManager() {
-        if (device_) { device_ = nullptr; }
-        if (srvDescriptorHeap_) { srvDescriptorHeap_ = nullptr; }
-        if (commandList_) { commandList_ = nullptr; }
     }
 
-    void Initialize(ID3D12Device* device, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList, ID3D12CommandQueue* commandQueue);
+    void Initialize(DirectXCommon *dxCommon);
 
     void LoadAllFromFolder(const std::string& folderPath);
 
@@ -34,7 +31,7 @@ public:
 
     std::vector<std::string>GetTextureNames() const;
 
-    void CreateWhiteDummyTexture(ID3D12Device* device, ID3D12DescriptorHeap* srvDescriptorHeap);
+    void CreateWhiteDummyTexture();
 
     // ハンドル取得用
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() { return whiteTextureHandle; }

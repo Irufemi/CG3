@@ -2,6 +2,8 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
+#include <array>          
+#include <cstddef>        
 
 
 #include "../source/D3D12ResourceUtil.h"
@@ -18,6 +20,20 @@ private: // メンバ変数
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 
     TextureManager* textureManager_;
+
+    // ★追加: パフォーマンス履歴
+    static constexpr size_t kPerfHistoryCount_ = 240;          // 約4秒分
+    std::array<float, kPerfHistoryCount_> frameTimeHistory_{}; // ms
+    size_t historyIndex_ = 0;
+    bool historyFilled_ = false;
+
+    // ★内部計算キャッシュ
+    float cachedAvgMs_ = 0.0f;
+    float cachedMinMs_ = 0.0f;
+    float cachedMaxMs_ = 0.0f;
+    float cachedP99Ms_ = 0.0f;   // 99th percentile frame time (≒ 1% worst)
+    float cachedFps_ = 0.0f;
+    void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
 
 public: // メンバ関数
 
@@ -42,6 +58,9 @@ public: // メンバ関数
     // Transform
     void DebugTransform(Transform& transform);
 
+    void DebugTransform2D(Transform& transform);
+
+
     void TextTransform(Transform& transform, const char* name = "");
 
     // Material
@@ -61,5 +80,8 @@ public: // メンバ関数
 
     // Sphere
     void DebugSphereInfo(Sphere& sphere);
+
+    // FPS/FrameTime オーバーレイ
+    void FPSDebug();
 };
 

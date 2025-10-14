@@ -1,4 +1,5 @@
-#include "Function.h"
+#include "StringUtility.h"
+#include <Windows.h>
 
 std::wstring ConvertString(const std::string& str) {
     if (str.empty()) {

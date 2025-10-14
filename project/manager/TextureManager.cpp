@@ -10,7 +10,8 @@
 
 ///事前準備
 
-#include "../externals/DirectXTex/d3dx12.h"
+#include "externals/DirectXTex/d3dx12.h"
+#include "engine/directX/DirectXCommon.h"
 
 #include <filesystem>
 #include <algorithm>
@@ -22,13 +23,11 @@
 
 uint32_t Texture::index_ = 0;
 
-void TextureManager::Initialize(ID3D12Device* device, ID3D12DescriptorHeap* srvDescriptorHeap, ID3D12GraphicsCommandList* commandList, ID3D12CommandQueue* commandQueue) {
-    device_ = device;
-    srvDescriptorHeap_ = srvDescriptorHeap;
-    commandList_ = commandList;
-    commandQueue_ = commandQueue;
+void TextureManager::Initialize(DirectXCommon*dxCommon) {
+    dxCommon_ = dxCommon;
+    Texture::SetDirectXCommon(dxCommon_);
 
-    CreateWhiteDummyTexture(device_, srvDescriptorHeap_);
+    CreateWhiteDummyTexture();
 }
 
 void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
@@ -36,14 +35,14 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
 
     // --- 一時コマンドアロケータとコマンドリストを作成 ---
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    HRESULT hr = device_->CreateCommandAllocator(
+    HRESULT hr = dxCommon_->GetDevice()->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         IID_PPV_ARGS(&allocator)
     );
     assert(SUCCEEDED(hr));
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadCommandList;
-    hr = device_->CreateCommandList(
+    hr = dxCommon_->GetDevice()->CreateCommandList(
         0,
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         allocator.Get(),
@@ -69,7 +68,7 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
                 std::string fullPath = folderPath + "/" + filename;
 
                 auto texture = std::make_shared<Texture>();
-                texture->Initialize(fullPath, device_, srvDescriptorHeap_, uploadCommandList.Get());
+                texture->Initialize(fullPath, dxCommon_->GetSrvDescriptorHeap(), uploadCommandList.Get());
                 textures_[filename] = texture;
             }
         }
@@ -81,18 +80,18 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
 
     // --- GPUに送信 ---
     ID3D12CommandList* cmdLists[] = { uploadCommandList.Get() };
-    commandQueue_->ExecuteCommandLists(1, cmdLists);
+    dxCommon_->GetCommandQueue()->ExecuteCommandLists(1, cmdLists);
 
     // --- フェンスで同期 ---
     Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-    hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+    hr = dxCommon_->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     assert(SUCCEEDED(hr));
 
     HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
     assert(fenceEvent);
 
     uint64_t fenceValue = 1;
-    commandQueue_->Signal(fence.Get(), fenceValue);
+    dxCommon_->GetCommandQueue()->Signal(fence.Get(), fenceValue);
     if (fence->GetCompletedValue() < fenceValue) {
         fence->SetEventOnCompletion(fenceValue, fenceEvent);
         WaitForSingleObject(fenceEvent, INFINITE);
@@ -118,7 +117,7 @@ std::vector<std::string> TextureManager::GetTextureNames() const {
     return names;
 }
 
-void TextureManager::CreateWhiteDummyTexture(ID3D12Device* device, ID3D12DescriptorHeap* srvDescriptorHeap) {
+void TextureManager::CreateWhiteDummyTexture() {
     // 2x2の白画像（全画素RGBA=255,255,255,255）
     uint32_t whitePixels[4] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
 
@@ -139,7 +138,7 @@ void TextureManager::CreateWhiteDummyTexture(ID3D12Device* device, ID3D12Descrip
     heapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
 
     // テクスチャリソース生成
-    device->CreateCommittedResource(
+    dxCommon_->GetDevice()->CreateCommittedResource(
         &heapProp, D3D12_HEAP_FLAG_NONE,
         &texDesc, D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr, IID_PPV_ARGS(&whiteTextureResource)
@@ -149,7 +148,7 @@ void TextureManager::CreateWhiteDummyTexture(ID3D12Device* device, ID3D12Descrip
     CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
     D3D12_RESOURCE_DESC uploadDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(whitePixels));
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadResource;
-    device->CreateCommittedResource(
+    dxCommon_->GetDevice()->CreateCommittedResource(
         &heapProps,
         D3D12_HEAP_FLAG_NONE,
         &uploadDesc,
@@ -176,10 +175,10 @@ void TextureManager::CreateWhiteDummyTexture(ID3D12Device* device, ID3D12Descrip
     srvDesc.Texture2D.MipLevels = 1;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-    device->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+    dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
 
-    whiteTextureHandle = srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+    whiteTextureHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
 }
 
 uint32_t TextureManager::GetSRVIndex()const {

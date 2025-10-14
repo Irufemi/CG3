@@ -7,15 +7,16 @@
 #include <cstdint>
 #include <format>
 
-#include "../math/VertexData.h"
-#include "../source/D3D12ResourceUtil.h"
+#include "math/VertexData.h"
+#include "source/D3D12ResourceUtil.h"
+#include "2D/Sprite.h"
 
-#include "../scene/IScene.h"
-#include "../scene/title/TitleScene.h"
-#include "../scene/inGame/GameScene.h"
-#include "../scene/result/ResultScene.h"
-#include "../scene/SceneName.h"
-#include "../externals/imgui/imgui.h"
+#include "scene/IScene.h"
+#include "scene/title/TitleScene.h"
+#include "scene/inGame/GameScene.h"
+#include "scene/result/ResultScene.h"
+#include "scene/SceneName.h"
+#include "externals/imgui/imgui.h"
 
 #pragma comment(lib,"Dbghelp.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -53,8 +54,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // DirectX 基盤
     dxCommon_ = std::make_unique<DirectXCommon>();
     dxCommon_->SetLog(log_.get());
-    dxCommon_->First(winApp_->GetHwnd(), winApp_->GetClientWidth(), winApp_->GetClientHeight());
-    dxCommon_->Second();
+    dxCommon_->Initialize(winApp_->GetHwnd(), winApp_->GetClientWidth(), winApp_->GetClientHeight());
+
+    D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
+    D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
@@ -63,26 +66,20 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // UI
     ui = std::make_unique <DebugUI>();
     ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
+    Sprite::SetDebugUI(ui.get());
 
     // 描画
-    drawManager = std::make_unique< DrawManager>();
-    drawManager->Initialize(
-        GetCommandList(),
-        GetCommandQueue(),
-        GetSwapChain(),
-        GetFence(),
-        GetFenceEvent(),
-        GetCommandAllocator(),
-        GetSrvDescriptorHeap(),
-        GetRootSignature()
-    );
+    drawManager = std::make_unique<DrawManager>();
+    drawManager->Initialize(dxCommon_.get());
+    Sprite::SetDrawManager(drawManager.get());
 
     // テクスチャ
 
     textureManager = std::make_unique <TextureManager>();
-    textureManager->Initialize(GetDevice(), GetSrvDescriptorHeap(), GetCommandList(), GetCommandQueue());
+    textureManager->Initialize(dxCommon_.get());
     textureManager->LoadAllFromFolder("resources/");
     ui->SetTextureManager(textureManager.get());
+    Sprite::SetTextureManager(textureManager.get());
 
 }
 
@@ -148,7 +145,9 @@ void IrufemiEngine::Execute() {
         // ImGui
         ui->FrameStart();
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+
+        ui->FPSDebug();
 
         // 　シーン選択UI（Requestで要求を出す）
         ImGui::Begin("Scene Selector");
@@ -192,15 +191,7 @@ void IrufemiEngine::ProcessFrame() {
     //描画先のRTVとDSVを設定する
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
 
-    drawManager->PreDraw(
-        GetSwapChainResources(backBufferIndex_),
-        GetRtvHandles(backBufferIndex_),
-        GetDsvDescriptorHeap(),
-        dsvHandle,
-        clearColor_,
-        1.0f,
-        0
-    );
+    drawManager->PreDraw(clearColor_, 1.0f, 0);
 
 
 }
@@ -212,10 +203,7 @@ void IrufemiEngine::EndFrame() {
 
     ui->QueuePostDrawCommands();
 
-    drawManager->PostDraw(
-        GetSwapChainResources(backBufferIndex_),
-        GetFenceValue()
-    );
+    drawManager->PostDraw();
 }
 
 void IrufemiEngine::ApplyPSO() {
@@ -227,5 +215,10 @@ void IrufemiEngine::ApplyPSO() {
 void IrufemiEngine::ApplyParticlePSO() {
     auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_);
     assert(pso && "Particle PSO is null. Check particle shader setup.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySpritePSO() {
+    auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
     if (pso) { drawManager->BindPSO(pso); }
 }

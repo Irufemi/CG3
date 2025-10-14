@@ -1,6 +1,8 @@
 #include "Function.h"
 #include "../engine/Log.h"
+#include "StringUtility.h"
 #include <filesystem>
+#include <cassert>
 
 /*三角形を表示しよう*/
 

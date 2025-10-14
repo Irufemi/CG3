@@ -7,6 +7,7 @@
 #include <wrl.h>
 
 // 前方宣言
+class DirectXCommon;
 class Sprite;
 class SphereClass;
 class ObjClass;
@@ -18,50 +19,27 @@ class D3D12ResourceUtil;
 
 class DrawManager{
 private:
-    ID3D12GraphicsCommandList* commandList_ = nullptr;
-    ID3D12CommandQueue* commandQueue_ = nullptr;
-    IDXGISwapChain4* swapChain_ = nullptr;
-    ID3D12Fence* fence_ = nullptr;
-    HANDLE fenceEvent_ = nullptr;
-    ID3D12CommandAllocator* commandAllocator_ = nullptr;
-    ID3D12DescriptorHeap* srvDescriptorHeap_ = nullptr;
-    ID3D12RootSignature* rootSignature_ = nullptr;
+
+    DirectXCommon* dxCommon_ = nullptr;
 
 public: //メンバ関数
-    void Initialize(
-        ID3D12GraphicsCommandList* commandList,
-        ID3D12CommandQueue* commandQueue,
-        IDXGISwapChain4* swapChain,
-        ID3D12Fence* fence,
-        HANDLE &fenceEvent,
-        ID3D12CommandAllocator* commandAllocator,
-        ID3D12DescriptorHeap* srvDescriptorHeap,
-        ID3D12RootSignature* rootSignature
-    );
 
-    void Finalize();
+    void Initialize(DirectXCommon* dx) { dxCommon_ = dx; }
+    void Finalize() { dxCommon_ = nullptr; }
 
     // 追加（保持はしないで即時バインド）
     void BindPSO(ID3D12PipelineState* pso);
 
     void PreDraw(
-        ID3D12Resource* backBufferResource,
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
-        ID3D12DescriptorHeap* dsvDescriptorHeap,
-        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,
         std::array<float, 4> clearColor = { 0.1f, 0.25f, 0.5f, 1.0f },
         float clearDepth = 1.0f,
         uint8_t clearStencil = 0
     );
 
     void PostDraw(
-        ID3D12Resource* backBufferResource,
-        uint64_t& fenceValue
     );
 
     void DrawTriangle(
-        D3D12_VIEWPORT& viewport,
-        D3D12_RECT& scissorRect,
         D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
         ID3D12Resource* materialResource,
         ID3D12Resource* wvpResource,
@@ -69,33 +47,13 @@ public: //メンバ関数
         D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
     );
 
-    void DrawSprite(
-        D3D12_VIEWPORT& viewport,
-        D3D12_RECT& scissorRect,
-        Sprite* sprite
-    );
+    void DrawSprite(Sprite* sprite);
 
-    void DrawSphere(
-        D3D12_VIEWPORT& viewport,
-        D3D12_RECT& scissorRect,
-        SphereClass* sphere
-    );
+    void DrawSphere(SphereClass* sphere);
 
-    void DrawParticle(
-        D3D12_VIEWPORT& viewport,
-        D3D12_RECT& scissorRect,
-        ParticleClass* resource
-    );
+    void DrawParticle(ParticleClass* resource);
 
-    void DrawByIndex(
-        D3D12_VIEWPORT& viewport,
-        D3D12_RECT& scissorRect,
-        D3D12ResourceUtil* resource
-    );
+    void DrawByIndex(D3D12ResourceUtil* resource);
 
-    void DrawByVertex(
-        D3D12_VIEWPORT& viewport,
-        D3D12_RECT& scissorRect,
-        D3D12ResourceUtil* resource
-    );
+    void DrawByVertex(D3D12ResourceUtil* resource);
 };

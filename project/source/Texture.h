@@ -4,6 +4,9 @@
 #include <string>
 #include <wrl.h>
 
+// 前方宣言
+class DirectXCommon;
+
 class Texture {
 protected:
 
@@ -13,7 +16,6 @@ protected:
     std::string filePath_;
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
     static uint32_t index_;
@@ -22,12 +24,22 @@ protected:
     uint32_t width_ = 0;
     uint32_t height_ = 0;
 
+#pragma region 外部参照
+
+    static DirectXCommon* dxCommon_;
+
+#pragma endregion
+
 public:
+
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
     //デストラクタ
     ~Texture() = default;
 
     //初期化
-    void Initialize(const std::string& filePath, const Microsoft::WRL::ComPtr<ID3D12Device>& device, const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+    void Initialize(const std::string& filePath,const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 
     //ゲッター
 
