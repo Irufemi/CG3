@@ -10,6 +10,7 @@
 #include "math/VertexData.h"
 #include "source/D3D12ResourceUtil.h"
 #include "2D/Sprite.h"
+#include "application/Blocks.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -67,11 +68,12 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui = std::make_unique <DebugUI>();
     ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
     Sprite::SetDebugUI(ui.get());
-
-    // 描画
+    ObjClass::SetDebugUI(ui.get());
+    Blocks::SetDebugUI(ui.get());
     drawManager = std::make_unique<DrawManager>();
     drawManager->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager.get());
+    D3D12ResourceUtil::SetDrawManager(drawManager.get());
 
     // テクスチャ
 
@@ -80,6 +82,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     textureManager->LoadAllFromFolder("resources/");
     ui->SetTextureManager(textureManager.get());
     Sprite::SetTextureManager(textureManager.get());
+    ObjClass::SetTextureManager(textureManager.get());
+    Blocks::SetTextureManager(textureManager.get());
 
 }
 

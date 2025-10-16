@@ -56,4 +56,5 @@ public: //メンバ関数
     void DrawByIndex(D3D12ResourceUtil* resource);
 
     void DrawByVertex(D3D12ResourceUtil* resource);
+
 };

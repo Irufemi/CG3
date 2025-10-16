@@ -1,9 +1,11 @@
 #include "D3D12ResourceUtil.h"
 
 #include "engine/directX/DirectXCommon.h"
+#include "camera/Camera.h"
 
 DirectXCommon* D3D12ResourceUtil::dxCommon_ = nullptr;
 DirectXCommon * D3D12ResourceUtilParticle::dxCommon_ = nullptr;
+DrawManager* D3D12ResourceUtil::drawManager_ = nullptr;
 
 //デストラクタ
 D3D12ResourceUtil::~D3D12ResourceUtil() {
@@ -66,9 +68,20 @@ void D3D12ResourceUtil::UnMap() {
     if (indexResource_) {
         indexResource_->Unmap(0, nullptr);
     }
-    materialResource_->Unmap(0, nullptr);
-    transformationResource_->Unmap(0, nullptr);
-    directionalLightResource_->Unmap(0, nullptr);
+    if(materialResource_){
+        materialResource_->Unmap(0, nullptr);
+    }
+    if(transformationResource_){
+        transformationResource_->Unmap(0, nullptr);
+    }
+    if(directionalLightResource_){
+        directionalLightResource_->Unmap(0, nullptr);
+    }
+}
+
+void D3D12ResourceUtil::UpdateTransform3D(const Camera &camera) {
+    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 }
 
 
