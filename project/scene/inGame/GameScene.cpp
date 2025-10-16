@@ -15,11 +15,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // エンジン
     this->engine_ = engine;
 
-    camera = std::make_unique <Camera>();
-    camera->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    camera_ = std::make_unique <Camera>();
+    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
 
-    debugCamera = std::make_unique <DebugCamera>();
-    debugCamera->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugCamera_ = std::make_unique <DebugCamera>();
+    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
 
     isActiveObj = false;
@@ -36,48 +36,48 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     if (isActiveObj) {
         obj = std::make_unique <ObjClass>();
-        obj->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager());
+        obj->Initialize(camera_.get());
     }
     if (isActiveSprite) {
         sprite = std::make_unique <Sprite>();
-        sprite->Initialize(camera.get());
+        sprite->Initialize(camera_.get());
     }
     if (isActiveTriangle) {
         triangle = std::make_unique <TriangleClass>();
-        triangle->Initialize(camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+        triangle->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
     }
     if (isActiveSphere) {
         sphere = std::make_unique <SphereClass>();
-        sphere->Initialize(camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+        sphere->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
     }
     if (isActiveStanfordBunny) {
         stanfordBunny = std::make_unique <ObjClass>();
-        stanfordBunny->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "bunny.obj");
+        stanfordBunny->Initialize(camera_.get(), "bunny.obj");
     }
     if (isActiveUtashTeapot) {
         utashTeapot = std::make_unique <ObjClass>();
-        utashTeapot->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "teapot.obj");
+        utashTeapot->Initialize(camera_.get(), "teapot.obj");
     }
     if (isActiveMultiMesh) {
         multiMesh = std::make_unique <ObjClass>();
-        multiMesh->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "multiMesh.obj");
+        multiMesh->Initialize(camera_.get(), "multiMesh.obj");
     }
     if (isActiveMultiMaterial) {
         multiMaterial = std::make_unique <ObjClass>();
-        multiMaterial->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "multiMaterial.obj");
+        multiMaterial->Initialize(camera_.get(),"multiMaterial.obj");
     }
     if (isActiveSuzanne) {
         suzanne = std::make_unique <ObjClass>();
-        suzanne->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "suzanne.obj");
+        suzanne->Initialize(camera_.get(), "suzanne.obj");
     }
 
     if (isActiveFence_) {
         fence_ = std::make_unique <ObjClass>();
-        fence_->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "fence.obj");
+        fence_->Initialize(camera_.get(), "fence.obj");
     }
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
+        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
     }
 
     bgm = std::make_unique<Bgm>();
@@ -111,16 +111,16 @@ void GameScene::Update() {
     ImGui::Checkbox("debugMode", &debugMode);
     ImGui::End();
 
+#endif // _DEBUG
+
     if (debugMode) {
-        debugCamera->Update();
-        camera->SetViewMatrix(debugCamera->GetCamera().GetViewMatrix());
-        camera->SetPerspectiveFovMatrix(debugCamera->GetCamera().GetPerspectiveFovMatrix());
+        debugCamera_->Update();
+        camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
+        camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
     } else {
-        camera->Update("Camera");
+        camera_->Update("Camera");
 
     }
-
-#endif // _DEBUG
 
     // BGM
     bgm->Update();
@@ -130,70 +130,70 @@ void GameScene::Update() {
     if (isActiveObj) {
         if (!obj) {
             obj = std::make_unique<ObjClass>();
-            obj->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager());
+            obj->Initialize(camera_.get());
         }
         obj->Update("Plane");
     }
     if (isActiveTriangle) {
         if (!triangle) {
             triangle = std::make_unique<TriangleClass>();
-            triangle->Initialize(camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            triangle->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
         triangle->Update();
     }
     if (isActiveSphere) {
         if (!sphere) {
             sphere = std::make_unique<SphereClass>();
-            sphere->Initialize(camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            sphere->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
         sphere->Update();
     }
     if (isActiveUtashTeapot) {
         if (!utashTeapot) {
             utashTeapot = std::make_unique<ObjClass>();
-            utashTeapot->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "teapot.obj");
+            utashTeapot->Initialize(camera_.get(),"teapot.obj");
         }
         utashTeapot->Update("Utash Teapot");
     }
     if (isActiveStanfordBunny) {
         if (!stanfordBunny) {
             stanfordBunny = std::make_unique<ObjClass>();
-            stanfordBunny->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "bunny.obj");
+            stanfordBunny->Initialize(camera_.get(), "bunny.obj");
         }
         stanfordBunny->Update("Stanford Bunny");
     }
     if (isActiveMultiMesh) {
         if (!multiMesh) {
             multiMesh = std::make_unique<ObjClass>();
-            multiMesh->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "multiMesh.obj");
+            multiMesh->Initialize(camera_.get(), "multiMesh.obj");
         }
         multiMesh->Update("MultiMesh");
     }
     if (isActiveMultiMaterial) {
         if (!multiMaterial) {
             multiMaterial = std::make_unique<ObjClass>();
-            multiMaterial->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "multiMaterial.obj");
+            multiMaterial->Initialize(camera_.get(), "multiMaterial.obj");
         }
         multiMaterial->Update("MultiMaterial");
     }
     if (isActiveSuzanne) {
         if (!suzanne) {
             suzanne = std::make_unique<ObjClass>();
-            suzanne->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "suzanne.obj");
+            suzanne->Initialize(camera_.get(), "suzanne.obj");
         }
         suzanne->Update("Suzanne");
     }
     if (isActiveFence_) {
         if (!fence_) {
             fence_ = std::make_unique<ObjClass>();
-            fence_->Initialize(camera.get(), engine_->GetSrvDescriptorHeap(), engine_->GetCommandList(), engine_->GetDebugUI(), engine_->GetTextureManager(), "fence.obj");
+            fence_->Initialize(camera_.get(), "fence.obj");
         }
         fence_->Update("Fence");
     }
     if (isActiveParticle) {
         if (!particle) {
             particle = std::make_unique <ParticleClass>();
-            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
         particle->Update();
     }
@@ -203,15 +203,15 @@ void GameScene::Update() {
     if (isActiveSprite) {
         if (!sprite) {
             sprite = std::make_unique<Sprite>();
-            sprite->Initialize(camera.get());
+            sprite->Initialize(camera_.get());
         }
         sprite->Update();
     }
 
 
 
-    //エンターキーが押されていたら
-    if (PressedVK(VK_RETURN)) {
+    //キーが押されていたら
+    if (PressedVK('P')) {
         if (g_SceneManager) {
             g_SceneManager->Request(SceneName::result);
         }
@@ -229,7 +229,7 @@ void GameScene::Draw() {
     engine_->ApplyPSO();
 
     if (isActiveObj) {
-        obj->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        obj->Draw();
     }
     if (isActiveTriangle) {
         engine_->GetDrawManager()->DrawByIndex(triangle->GetD3D12Resource());
@@ -238,22 +238,22 @@ void GameScene::Draw() {
         engine_->GetDrawManager()->DrawSphere(sphere.get());
     }
     if (isActiveUtashTeapot) {
-        utashTeapot->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        utashTeapot->Draw();
     }
     if (isActiveStanfordBunny) {
-        stanfordBunny->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        stanfordBunny->Draw();
     }
     if (isActiveMultiMesh) {
-        multiMesh->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        multiMesh->Draw();
     }
     if (isActiveMultiMaterial) {
-        multiMaterial->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        multiMaterial->Draw();
     }
     if (isActiveSuzanne) {
-        suzanne->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        suzanne->Draw();
     }
     if (isActiveFence_) {
-        fence_->Draw(engine_->GetDrawManager(), engine_->GetViewport(), engine_->GetScissorRect());
+        fence_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
