@@ -28,10 +28,10 @@ class GameScene : public IScene {
 private: // メンバ変数
 
     // カメラ
-    std::unique_ptr<Camera> camera = nullptr;
+    std::unique_ptr<Camera> camera_ = nullptr;
 
     // デバッグカメラ
-    std::unique_ptr<DebugCamera> debugCamera = nullptr;
+    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
     std::unique_ptr<ObjClass> obj = nullptr;
     bool isActiveObj = false;

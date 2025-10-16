@@ -4,13 +4,14 @@
 #include <string>
 #include "../camera/Camera.h"
 #include "../source/D3D12ResourceUtil.h"
-#include "../manager/DebugUI.h"
+#include "manager/DebugUI.h"
+#include "manager/TextureManager.h"
 #include <wrl.h>
+#include <cstdint>
 #include <memory>
 
 //前方宣言
 
-class DrawManager;
 class TextureManager;
 
 //==========================
@@ -33,7 +34,9 @@ protected: //メンバ変数
 
     Camera* camera_ = nullptr;
 
-    DebugUI* ui_ = nullptr;
+    static DebugUI* ui_;
+
+    static TextureManager* textureManager_;
 
 #pragma endregion
 
@@ -44,11 +47,37 @@ public: //メンバ関数
     ~ObjClass() = default;
 
     //初期化
-    void Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename = "plane.obj");
+    void Initialize(Camera* camera, const std::string& filename = "plane.obj");
 
     void Update(const char* objName = " ");
 
-    void Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect);
+    void Draw();
+
+    // 位置
+    const Vector3& GetPosition(uint32_t index = 0)const { return resources_[index]->transform_.translate; }
+    void SetPosition(const Vector3& position, uint32_t index = 0) { resources_[index]->transform_.translate = position; }
+
+    // 回転
+    const Vector3& GetRotate(uint32_t index = 0)const { return resources_[index]->transform_.rotate; }
+    void SetRotate(const Vector3& rotate, uint32_t index = 0) { for (auto& res : resources_) { res->transform_.rotate = rotate; } }
+    void SetRotateX(const float& rotate, uint32_t index = 0) { for (auto& res : resources_) { res->transform_.rotate.x = rotate; } }
+    void SetRotateY(const float& rotate, uint32_t index = 0) { for (auto& res : resources_) { res->transform_.rotate.y = rotate; } }
+    void SetRotateZ(const float& rotate, uint32_t index = 0) { for (auto& res : resources_) { res->transform_.rotate.z = rotate; } }
+
+    // 拡縮
+    const Vector3& GetScale(uint32_t index = 0)const { return resources_[index]->transform_.scale; }
+    void SetScale(const Vector3& scale) { for (auto& res : resources_) { res->transform_.scale = scale; } }
+
+    // Transform
+    const Transform& GetTransform(uint32_t index = 0)const { return resources_[index]->transform_; }
+    void SetTransform(Transform transform) { for (auto& res : resources_) { res->transform_ = transform; } }
+
+    // Transform
+    const TransformationMatrix& GetTransformationMatrix(uint32_t index = 0)const { return resources_[index]->transformationMatrix_; }
+    void SetTransformationMatrix(TransformationMatrix transformationMatrix, uint32_t index = 0) { resources_[index]->transformationMatrix_ = transformationMatrix; }
+
+    static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
 
 };
 
