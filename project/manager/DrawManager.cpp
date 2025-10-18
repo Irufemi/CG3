@@ -270,6 +270,10 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
 
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, sphere->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
 
+    /*PhongReflectionModel*/
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, sphere->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
+
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
@@ -345,6 +349,10 @@ void DrawManager::DrawByIndex(D3D12ResourceUtil* resource) {
 
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, resource->directionalLightResource_->GetGPUVirtualAddress());
 
+    /*PhongReflectionModel*/
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, resource->cameraResource_->GetGPUVirtualAddress());
+
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
@@ -380,8 +388,11 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
 
-
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, resource->directionalLightResource_->GetGPUVirtualAddress());
+
+    /*PhongReflectionModel*/
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, resource->cameraResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
 

@@ -4,7 +4,6 @@
 #include <string>
 #include "../camera/Camera.h"
 #include "../source/D3D12ResourceUtil.h"
-#include "../manager/DebugUI.h"
 #include "math/ObjModel.h"
 #include <wrl.h>
 #include <cstdint>
@@ -14,6 +13,8 @@
 
 // 前方宣言
 class TextureManager;
+class DrawManager;
+class DebugUI;
 
 class Blocks {
     ObjModel objModel_;
@@ -24,6 +25,7 @@ class Blocks {
     Camera* camera_ = nullptr;
     static DebugUI* ui_;
     static TextureManager* textureManager_;
+    static DrawManager* drawManager_;
 #pragma endregion
 
 public:
@@ -60,5 +62,6 @@ public:
     void SetTransformationMatrix(TransformationMatrix mtx, uint32_t index = 0) { resources_[index]->transformationMatrix_ = mtx; }
 
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
 };

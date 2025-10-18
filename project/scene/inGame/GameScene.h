@@ -37,7 +37,7 @@ private: // メンバ変数
     std::unique_ptr<Camera> camera_ = nullptr;
 
     // デバッグカメラ
-    std::unique_ptr<DebugCamera> debugCamera = nullptr;
+    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
     int loadTexture = false;
 

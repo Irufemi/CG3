@@ -4,11 +4,14 @@
 #include "function/Function.h"
 #include "function/Math.h"
 #include "manager/TextureManager.h"
+#include "manager/DrawManager.h"
+#include "manager/DebugUI.h"
 #include "externals/imgui/imgui.h"
 #include "engine/directX/DirectXCommon.h"
 
 DebugUI* Blocks::ui_ = nullptr;
 TextureManager* Blocks::textureManager_ = nullptr;
+DrawManager* Blocks::drawManager_ = nullptr;
 
 void Blocks::Initialize(Camera* camera, const std::string& filename) {
     this->camera_ = camera;
@@ -48,14 +51,32 @@ void Blocks::AddInstance(const Transform& t) {
     res->materialData_->hasTexture = true;
     res->materialData_->lightingMode = 2;
     res->materialData_->uvTransform = mesh.material.uvTransform;
+    res->materialData_->shininess = 64.0f;
 
     // Transform → WVP
     res->transform_ = t;
     res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
     res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+    // 法線変換用：平行移動を除いた World を使う
+    Matrix4x4 worldForNormal = res->transformationMatrix_.world;
+    worldForNormal.m[3][0] = 0.0f;
+    worldForNormal.m[3][1] = 0.0f;
+    worldForNormal.m[3][2] = 0.0f;
+    worldForNormal.m[3][3] = 1.0f;
+
+    // 逆転置行列を計算
+    res->transformationMatrix_.WorldInverseTranspose =
+        Math::Transpose(Math::Inverse(worldForNormal));
+
     res->transformationResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
-    *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
+
+    // 定数バッファへ全フィールドを書き込む
+    *res->transformationData_ = {
+        res->transformationMatrix_.WVP,
+        res->transformationMatrix_.world,
+        res->transformationMatrix_.WorldInverseTranspose
+    };
 
     // テクスチャ
     if (!mesh.material.textureFilePath.empty()) {
@@ -80,13 +101,17 @@ void Blocks::AddInstance(const Transform& t) {
     res->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
     res->directionalLightData_->intensity = 1.0f;
 
+    res->cameraResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(CameraForGPU));
+    res->cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->cameraData_));
+    res->cameraData_->worldPosition = camera_->GetTranslate();
+
     resources_.push_back(std::move(res));
 }
 
 void Blocks::Update(const char* /*objName*/) {
     for (auto& res : resources_) {
         res->UpdateTransform3D(*camera_);
-        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
+        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world ,res->transformationMatrix_.WorldInverseTranspose };;
         res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
         res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
     }
@@ -94,6 +119,6 @@ void Blocks::Update(const char* /*objName*/) {
 
 void Blocks::Draw() {
     for (auto& res : resources_) {
-        res->GetDrawManager()->DrawByVertex(res.get());
+        drawManager_->DrawByVertex(res.get());
     }
 }

@@ -339,7 +339,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[5] = {};
+    D3D12_ROOT_PARAMETER rootParameters[6] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -370,6 +370,14 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
     rootParameters[4].DescriptorTable.pDescriptorRanges = descriptorRangeForInstacing;
     rootParameters[4].DescriptorTable.NumDescriptorRanges = 1;
+
+    /*PhongReflectionModel*/
+
+    /// カメラの位置を送る
+
+    rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PS で使う
+    rootParameters[5].Descriptor.ShaderRegister = 2;
 
     /*テクスチャを貼ろう*/
 

@@ -19,8 +19,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     camera_ = std::make_unique <Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
 
-    debugCamera = std::make_unique <DebugCamera>();
-    debugCamera->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugCamera_ = std::make_unique <DebugCamera>();
+    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
 
 
@@ -74,9 +74,9 @@ void GameScene::Update() {
 
     // カメラの更新
     if (debugMode) {
-        debugCamera->Update();
-        camera_->SetViewMatrix(debugCamera->GetCamera().GetViewMatrix());
-        camera_->SetPerspectiveFovMatrix(debugCamera->GetCamera().GetPerspectiveFovMatrix());
+        debugCamera_->Update();
+        camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
+        camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
     } else {
         camera_->Update("Camera");
 

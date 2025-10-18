@@ -2,15 +2,18 @@
 
 #include <cstdint>
 
-#include "../camera/Camera.h"
-#include "../manager/TextureManager.h"
-#include "../manager/DebugUI.h"
+#include "camera/Camera.h"
 #include <vector>
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "../source/D3D12ResourceUtil.h"
-#include "../math/shape/Sphere.h"
+#include "source/D3D12ResourceUtil.h"
+#include "math/shape/Sphere.h"
+
+// 前方宣言
+class TextureManager;
+class DrawManager;
+class DebugUI;
 
 class SphereClass {
 protected: //メンバ変数
@@ -38,9 +41,11 @@ protected: //メンバ変数
 
     // ポインタ参照
 
-    TextureManager* textureManager_ = nullptr;
+    static TextureManager* textureManager_;
 
-    DebugUI* ui_ = nullptr;
+    static DrawManager* drawManager_;
+
+    static DebugUI* ui_;
 
     Camera* camera_ = nullptr;
 
@@ -52,15 +57,22 @@ public: //メンバ関数
     ~SphereClass() = default;
 
     // 初期化
-    void Initialize(Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
+    void Initialize(Camera* camera,  const std::string& textureName = "uvChecker.png");
 
     // 更新
     void Update(const char* sphereName = " ");
+
+    // 描画
+    void Draw();
 
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
     void AddRotateY(float value) { this->resource_->transform_.rotate.y += value; }
 
     // Sphereの情報を取得
     Sphere GetInfo() const { return info_; }
+
+    static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
 };
 
