@@ -81,7 +81,23 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
 
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    // 法線変換用：平行移動を除いた World を使う
+    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
+    worldForNormal.m[3][0] = 0.0f;
+    worldForNormal.m[3][1] = 0.0f;
+    worldForNormal.m[3][2] = 0.0f;
+    worldForNormal.m[3][3] = 1.0f;
+
+    // 逆転置行列を計算
+    resource_->transformationMatrix_.WorldInverseTranspose =
+        Math::Transpose(Math::Inverse(worldForNormal));
+
+    // 定数バッファへ全フィールドを書き込む
+    *resource_->transformationData_ = {
+        resource_->transformationMatrix_.WVP,
+        resource_->transformationMatrix_.world,
+        resource_->transformationMatrix_.WorldInverseTranspose
+    };
 
     auto textureNames = textureManager_->GetTextureNames();
     std::sort(textureNames.begin(), textureNames.end());
@@ -135,7 +151,23 @@ void TriangleClass::Update(const char* triangleName) {
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    // 法線変換用：平行移動を除いた World を使う
+    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
+    worldForNormal.m[3][0] = 0.0f;
+    worldForNormal.m[3][1] = 0.0f;
+    worldForNormal.m[3][2] = 0.0f;
+    worldForNormal.m[3][3] = 1.0f;
+
+    // 逆転置行列を計算
+    resource_->transformationMatrix_.WorldInverseTranspose =
+        Math::Transpose(Math::Inverse(worldForNormal));
+
+    // 定数バッファへ全フィールドを書き込む
+    *resource_->transformationData_ = {
+        resource_->transformationMatrix_.WVP,
+        resource_->transformationMatrix_.world,
+        resource_->transformationMatrix_.WorldInverseTranspose
+    };
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 

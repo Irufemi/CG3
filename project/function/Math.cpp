@@ -259,7 +259,7 @@ namespace Math {
         tMatrix.m[3][0] = m.m[0][3];
         tMatrix.m[3][1] = m.m[1][3];
         tMatrix.m[3][2] = m.m[2][3];
-        tMatrix.m[3][3] = m.m[2][3];
+        tMatrix.m[3][3] = m.m[3][3];
         return tMatrix;
     }
 

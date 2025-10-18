@@ -122,13 +122,37 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
     resource_->transform_.translate = info_.center;
 
-    resource_->transform_.scale = Vector3{ info_.radius,info_.radius,info_.radius };
+    // scaleは係数として扱う（初期値は等方1）
+    resource_->transform_.scale = Vector3{ 1.0f,1.0f,1.0f };
 
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
+    // 実スケール = 半径 × 係数
+    Vector3 effectiveScale{
+        info_.radius * resource_->transform_.scale.x,
+        info_.radius * resource_->transform_.scale.y,
+        info_.radius * resource_->transform_.scale.z
+    };
+
+    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
 
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    // 法線変換用：平行移動を除いた World を使う
+    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
+    worldForNormal.m[3][0] = 0.0f;
+    worldForNormal.m[3][1] = 0.0f;
+    worldForNormal.m[3][2] = 0.0f;
+    worldForNormal.m[3][3] = 1.0f;
+
+    // 逆転置行列を計算
+    resource_->transformationMatrix_.WorldInverseTranspose =
+        Math::Transpose(Math::Inverse(worldForNormal));
+
+    // 定数バッファへ全フィールドを書き込む
+    *resource_->transformationData_ = {
+        resource_->transformationMatrix_.WVP,
+        resource_->transformationMatrix_.world,
+        resource_->transformationMatrix_.WorldInverseTranspose
+    };
 
 
     auto textureNames = textureManager_->GetTextureNames();
@@ -164,29 +188,17 @@ void SphereClass::Update(const char* sphereName) {
 
     ImGui::Begin(name.c_str());
 
+    // 半径と中心は DebugSphereInfo で編集
     ui_->DebugSphereInfo(info_);
 
+    // 位置は Transform 側でも編集されるので同期
     resource_->transform_.translate = info_.center;
 
-    resource_->transform_.scale = Vector3{ info_.radius,info_.radius,info_.radius };
-
+    // scale は係数（1.0 基準）。ここで自由に非等方も可。
     ui_->DebugTransform(resource_->transform_);
 
+    // 位置を SphereInfo に反映（半径は Transform からは変更しない）
     info_.center = resource_->transform_.translate;
-
-    if (resource_->transform_.scale.x != resource_->transform_.scale.y && resource_->transform_.scale.y == resource_->transform_.scale.z) {
-        resource_->transform_.scale.y = resource_->transform_.scale.x;
-        resource_->transform_.scale.z = resource_->transform_.scale.x;
-    }
-    else if (resource_->transform_.scale.y != resource_->transform_.scale.x && resource_->transform_.scale.x == resource_->transform_.scale.z) {
-        resource_->transform_.scale.x = resource_->transform_.scale.y;
-        resource_->transform_.scale.z = resource_->transform_.scale.y;
-    } else if (resource_->transform_.scale.z != resource_->transform_.scale.x && resource_->transform_.scale.x == resource_->transform_.scale.y) {
-        resource_->transform_.scale.x = resource_->transform_.scale.z;
-        resource_->transform_.scale.y = resource_->transform_.scale.z;
-    }
-
-    info_.radius = resource_->transform_.scale.x;
 
     ui_->DebugMaterialBy3D(resource_->materialData_);
 
@@ -200,11 +212,34 @@ void SphereClass::Update(const char* sphereName) {
 
 #endif // _DEBUG
 
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
+    // 実スケール = 半径 × 係数
+    Vector3 effectiveScale{
+        info_.radius * resource_->transform_.scale.x,
+        info_.radius * resource_->transform_.scale.y,
+        info_.radius * resource_->transform_.scale.z
+    };
+
+    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
 
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    // 法線変換用：平行移動を除いた World を使う
+    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
+    worldForNormal.m[3][0] = 0.0f;
+    worldForNormal.m[3][1] = 0.0f;
+    worldForNormal.m[3][2] = 0.0f;
+    worldForNormal.m[3][3] = 1.0f;
+
+    // 逆転置行列を計算
+    resource_->transformationMatrix_.WorldInverseTranspose =
+        Math::Transpose(Math::Inverse(worldForNormal));
+
+    // 定数バッファへ全フィールドを書き込む
+    *resource_->transformationData_ = {
+        resource_->transformationMatrix_.WVP,
+        resource_->transformationMatrix_.world,
+        resource_->transformationMatrix_.WorldInverseTranspose
+    };
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 

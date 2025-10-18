@@ -52,7 +52,23 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
         res->transformationResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(TransformationMatrix));
         res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
-        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
+        // 法線変換用：平行移動を除いた World を使う
+        Matrix4x4 worldForNormal = res->transformationMatrix_.world;
+        worldForNormal.m[3][0] = 0.0f;
+        worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f;
+        worldForNormal.m[3][3] = 1.0f;
+
+        // 逆転置行列を計算
+        res->transformationMatrix_.WorldInverseTranspose =
+            Math::Transpose(Math::Inverse(worldForNormal));
+
+        // 定数バッファへ全フィールドを書き込む
+        *res->transformationData_ = {
+            res->transformationMatrix_.WVP,
+            res->transformationMatrix_.world,
+            res->transformationMatrix_.WorldInverseTranspose
+        };
 
         // テクスチャ
         auto tex = std::make_unique<Texture>();
@@ -105,7 +121,23 @@ void ObjClass::Update(const char* objName) {
     for (auto& res : resources_) {
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
         res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
+        // 法線変換用：平行移動を除いた World を使う
+        Matrix4x4 worldForNormal = res->transformationMatrix_.world;
+        worldForNormal.m[3][0] = 0.0f;
+        worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f;
+        worldForNormal.m[3][3] = 1.0f;
+
+        // 逆転置行列を計算
+        res->transformationMatrix_.WorldInverseTranspose =
+            Math::Transpose(Math::Inverse(worldForNormal));
+
+        // 定数バッファへ全フィールドを書き込む
+        *res->transformationData_ = {
+            res->transformationMatrix_.WVP,
+            res->transformationMatrix_.world,
+            res->transformationMatrix_.WorldInverseTranspose
+        };
         res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
         res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
         res->cameraData_->worldPosition = camera_->GetTranslate();
