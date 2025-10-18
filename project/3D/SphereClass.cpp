@@ -1,19 +1,24 @@
 #include "SphereClass.h"
 
 #include <cmath>
-#include "../externals/imgui/imgui.h"
+#include "externals/imgui/imgui.h"
+#include "manager/TextureManager.h"
+#include "manager/DrawManager.h"
+#include "manager/DebugUI.h"
 
-#include "../function/Function.h"
-#include "../function/Math.h"
+#include "function/Function.h"
+#include "function/Math.h"
 #include <string>
 #include <algorithm>
 
+TextureManager* SphereClass::textureManager_ = nullptr;
+DrawManager* SphereClass::drawManager_ = nullptr;
+DebugUI* SphereClass::ui_ = nullptr;
+
 //初期化
-void SphereClass::Initialize(Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
     this->camera_ = camera;
-    this->textureManager_ = textureManager;
-    this->ui_ = ui;
 
     // D3D12ResourceUtilの生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
@@ -111,6 +116,7 @@ void SphereClass::Initialize(Camera* camera, TextureManager* textureManager, Deb
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->materialData_->shininess = 64.0f;
 
     //transformationMatrix
 
@@ -144,6 +150,8 @@ void SphereClass::Initialize(Camera* camera, TextureManager* textureManager, Deb
     resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
     resource_->directionalLightData_->intensity = 1.0f;
+
+    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 
 }
 
@@ -202,4 +210,11 @@ void SphereClass::Update(const char* sphereName) {
 
     resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
 
+    resource_->cameraData_->worldPosition = camera_->GetTranslate();
+
 }
+
+void SphereClass::Draw() {
+    drawManager_->DrawSphere(this);
+}
+

@@ -1,17 +1,21 @@
 #include "ObjClass.h"
 
-#include "../source/Texture.h"
-#include "../function/Function.h"
-#include "../function/Math.h"
-#include "../manager/DrawManager.h"
-#include "../manager/TextureManager.h"
-#include "../externals/imgui/imgui.h"
+#include "source/Texture.h"
+#include "function/Function.h"
+#include "function/Math.h"
+#include "manager/TextureManager.h"
+#include "manager/DrawManager.h"
+#include "manager/DebugUI.h"
+#include "externals/imgui/imgui.h"
 #include "engine/directX/DirectXCommon.h"
 
-void ObjClass::Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename) {
+TextureManager* ObjClass::textureManager_ = nullptr;
+DrawManager* ObjClass::drawManager_ = nullptr;
+DebugUI* ObjClass::ui_ = nullptr;
+
+void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     this->camera_ = camera;
-    this->ui_ = ui;
 
     objModel_ = LoadObjFileM("resources/obj", filename);
 
@@ -41,6 +45,7 @@ void ObjClass::Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHea
         res->materialData_->hasTexture = true;
         res->materialData_->lightingMode = 2;
         res->materialData_->uvTransform = mesh.material.uvTransform; // すでに行列
+        res->materialData_->shininess = 64.0f;
 
         // WVP
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
@@ -52,12 +57,12 @@ void ObjClass::Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHea
         // テクスチャ
         auto tex = std::make_unique<Texture>();
         if (!mesh.material.textureFilePath.empty()) {
-            tex->Initialize(mesh.material.textureFilePath, srvDescriptorHeap, commandList);
+            tex->Initialize(mesh.material.textureFilePath, res->GetDirectXCommon()->GetSrvDescriptorHeap(), res->GetDirectXCommon()->GetCommandList());
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
         } else if (!res->textureHandle_.ptr) {
             res->materialData_->hasTexture = false;
             // ダミー（白）テクスチャのSRVハンドルを取得
-            res->textureHandle_ = textureManager->GetWhiteTextureHandle();
+            res->textureHandle_ = textureManager_->GetWhiteTextureHandle();
         }
 
         // ライト
@@ -66,6 +71,11 @@ void ObjClass::Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHea
         res->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
         res->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
         res->directionalLightData_->intensity = 1.0f;
+
+        // カメラ
+        res->cameraResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(CameraForGPU));
+        res->cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->cameraData_));
+        res->cameraData_->worldPosition = camera_->GetTranslate();
 
         textures_.push_back(std::move(tex));
         resources_.push_back(std::move(res));
@@ -98,11 +108,12 @@ void ObjClass::Update(const char* objName) {
         *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world };
         res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
         res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
+        res->cameraData_->worldPosition = camera_->GetTranslate();
     }
 }
 
-void ObjClass::Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect) {
+void ObjClass::Draw() {
     for (auto& res : resources_) {
-        drawManager->DrawByVertex(res.get());
+        drawManager_->DrawByVertex(res.get());
     }
 }

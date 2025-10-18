@@ -4,14 +4,13 @@
 #include <string>
 #include "../camera/Camera.h"
 #include "../source/D3D12ResourceUtil.h"
-#include "../manager/DebugUI.h"
 #include <wrl.h>
 #include <memory>
 
-//前方宣言
-
-class DrawManager;
+// 前方宣言
 class TextureManager;
+class DrawManager;
+class DebugUI;
 
 //==========================
 // objが配布されているサイト
@@ -33,7 +32,11 @@ protected: //メンバ変数
 
     Camera* camera_ = nullptr;
 
-    DebugUI* ui_ = nullptr;
+    static TextureManager* textureManager_;
+
+    static DrawManager* drawManager_;
+
+    static DebugUI* ui_;
 
 #pragma endregion
 
@@ -44,11 +47,15 @@ public: //メンバ関数
     ~ObjClass() = default;
 
     //初期化
-    void Initialize(Camera* camera, ID3D12DescriptorHeap* srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DebugUI* ui, TextureManager* textureManager, const std::string& filename = "plane.obj");
+    void Initialize(Camera* camera, const std::string& filename = "plane.obj");
 
     void Update(const char* objName = " ");
 
-    void Draw(DrawManager* drawManager, D3D12_VIEWPORT& viewport, D3D12_RECT& scissorRect);
+    void Draw();
+
+    static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
 
 };
 

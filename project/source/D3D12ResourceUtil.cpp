@@ -3,7 +3,7 @@
 #include "engine/directX/DirectXCommon.h"
 
 DirectXCommon* D3D12ResourceUtil::dxCommon_ = nullptr;
-DirectXCommon * D3D12ResourceUtilParticle::dxCommon_ = nullptr;
+DirectXCommon* D3D12ResourceUtilParticle::dxCommon_ = nullptr;
 
 //デストラクタ
 D3D12ResourceUtil::~D3D12ResourceUtil() {
@@ -18,6 +18,7 @@ D3D12ResourceUtil::~D3D12ResourceUtil() {
     if (materialResource_) { materialResource_.Reset(); }
     if (transformationResource_) { transformationResource_.Reset(); }
     if (directionalLightResource_) { directionalLightResource_.Reset(); }
+    if (cameraResource_) { cameraResource_.Reset(); }
 }
 
 
@@ -43,6 +44,9 @@ void D3D12ResourceUtil::CreateResource() {
     directionalLightResource_ = dxCommon_->CreateBufferResource(sizeof(DirectionalLight));
     snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", directionalLightResource_.Get(), __FILE__, __LINE__);
     OutputDebugStringA(buf);
+    cameraResource_ = dxCommon_->CreateBufferResource(sizeof(CameraForGPU));
+    snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", cameraResource_.Get(), __FILE__, __LINE__);
+    OutputDebugStringA(buf);
 }
 
 //バッファへの書き込みを開放
@@ -56,6 +60,7 @@ void D3D12ResourceUtil::Map() {
     materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
     directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
+    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
 }
 
 //バッファへの書き込みを閉鎖
@@ -69,6 +74,7 @@ void D3D12ResourceUtil::UnMap() {
     materialResource_->Unmap(0, nullptr);
     transformationResource_->Unmap(0, nullptr);
     directionalLightResource_->Unmap(0, nullptr);
+    cameraResource_->Unmap(0, nullptr);
 }
 
 

@@ -67,11 +67,17 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui = std::make_unique <DebugUI>();
     ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
     Sprite::SetDebugUI(ui.get());
+    ObjClass::SetDebugUI(ui.get());
+    SphereClass::SetDebugUI(ui.get());
+    TriangleClass::SetDebugUI(ui.get());
 
     // 描画
     drawManager = std::make_unique<DrawManager>();
     drawManager->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager.get());
+    ObjClass::SetDrawManager(drawManager.get());
+    SphereClass::SetDrawManager(drawManager.get());
+    TriangleClass::SetDrawManager(drawManager.get());
 
     // テクスチャ
 
@@ -80,6 +86,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     textureManager->LoadAllFromFolder("resources/");
     ui->SetTextureManager(textureManager.get());
     Sprite::SetTextureManager(textureManager.get());
+    ObjClass::SetTextureManager(textureManager.get());
+    SphereClass::SetTextureManager(textureManager.get());
+    TriangleClass::SetTextureManager(textureManager.get());
 
 }
 

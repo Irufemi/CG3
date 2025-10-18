@@ -1,15 +1,20 @@
 #include "TriangleClass.h"
-#include "../function/Math.h"
-#include "../function/Function.h"
-#include "../externals/imgui/imgui.h"
+#include "function/Math.h"
+#include "function/Function.h"
+#include "manager/TextureManager.h"
+#include "manager/DrawManager.h"
+#include "manager/DebugUI.h"
+#include "externals/imgui/imgui.h"
 
 #include <algorithm>
 
-void TriangleClass::Initialize(Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+TextureManager* TriangleClass::textureManager_ = nullptr;
+DrawManager* TriangleClass::drawManager_ = nullptr;
+DebugUI* TriangleClass::ui_ = nullptr;
+
+void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
 
     this->camera_ = camera;
-    this->textureManager_ = textureManager;
-    this->ui_ = ui;
 
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
@@ -68,6 +73,7 @@ void TriangleClass::Initialize(Camera* camera, TextureManager* textureManager, D
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->materialData_->shininess = 64.0f;
 
     //wvp
 
@@ -96,6 +102,8 @@ void TriangleClass::Initialize(Camera* camera, TextureManager* textureManager, D
     resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
     resource_->directionalLightData_->intensity = 1.0f;
+
+    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 
 }
 
@@ -132,5 +140,7 @@ void TriangleClass::Update(const char* triangleName) {
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
     resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
+
+    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 

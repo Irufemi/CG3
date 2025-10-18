@@ -63,6 +63,12 @@ VertexShaderOutput main(VertexShaderInput input)
 	
 	output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.World));
 	
+	/*PhongReflectionModel*/
+	
+	/// Cameraへの方向を算出
+	float32_t4 worldPos = mul(input.position, gTransformationMatrix.World);
+	output.worldPosition = worldPos.xyz;
+	
 	/*三角形を表示しよう*/
 
 	return output;

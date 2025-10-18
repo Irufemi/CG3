@@ -465,6 +465,9 @@
     <ClInclude Include="function\StringUtility.h">
       <Filter>Engine\function</Filter>
     </ClInclude>
+    <ClInclude Include="math\CameraForGPU.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">

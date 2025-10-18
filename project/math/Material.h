@@ -29,4 +29,8 @@ struct Material {
 
     Matrix4x4 uvTransform;
 
+    /*PhongReflectionModel*/
+
+    float shininess = 1.0f;
+
 };
