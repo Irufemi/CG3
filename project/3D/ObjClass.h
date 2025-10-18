@@ -40,8 +40,6 @@ protected: //メンバ変数
 
     static DebugUI* ui_;
 
-    static TextureManager* textureManager_;
-
 #pragma endregion
 
 
