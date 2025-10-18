@@ -154,6 +154,7 @@ void DebugUI::DebugMaterialBy3D(Material* materialData) {
         if (ImGui::Combo("LightingMode", &currentMode, items, IM_ARRAYSIZE(items))) {
             materialData->lightingMode = currentMode;
         }
+        ImGui::DragFloat("Shininess", &materialData->shininess);
     }
 }
 

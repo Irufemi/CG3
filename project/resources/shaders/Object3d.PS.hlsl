@@ -125,54 +125,60 @@ PixelShaderOutput main(VertexShaderOutput input)
 			else if (gMaterial.lightingMode == 2)
 			{
 		
-			/*HalfLambert*/
+				/*HalfLambert*/
 		
-			///HalfLambertを実装する
+				///HalfLambertを実装する
 		
-			//HalfLambert
+				//HalfLambert
 				float NdotL = dot(normalize(input.normal), -gDirectionalLight.direction);
 				cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
 		
 			}
+
+			/*PhongReflectionModel*/
+
+			/// カメラの位置を送る
+	
+			// Cameraへの方向を算出
+			float32_t3 toEye = normalize(gCamera.worldPosition - input.worldPosition);
+
+			/// 反射ベクトルと強度を求める
+	
+			// 入射光の反射ベクトルを求める
+			float32_t3 reflectRight = reflect(gDirectionalLight.direction, normalize(input.normal));
+	
+			//// 内積をとる
+			//float RdotE = dot(reflectRight, toEye);
+			//// 鏡面反射の強度を求める
+			//float specularPow = pow(saturate(RdotE), gMaterial.shininess);
+			
+			/*BlinnPhongReflectionModel*/
+			
+			/// HalfVectorを求めて計算する
+			
+			float32_t3 halfVector = normalize(-gDirectionalLight.direction + toEye);
+			float NDotH = dot(normalize(input.normal), halfVector);
+			float specularPow = pow(saturate(NDotH), gMaterial.shininess);
+
+			/*PhongReflectionModel*/
+	
+			/// すべてを1つに
+			// 拡散反射
+			float32_t3 diffuse = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
+			// 鏡面反射
+			float32_t3 specular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+			// 拡散反射 + 鏡面反射
+			output.color.rgb = diffuse + specular;
 			
 			if (gMaterial.hasTexture == 1)
 			{
-
-				/*PhongReflectionModel*/
-
-				/// カメラの位置を送る
-	
-				// Cameraへの方向を算出
-				float32_t3 toEye = normalize(gCamera.worldPosition - input.worldPosition);
-	
-				/// 反射ベクトルと強度を求める
-	
-				// 入射光の反射ベクトルを求める
-				float32_t3 reflectRight = reflect(gDirectionalLight.direction, normalize(input.normal));
-	
-				// 内積をとる
-				float RdotE = dot(reflectRight, toEye);
-				// 鏡面反射の強度を求める
-				float specularPow = pow(saturate(RdotE), gMaterial.shininess);
-	
-				/// すべてを1つに
-				// 拡散反射
-				float32_t3 diffuse = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
-				// 鏡面反射
-				float32_t3 specular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
-				// 拡散反射 + 鏡面反射
-				output.color.rgb = diffuse + specular;
 				// アルファは今まで通り
 				output.color.a = gMaterial.color.a * textureColor.a;
 			}
 			else
 			{
-				output.color.rgb = gMaterial.color.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
 				output.color.a = 1.0f;
 			}
-			
-			
-			
 		}
 		
 		/*2値抜き*/
