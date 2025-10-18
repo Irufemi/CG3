@@ -70,6 +70,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         suzanne = std::make_unique <ObjClass>();
         suzanne->Initialize(camera_.get(), "suzanne.obj");
     }
+    if (isActiveFence_) {
+        fence_ = std::make_unique <ObjClass>();
+        fence_->Initialize(camera_.get(), "fence.obj");
+    }
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
         particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
