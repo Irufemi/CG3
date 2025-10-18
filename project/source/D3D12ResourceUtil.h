@@ -124,8 +124,6 @@ public: //メンバ変数
 
     static DirectXCommon* dxCommon_;
 
-    static DrawManager* drawManager_;
-
 #pragma endregion
 
 
@@ -133,9 +131,6 @@ public: //メンバ関数
 
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
     DirectXCommon* GetDirectXCommon() { return dxCommon_; }
-
-    static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
-    DrawManager* GetDrawManager() { return drawManager_; }
 
     //デストラクタ
     ~D3D12ResourceUtil();
