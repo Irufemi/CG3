@@ -13,8 +13,8 @@
 #include "math/Material.h"
 #include "math/TransformationMatrix.h"
 #include "math/DirectionalLight.h"
+#include "math/CameraForGPU.h"
 #include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
 #include "function/Function.h"
 
 // 前方宣言
@@ -98,6 +98,12 @@ public: //メンバ変数
 
 #pragma endregion
 
+#pragma region Camera
+
+    CameraForGPU* cameraData_ = nullptr;
+
+#pragma endregion
+
 #pragma region ID3D12Resource
 
     // 頂点データ用定数バッファ
@@ -110,14 +116,13 @@ public: //メンバ変数
     Microsoft::WRL::ComPtr <ID3D12Resource> transformationResource_ = nullptr;
     // 光用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> directionalLightResource_ = nullptr;
-
+    
+    Microsoft::WRL::ComPtr <ID3D12Resource> cameraResource_ = nullptr;
 #pragma endregion
 
 #pragma region 外部参照
 
     static DirectXCommon* dxCommon_;
-
-    static DrawManager* drawManager_;
 
 #pragma endregion
 
@@ -126,9 +131,6 @@ public: //メンバ関数
 
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
     DirectXCommon* GetDirectXCommon() { return dxCommon_; }
-
-    static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
-    DrawManager* GetDrawManager() { return drawManager_; }
 
     //デストラクタ
     ~D3D12ResourceUtil();

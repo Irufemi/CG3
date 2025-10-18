@@ -12,6 +12,12 @@ struct TransformationMatrix
 	/*LambertianReflectance*/
 	
 	float32_t4x4 World;
+	
+	/*非均一スケール*/
+	
+	/// 組み込んで使う
+	
+	float32_t4x4 WorldInverseTranspose;
 };
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
@@ -57,11 +63,25 @@ VertexShaderOutput main(VertexShaderInput input)
 	output.texcoord = input.texcoord;
 	
 	
-	/*LambertianReflectance*/
+	///*LambertianReflectance*/
 	
-	///法線の座標系を変換してPixelShaderに送る
+	/////法線の座標系を変換してPixelShaderに送る
 	
-	output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.World));
+	//output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.World));
+	
+	/*非均一スケール*/
+	
+	/// 組み込んで使う
+	
+	// 法線を変換する際に逆転置行列を使う
+	
+	output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.WorldInverseTranspose));
+	
+	/*PhongReflectionModel*/
+	
+	/// Cameraへの方向を算出
+	float32_t4 worldPos = mul(input.position, gTransformationMatrix.World);
+	output.worldPosition = worldPos.xyz;
 	
 	/*三角形を表示しよう*/
 

@@ -44,11 +44,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveTriangle) {
         triangle = std::make_unique <TriangleClass>();
-        triangle->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+        triangle->Initialize(camera_.get());
     }
     if (isActiveSphere) {
         sphere = std::make_unique <SphereClass>();
-        sphere->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+        sphere->Initialize(camera_.get());
     }
     if (isActiveStanfordBunny) {
         stanfordBunny = std::make_unique <ObjClass>();
@@ -64,13 +64,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveMultiMaterial) {
         multiMaterial = std::make_unique <ObjClass>();
-        multiMaterial->Initialize(camera_.get(),"multiMaterial.obj");
+        multiMaterial->Initialize(camera_.get(), "multiMaterial.obj");
     }
     if (isActiveSuzanne) {
         suzanne = std::make_unique <ObjClass>();
         suzanne->Initialize(camera_.get(), "suzanne.obj");
     }
-
     if (isActiveFence_) {
         fence_ = std::make_unique <ObjClass>();
         fence_->Initialize(camera_.get(), "fence.obj");
@@ -137,21 +136,21 @@ void GameScene::Update() {
     if (isActiveTriangle) {
         if (!triangle) {
             triangle = std::make_unique<TriangleClass>();
-            triangle->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            triangle->Initialize(camera_.get());
         }
         triangle->Update();
     }
     if (isActiveSphere) {
         if (!sphere) {
             sphere = std::make_unique<SphereClass>();
-            sphere->Initialize(camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            sphere->Initialize(camera_.get());
         }
         sphere->Update();
     }
     if (isActiveUtashTeapot) {
         if (!utashTeapot) {
             utashTeapot = std::make_unique<ObjClass>();
-            utashTeapot->Initialize(camera_.get(),"teapot.obj");
+            utashTeapot->Initialize(camera_.get(), "teapot.obj");
         }
         utashTeapot->Update("Utash Teapot");
     }
@@ -165,7 +164,7 @@ void GameScene::Update() {
     if (isActiveMultiMesh) {
         if (!multiMesh) {
             multiMesh = std::make_unique<ObjClass>();
-            multiMesh->Initialize(camera_.get(), "multiMesh.obj");
+            multiMesh->Initialize(camera_.get(),  "multiMesh.obj");
         }
         multiMesh->Update("MultiMesh");
     }
@@ -235,7 +234,7 @@ void GameScene::Draw() {
         engine_->GetDrawManager()->DrawByIndex(triangle->GetD3D12Resource());
     }
     if (isActiveSphere) {
-        engine_->GetDrawManager()->DrawSphere(sphere.get());
+        sphere->Draw();
     }
     if (isActiveUtashTeapot) {
         utashTeapot->Draw();
