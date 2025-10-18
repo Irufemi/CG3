@@ -12,7 +12,6 @@
 TextureManager* ObjClass::textureManager_ = nullptr;
 DrawManager* ObjClass::drawManager_ = nullptr;
 DebugUI* ObjClass::ui_ = nullptr;
-
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     this->camera_ = camera;

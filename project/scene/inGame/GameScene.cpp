@@ -15,11 +15,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // エンジン
     this->engine_ = engine;
 
-    camera = std::make_unique <Camera>();
-    camera->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    camera_ = std::make_unique <Camera>();
+    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
 
-    debugCamera = std::make_unique <DebugCamera>();
-    debugCamera->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugCamera_ = std::make_unique <DebugCamera>();
+    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
 
     isActiveObj = false;
@@ -40,7 +40,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveSprite) {
         sprite = std::make_unique <Sprite>();
-        sprite->Initialize(camera.get());
+        sprite->Initialize(camera_.get());
     }
     if (isActiveTriangle) {
         triangle = std::make_unique <TriangleClass>();
@@ -69,15 +69,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     if (isActiveSuzanne) {
         suzanne = std::make_unique <ObjClass>();
         suzanne->Initialize(camera.get(), "suzanne.obj");
-    }
-
-    if (isActiveFence_) {
-        fence_ = std::make_unique <ObjClass>();
-        fence_->Initialize(camera.get(),"fence.obj");
+        fence_->Initialize(camera_.get(), "fence.obj");
     }
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
+        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
     }
 
     bgm = std::make_unique<Bgm>();
@@ -111,16 +107,16 @@ void GameScene::Update() {
     ImGui::Checkbox("debugMode", &debugMode);
     ImGui::End();
 
+#endif // _DEBUG
+
     if (debugMode) {
-        debugCamera->Update();
-        camera->SetViewMatrix(debugCamera->GetCamera().GetViewMatrix());
-        camera->SetPerspectiveFovMatrix(debugCamera->GetCamera().GetPerspectiveFovMatrix());
+        debugCamera_->Update();
+        camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
+        camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
     } else {
-        camera->Update("Camera");
+        camera_->Update("Camera");
 
     }
-
-#endif // _DEBUG
 
     // BGM
     bgm->Update();
@@ -193,7 +189,7 @@ void GameScene::Update() {
     if (isActiveParticle) {
         if (!particle) {
             particle = std::make_unique <ParticleClass>();
-            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
         particle->Update();
     }
@@ -203,15 +199,15 @@ void GameScene::Update() {
     if (isActiveSprite) {
         if (!sprite) {
             sprite = std::make_unique<Sprite>();
-            sprite->Initialize(camera.get());
+            sprite->Initialize(camera_.get());
         }
         sprite->Update();
     }
 
 
 
-    //エンターキーが押されていたら
-    if (PressedVK(VK_RETURN)) {
+    //キーが押されていたら
+    if (PressedVK('P')) {
         if (g_SceneManager) {
             g_SceneManager->Request(SceneName::result);
         }

@@ -7,18 +7,19 @@
 #include <cstdint>
 #include <wrl.h>
 
-#include "../math/Matrix4x4.h"
-#include "../math/Transform.h"
-#include "../math/VertexData.h"
-#include "../math/Material.h"
-#include "../math/TransformationMatrix.h"
-#include "../math/DirectionalLight.h"
-#include "../math/CameraForGPU.h"
-#include "../manager/TextureManager.h"
-#include "../function/Function.h"
+#include "math/Matrix4x4.h"
+#include "math/Transform.h"
+#include "math/VertexData.h"
+#include "math/Material.h"
+#include "math/TransformationMatrix.h"
+#include "math/DirectionalLight.h"
+#include "math/CameraForGPU.h"
+#include "manager/TextureManager.h"
+#include "function/Function.h"
 
 // 前方宣言
 class DirectXCommon;
+class Camera;
 
 class D3D12ResourceUtil {
 public: //メンバ変数
@@ -123,6 +124,8 @@ public: //メンバ変数
 
     static DirectXCommon* dxCommon_;
 
+    static DrawManager* drawManager_;
+
 #pragma endregion
 
 
@@ -130,6 +133,9 @@ public: //メンバ関数
 
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
     DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
+    static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
+    DrawManager* GetDrawManager() { return drawManager_; }
 
     //デストラクタ
     ~D3D12ResourceUtil();
@@ -142,6 +148,8 @@ public: //メンバ関数
 
     //バッファへの書き込みを閉鎖
     void UnMap();
+
+    void UpdateTransform3D(const Camera& camera);
 };
 
 class D3D12ResourceUtilParticle {
