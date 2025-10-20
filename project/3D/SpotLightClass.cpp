@@ -28,7 +28,7 @@ void SpotLightClass::Debug() {
         ImGui::DragFloat3("SpotLightPosition", &data_->position.x, 0.01f);
         ImGui::DragFloat("SpotLightDistance", &data_->distance, 0.01f, 0.0f);
         // 方向ベクトルは都度正規化
-        if (ImGui::DragFloat3("direction", &data_->direction.x, 0.01f)) {
+        if (ImGui::DragFloat3("SpotLightDirection", &data_->direction.x, 0.01f)) {
             data_->direction = Math::Normalize(data_->direction);
         }
         ImGui::DragFloat("SpotLightIntensity", &data_->intensity, 0.01f, 0.0f);
