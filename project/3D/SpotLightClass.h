@@ -1,17 +1,16 @@
 #pragma once
 
-#include "math/PointLight.h"
+#include "math/SpotLight.h"
 #include "engine/directX/DirectXCommon.h"
 #include "wrl.h"
 #include <d3d12.h>
 
-class PointLightClass
-{
-    
+class SpotLightClass{
+
 private: // メンバ変数
 
     Microsoft::WRL::ComPtr<ID3D12Resource> resource_ = nullptr;
-    PointLight* data_ = nullptr;
+    SpotLight* data_ = nullptr;
 
     static DirectXCommon* dxCommon_;
 
@@ -24,14 +23,12 @@ public: // メンバ関数
     void Debug();
 
     // PointLightの情報を渡す
-    PointLight* GetData() { return data_; }
+    SpotLight* GetData() { return data_; }
     // PointLightの情報をセットする
-    void SetData(PointLight* info) { data_ = info; }
+    void SetData(SpotLight* info) { data_ = info; }
 
     ID3D12Resource* GetResource() { return resource_.Get(); }
 
     static void SetDxCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
-
-
 };
 

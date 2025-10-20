@@ -16,8 +16,8 @@ void PointLightClass::Initialize() {
 void PointLightClass::Debug() {
 
     if (ImGui::CollapsingHeader("PointLight")) {
-        ImGui::ColorEdit4("lightColor", &data_->color.x);
-        ImGui::DragFloat3("lightPosition", &data_->position.x, 0.01f);
-        ImGui::DragFloat("intensity", &data_->intensity, 0.01f);
+        ImGui::ColorEdit4("PointLightColor", &data_->color.x);
+        ImGui::DragFloat3("PointLightPosition", &data_->position.x, 0.01f);
+        ImGui::DragFloat("PointLightIntensity", &data_->intensity, 0.01f, 0.0f);
     }
 }

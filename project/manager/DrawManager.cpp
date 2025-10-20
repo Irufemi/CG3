@@ -164,6 +164,13 @@ void DrawManager::EnsurePointLightResource() {
 
 }
 
+void DrawManager::EnsureSpotLightResource() {
+    if (spotLight_) return;
+
+    spotLight_->Initialize();
+
+}
+
 void DrawManager::DrawTriangle(
     D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     ID3D12Resource* materialResource,
@@ -203,6 +210,9 @@ void DrawManager::DrawTriangle(
 
     EnsurePointLightResource();
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
+
+    EnsureSpotLightResource();
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
 
     /*三角形を表示しよう*/
 
@@ -294,6 +304,9 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
     EnsurePointLightResource();
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
 
+    EnsureSpotLightResource();
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
@@ -376,6 +389,9 @@ void DrawManager::DrawByIndex(D3D12ResourceUtil* resource) {
     EnsurePointLightResource();
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
 
+    EnsureSpotLightResource();
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
@@ -419,6 +435,9 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
 
     EnsurePointLightResource();
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
+
+    EnsureSpotLightResource();
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
 
     /*三角形を表示しよう*/
 

@@ -212,6 +212,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="source\Sound.cpp" />
     <ClCompile Include="source\Texture.cpp" />
     <ClCompile Include="function\StringUtility.cpp" />
+    <ClCompile Include="3D\SpotLightClass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
@@ -272,6 +273,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\shape\Spring.h" />
     <ClInclude Include="math\shape\Triangle.h" />
     <ClInclude Include="math\SoundData.h" />
+    <ClInclude Include="math\SpotLight.h" />
     <ClInclude Include="math\Transform.h" />
     <ClInclude Include="math\TransformationMatrix.h" />
     <ClInclude Include="math\Vector2.h" />
@@ -290,6 +292,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="source\Sound.h" />
     <ClInclude Include="source\Texture.h" />
     <ClInclude Include="function\StringUtility.h" />
+    <ClInclude Include="3D\SpotLightClass.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
