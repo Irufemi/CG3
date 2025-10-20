@@ -10,6 +10,8 @@
 #include "math/VertexData.h"
 #include "source/D3D12ResourceUtil.h"
 #include "2D/Sprite.h"
+#include "3D/PointLightClass.h"
+#include "3D/SpotLightClass.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -58,6 +60,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
+    PointLightClass::SetDxCommon(dxCommon_.get());
+    SpotLightClass::SetDxCommon(dxCommon_.get());
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();

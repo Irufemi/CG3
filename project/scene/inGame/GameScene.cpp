@@ -2,8 +2,8 @@
 
 #include "../SceneManager.h"
 #include "../SceneName.h"
-#include "../../engine/IrufemiEngine.h"
-#include "../../externals/imgui/imgui.h"
+#include "engine/IrufemiEngine.h"
+#include "externals/imgui/imgui.h"
 
 #include <algorithm>
 
@@ -22,17 +22,28 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
 
+    pointLight_ = std::make_unique <PointLightClass>();
+    pointLight_->Initialize();
+    
+    engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
+
+    spotLight_ = std::make_unique <SpotLightClass>();
+    spotLight_->Initialize();
+
+    engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
+
     isActiveObj = false;
     isActiveSprite = false;
     isActiveTriangle = false;
-    isActiveSphere = false;
+    isActiveSphere = true;
     isActiveStanfordBunny = false;
     isActiveUtashTeapot = false;
     isActiveMultiMesh = false;
     isActiveMultiMaterial = false;
     isActiveSuzanne = false;
     isActiveFence_ = false;
-    isActiveParticle = true;
+    isActiveTerrain_ = true;
+    isActiveParticle = false;
 
     if (isActiveObj) {
         obj = std::make_unique <ObjClass>();
@@ -74,6 +85,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         fence_ = std::make_unique <ObjClass>();
         fence_->Initialize(camera_.get(), "fence.obj");
     }
+    if (isActiveTerrain_) {
+        terrain_ = std::make_unique <ObjClass>();
+        terrain_->Initialize(camera_.get(), "terrain.obj");
+    }
     if (isActiveParticle) {
         particle = std::make_unique <ParticleClass>();
         particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
@@ -88,6 +103,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
+    
+    ImGui::Begin("GameScene");
+    // pointLight 
+    pointLight_->Debug();
+    // spotLight 
+    spotLight_->Debug();
+
+    ImGui::End();
 
     ImGui::Begin("Activation");
     ImGui::Checkbox("Obj", &isActiveObj);
@@ -189,6 +212,13 @@ void GameScene::Update() {
         }
         fence_->Update("Fence");
     }
+    if (isActiveTerrain_) {
+        if (!terrain_) {
+            terrain_ = std::make_unique<ObjClass>();
+            terrain_->Initialize(camera_.get(), "terrain.obj");
+        }
+        terrain_->Update("Fence");
+    }
     if (isActiveParticle) {
         if (!particle) {
             particle = std::make_unique <ParticleClass>();
@@ -253,6 +283,9 @@ void GameScene::Draw() {
     }
     if (isActiveFence_) {
         fence_->Draw();
+    }
+    if (isActiveTerrain_) {
+        terrain_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);

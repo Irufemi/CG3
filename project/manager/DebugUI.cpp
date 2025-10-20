@@ -196,7 +196,7 @@ void DebugUI::DebugDirectionalLight(DirectionalLight* directionalLightData) {
     if (ImGui::CollapsingHeader("directionalLight")) {
         ImGui::ColorEdit4("lightColor", &directionalLightData->color.x);
         ImGui::DragFloat3("lightDirection", &directionalLightData->direction.x, 0.01f);
-        ImGui::DragFloat("intensity", &directionalLightData->intensity, 0.01f);
+        ImGui::DragFloat("intensity", &directionalLightData->intensity, 0.01f, 0.0f);
     }
 }
 
