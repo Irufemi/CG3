@@ -2,8 +2,8 @@
 
 #include "../SceneManager.h"
 #include "../SceneName.h"
-#include "../../engine/IrufemiEngine.h"
-#include "../../externals/imgui/imgui.h"
+#include "engine/IrufemiEngine.h"
+#include "externals/imgui/imgui.h"
 
 #include <algorithm>
 
@@ -21,6 +21,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera_ = std::make_unique <DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
+
+    pointLight_ = std::make_unique <PointLightClass>();
+    pointLight_->Initialize();
+    
+    engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
 
     isActiveObj = false;
     isActiveSprite = false;
@@ -88,6 +93,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
+    
+    ImGui::Begin("GameScene");
+    // pointLight 
+    pointLight_->Debug();
+
+    ImGui::End();
 
     ImGui::Begin("Activation");
     ImGui::Checkbox("Obj", &isActiveObj);

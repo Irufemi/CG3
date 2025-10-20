@@ -166,6 +166,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
+    <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -259,6 +260,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Matrix4x4.h" />
     <ClInclude Include="math\ModelData.h" />
     <ClInclude Include="math\ObjModel.h" />
+    <ClInclude Include="math\PointLight.h" />
     <ClInclude Include="math\RiffHeader.h" />
     <ClInclude Include="math\shape\AABB.h" />
     <ClInclude Include="math\shape\Ball.h" />
@@ -277,6 +279,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Vector4.h" />
     <ClInclude Include="math\VertexData.h" />
     <ClInclude Include="engine\PSOManager.h" />
+    <ClInclude Include="3D\PointLightClass.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />

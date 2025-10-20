@@ -65,6 +65,20 @@ struct Camera
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
+/*PointLight*/
+
+struct PointLight
+{
+	//!< ライトの色
+	float32_t4 color;
+	//!< ライトの位置
+	float32_t3 position;
+	//!< 輝度
+	float intensity;
+	
+};
+ConstantBuffer<PointLight> gPointLight : register(b3);
+
 /*テクスチャを貼ろう*/
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -167,8 +181,38 @@ PixelShaderOutput main(VertexShaderOutput input)
 			float32_t3 diffuse = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
 			// 鏡面反射
 			float32_t3 specular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
-			// 拡散反射 + 鏡面反射
-			output.color.rgb = diffuse + specular;
+			
+			/*PointLight*/
+			
+			/// 入射光を計算する
+			
+			// 物体表面の特定の点に対する入射光を計算する
+			float32_t3 pointLightDirection = normalize(input.worldPosition - gPointLight.position);
+			
+			// 拡散（Directional と同じモードで計算）
+			float cosPoint = 1.0f;
+			if (gMaterial.lightingMode == 1)
+			{
+				cosPoint = saturate(dot(normalize(input.normal), -pointLightDirection));
+			}
+			else if (gMaterial.lightingMode == 2)
+			{
+				float NdotLPoint = dot(normalize(input.normal), -pointLightDirection);
+				cosPoint = pow(NdotLPoint * 0.5f + 0.5f, 2.0f);
+			}
+			
+			// 鏡面（Blinn-Phong）
+			float32_t3 halfVectorPoint = normalize(-pointLightDirection + toEye);
+			float NDotHPoint = dot(normalize(input.normal), halfVectorPoint);
+			float specularPowPoint = pow(saturate(NDotHPoint), gMaterial.shininess);
+			// Point 拡散・鏡面
+			float32_t3 diffusePoint = gMaterial.color.rgb * textureColor.rgb * gPointLight.color.rgb * cosPoint * gPointLight.intensity;
+			float32_t3 specularPoint = gPointLight.color.rgb * gPointLight.intensity * specularPowPoint * float32_t3(1.0f, 1.0f, 1.0f);
+
+			/// 全部足す
+			
+			// 最終的な色はどのように決まるのかといえば、DirectionalLightとPointLightでそれぞれ計算したDiffuse/Specularをすべて足し合わせて求める
+			output.color.rgb = diffuse + specular + diffusePoint + specularPoint;
 			
 			if (gMaterial.hasTexture == 1)
 			{

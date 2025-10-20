@@ -244,6 +244,9 @@
     <ClCompile Include="function\ExportDump.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
+    <ClCompile Include="3D\PointLightClass.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -466,6 +469,12 @@
       <Filter>Engine\function</Filter>
     </ClInclude>
     <ClInclude Include="math\CameraForGPU.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\PointLightClass.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="math\PointLight.h">
       <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>

@@ -19,7 +19,7 @@ private: // メンバ変数
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 
-    TextureManager* textureManager_;
+    TextureManager* textureManager_ = nullptr;
 
     // ★追加: パフォーマンス履歴
     static constexpr size_t kPerfHistoryCount_ = 240;          // 約4秒分
