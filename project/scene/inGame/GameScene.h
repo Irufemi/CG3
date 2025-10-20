@@ -9,6 +9,8 @@
 #include "../../3D/SphereClass.h"
 #include "../../3D/ObjClass.h"
 #include "../../3D/ParticleClass.h"
+#include "../../3D/PointLightClass.h"
+#include "../../3D/SpotLightClass.h"
 #include "../../audio/Bgm.h"
 #include "../../camera/Camera.h"
 #include "../../camera/DebugCamera.h"
@@ -38,6 +40,10 @@ private: // メンバ変数
 
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
+
+    std::unique_ptr<PointLightClass> pointLight_ = nullptr;
+
+    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
 
     int loadTexture = false;
 

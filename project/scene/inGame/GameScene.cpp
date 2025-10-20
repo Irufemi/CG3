@@ -23,7 +23,15 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
 
+    pointLight_ = std::make_unique <PointLightClass>();
+    pointLight_->Initialize();
+    
+    engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
 
+    spotLight_ = std::make_unique <SpotLightClass>();
+    spotLight_->Initialize();
+
+    engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
     /// マップチップフィールド
     // マップチップフィールドの生成
@@ -58,6 +66,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
+    
+    ImGui::Begin("GameScene");
+    // pointLight 
+    pointLight_->Debug();
+    // spotLight 
+    spotLight_->Debug();
+
+    ImGui::End();
 
     ImGui::Begin("Texture");
     if (ImGui::Button("allLoadActivate")) {
