@@ -24,7 +24,7 @@ void SpotLightClass::Initialize() {
 void SpotLightClass::Debug() {
 
     if (ImGui::CollapsingHeader("SpotLight")) {
-        ImGui::ColorEdit4("SpotLightColor", &data_->color.x, 0.01f);
+        ImGui::ColorEdit4("SpotLightColor", &data_->color.x);
         ImGui::DragFloat3("SpotLightPosition", &data_->position.x, 0.01f);
         ImGui::DragFloat("SpotLightDistance", &data_->distance, 0.01f, 0.0f);
         // 方向ベクトルは都度正規化
