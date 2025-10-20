@@ -5,10 +5,11 @@ on:
     branches:
       - master
       - TD2_01
+      - AL4
 
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
-  SOLUTION_FILE_PATH: project/CG3.sln 
+  SOLUTION_FILE_PATH: project/Irufemi.sln
   # Visual Studio の構成
   CONFIGURATION: Release
 
