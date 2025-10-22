@@ -49,6 +49,24 @@ namespace {
     }
 } // anonymous
 
+void DrawManager::Finalize() {
+    // 静的フォールバックCBVを解放（デバイス参照を外す）
+    if (gNullPointLight) {
+        // マップ済みでもUnmap不要だが、気になるなら解除
+        // gNullPointLight->Unmap(0, nullptr);
+        gNullPointLight.Reset();
+        gNullPointLightVA = 0;
+    }
+    if (gNullSpotLight) {
+        // gNullSpotLight->Unmap(0, nullptr);
+        gNullSpotLight.Reset();
+        gNullSpotLightVA = 0;
+    }
+    pointLight_ = nullptr;
+    spotLight_ = nullptr;
+    dxCommon_ = nullptr;
+}
+
 void DrawManager::BindPSO(ID3D12PipelineState* pso) {
     if (!pso) { return; }
     dxCommon_->GetCommandList()->SetPipelineState(pso);

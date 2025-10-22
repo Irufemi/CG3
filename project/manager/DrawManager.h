@@ -41,7 +41,7 @@ private:
 public: //メンバ関数
 
     void Initialize(DirectXCommon* dx) { dxCommon_ = dx; }
-    void Finalize() { dxCommon_ = nullptr; }
+    void Finalize();
 
     // 追加（保持はしないで即時バインド）
     void BindPSO(ID3D12PipelineState* pso);
