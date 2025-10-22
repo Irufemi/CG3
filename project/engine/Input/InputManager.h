@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-#include "../engine/Input/Keyboard.h"
-#include "../engine/Input/GamePad.h"
+#include "engine/Input/Keyboard.h"
+#include "engine/Input/GamePad.h"
 
 // 役割：具体実装(Keyboard/GamePad)を保持し、旧APIをフォワードして互換を維持するファサード
 class InputManager {

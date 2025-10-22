@@ -32,6 +32,12 @@ void DirectXCommon::Finalize() {
         fenceEvent_ = nullptr;
     }
 
+    // PSO キャッシュを解放（PSO/RSの参照を切る）
+    if (psoManager_) {
+        psoManager_->ClearCache();
+        psoManager_.reset();
+    }
+
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
     rootSignature_.Reset();
     depthStencilResource_.Reset();
@@ -47,7 +53,7 @@ void DirectXCommon::Finalize() {
     swapChain_.Reset();
     device_.Reset();
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     debugController_.Reset();
 #endif
 
