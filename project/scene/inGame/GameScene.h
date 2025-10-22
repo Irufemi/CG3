@@ -55,7 +55,7 @@ private: // メンバ変数
     /// ブロック
 
     // ブロック群
-    std::unique_ptr<class Blocks> blocks_ = nullptr;
+    std::unique_ptr<class Region> blocks_ = nullptr;
     // ワールドトランスフォーム(ブロック)
     std::vector<std::vector<Transform*>> worldtransformBlocks_;
 

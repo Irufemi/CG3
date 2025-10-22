@@ -12,10 +12,10 @@
 #include "math/DirectionalLight.h"      // DirectionalLight
 #include "math/CameraForGPU.h"
 
-DirectXCommon* Blocks::dx_ = nullptr;
-TextureManager* Blocks::textureManager_ = nullptr;
+DirectXCommon* Region::dx_ = nullptr;
+TextureManager* Region::textureManager_ = nullptr;
 
-void Blocks::Initialize(
+void Region::Initialize(
     Camera* camera,
     const std::string& objFilename) {
     assert(camera);
@@ -39,7 +39,7 @@ void Blocks::Initialize(
     // インスタンシングバッファは必要になった時に作成（最低1で良ければここで CreateOrResizeInstanceBuffer(1) でもOK）
 }
 
-void Blocks::CreateMeshBuffers(const ObjMesh& mesh) {
+void Region::CreateMeshBuffers(const ObjMesh& mesh) {
     vertexCount_ = static_cast<UINT>(mesh.vertices.size());
     const size_t vbSize = sizeof(VertexData) * mesh.vertices.size();
 
@@ -57,7 +57,7 @@ void Blocks::CreateMeshBuffers(const ObjMesh& mesh) {
     vertexResource_->Unmap(0, nullptr);
 }
 
-void Blocks::CreateMaterialResources(const ObjMesh& mesh) {
+void Region::CreateMaterialResources(const ObjMesh& mesh) {
     // マテリアル
     materialResource_ = dx_->CreateBufferResource(sizeof(Material));
     Material* mat = nullptr;
@@ -84,11 +84,11 @@ void Blocks::CreateMaterialResources(const ObjMesh& mesh) {
     cam->worldPosition = camera_->GetTranslate();
 }
 
-void Blocks::EnsureLightAndCamera() {
+void Region::EnsureLightAndCamera() {
     // 初期化済み。毎フレームのカメラ位置更新は Draw 内で行う
 }
 
-void Blocks::EnsureSharedTexture(const ObjMesh& mesh) {
+void Region::EnsureSharedTexture(const ObjMesh& mesh) {
     if (!mesh.material.textureFilePath.empty()) {
         textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
     } else {
@@ -97,7 +97,7 @@ void Blocks::EnsureSharedTexture(const ObjMesh& mesh) {
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
 }
 
-void Blocks::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
+void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride); // 最低1
 
@@ -128,18 +128,18 @@ void Blocks::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
 }
 
-void Blocks::AddInstance(const Transform& t) {
+void Region::AddInstance(const Transform& t) {
     instances_.push_back(t);
     instanceDirty_ = true;
 }
 
-void Blocks::ClearInstances() {
+void Region::ClearInstances() {
     instances_.clear();
     instanceDirty_ = true;
 }
 
 // 変更: force を見るように
-void Blocks::UpdateInstanceBuffer(bool force) {
+void Region::BuildInstanceBuffer(bool force) {
     if (instances_.empty()) { return; }
     if (!force && !instanceDirty_) { return; }
 
@@ -180,7 +180,7 @@ void Blocks::UpdateInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
-void Blocks::Draw() {
+void Region::Draw() {
     if (vertexCount_ == 0 || instances_.empty()) { return; }
 
     // カメラ位置更新
@@ -191,7 +191,7 @@ void Blocks::Draw() {
     }
 
     // インスタンスバッファ更新（毎フレームWVP再計算）
-    UpdateInstanceBuffer(true);
+    BuildInstanceBuffer(true);
 
     auto* cmd = dx_->GetCommandList();
     cmd->SetGraphicsRootSignature(dx_->GetRootSignature());

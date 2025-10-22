@@ -538,7 +538,7 @@
     <FxCompile Include="resources\shaders\Object2D.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="resources\shaders\Blocks.VS.hlsl">
+    <FxCompile Include="resources\shaders\Region.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>

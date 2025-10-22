@@ -14,7 +14,7 @@
 
 class Camera;
 
-class Blocks {
+class Region {
 public:
     // 初期化：OBJ 読み込みと共有テクスチャの取得
     void Initialize(
@@ -28,7 +28,7 @@ public:
     void ClearInstances();
 
     // インスタンシングバッファ更新（必要時だけ再構築/更新）
-    void UpdateInstanceBuffer(bool force = false);
+    void BuildInstanceBuffer(bool force = false);
 
     // 描画（事前に DrawManager::PreDraw 済みであること）
     void Draw();

@@ -63,7 +63,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
-    Blocks::SetDirectXCommon(dxCommon_.get());
+    Region::SetDirectXCommon(dxCommon_.get());
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
@@ -95,7 +95,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
-    Blocks::SetTextureManager(textureManager.get());
+    Region::SetTextureManager(textureManager.get());
 
 }
 
