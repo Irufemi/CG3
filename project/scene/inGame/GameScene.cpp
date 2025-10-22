@@ -4,6 +4,7 @@
 #include "../SceneName.h"
 #include "engine/IrufemiEngine.h"
 #include "externals/imgui/imgui.h"
+#include "engine/Input/InputManager.h"
 
 #include <algorithm>
 
@@ -32,71 +33,33 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
-    isActiveObj = false;
-    isActiveSprite = false;
-    isActiveTriangle = false;
-    isActiveSphere = true;
-    isActiveStanfordBunny = false;
-    isActiveUtashTeapot = false;
-    isActiveMultiMesh = false;
-    isActiveMultiMaterial = false;
-    isActiveSuzanne = false;
-    isActiveFence_ = false;
-    isActiveTerrain_ = true;
-    isActiveParticle = false;
+    /// マップチップフィールド
+    // マップチップフィールドの生成
+    mapChipField_ = std::make_unique<MapChipField>();
+    // マップチップフィールドのファイル読み込み
+    mapChipField_->LoadMapChipCsv("resources/blocks.csv");
 
-    if (isActiveObj) {
-        obj = std::make_unique <ObjClass>();
-        obj->Initialize(camera_.get());
-    }
-    if (isActiveSprite) {
-        sprite = std::make_unique <Sprite>();
-        sprite->Initialize(camera_.get());
-    }
-    if (isActiveTriangle) {
-        triangle = std::make_unique <TriangleClass>();
-        triangle->Initialize(camera_.get());
-    }
-    if (isActiveSphere) {
-        sphere = std::make_unique <SphereClass>();
-        sphere->Initialize(camera_.get());
-    }
-    if (isActiveStanfordBunny) {
-        stanfordBunny = std::make_unique <ObjClass>();
-        stanfordBunny->Initialize(camera_.get(), "bunny.obj");
-    }
-    if (isActiveUtashTeapot) {
-        utashTeapot = std::make_unique <ObjClass>();
-        utashTeapot->Initialize(camera_.get(), "teapot.obj");
-    }
-    if (isActiveMultiMesh) {
-        multiMesh = std::make_unique <ObjClass>();
-        multiMesh->Initialize(camera_.get(), "multiMesh.obj");
-    }
-    if (isActiveMultiMaterial) {
-        multiMaterial = std::make_unique <ObjClass>();
-        multiMaterial->Initialize(camera_.get(), "multiMaterial.obj");
-    }
-    if (isActiveSuzanne) {
-        suzanne = std::make_unique <ObjClass>();
-        suzanne->Initialize(camera_.get(), "suzanne.obj");
-    }
-    if (isActiveFence_) {
-        fence_ = std::make_unique <ObjClass>();
-        fence_->Initialize(camera_.get(), "fence.obj");
-    }
-    if (isActiveTerrain_) {
-        terrain_ = std::make_unique <ObjClass>();
-        terrain_->Initialize(camera_.get(), "terrain.obj");
-    }
-    if (isActiveParticle) {
-        particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
-    }
+    /// ブロック
+    // ブロックの初期化
 
-    bgm = std::make_unique<Bgm>();
-    bgm->Initialize(engine_->GetAudioManager());
-    bgm->PlayFirstTrack();
+    /// ブロック
+    // ブロックの初期化（Blocksでまとめて管理）
+    blocks_ = std::make_unique<Region>();
+    blocks_->Initialize(camera_.get(), "block.obj");
+    GenerateBlocks();
+    
+    /// 自キャラ
+    // 自キャラの生成
+    player_ = std::make_shared<Player>();
+    // 3Dモデルデータの生成
+    modelplayer_ = std::make_unique<ObjClass>();
+    modelplayer_->Initialize(camera_.get(),"player.obj");
+    // 座標をマップチップ番号で指定
+    Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
+    // 自キャラの初期化
+    player_->Initialize(modelplayer_.get(), camera_.get(), engine->GetInputManager(), playerPosition);
+    // マップチップデータのセット
+    player_->SetMapChipField(mapChipField_.get());
 }
 
 // 更新
@@ -112,20 +75,6 @@ void GameScene::Update() {
 
     ImGui::End();
 
-    ImGui::Begin("Activation");
-    ImGui::Checkbox("Obj", &isActiveObj);
-    ImGui::Checkbox("Sprite", &isActiveSprite);
-    ImGui::Checkbox("Triangle", &isActiveTriangle);
-    ImGui::Checkbox("Sphere", &isActiveSphere);
-    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot);
-    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny);
-    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh);
-    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial);
-    ImGui::Checkbox("Suzanne", &isActiveSuzanne);
-    ImGui::Checkbox("Fence", &isActiveFence_);
-    ImGui::Checkbox("Particle", &isActiveParticle);
-    ImGui::End();
-
     ImGui::Begin("Texture");
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
@@ -135,6 +84,11 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
+
+    // 自キャラの更新
+    player_->Update();
+
+    // カメラの更新
     if (debugMode) {
         debugCamera_->Update();
         camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
@@ -144,102 +98,7 @@ void GameScene::Update() {
 
     }
 
-    // BGM
-    bgm->Update();
-
-    // 3D
-
-    if (isActiveObj) {
-        if (!obj) {
-            obj = std::make_unique<ObjClass>();
-            obj->Initialize(camera_.get());
-        }
-        obj->Update("Plane");
-    }
-    if (isActiveTriangle) {
-        if (!triangle) {
-            triangle = std::make_unique<TriangleClass>();
-            triangle->Initialize(camera_.get());
-        }
-        triangle->Update();
-    }
-    if (isActiveSphere) {
-        if (!sphere) {
-            sphere = std::make_unique<SphereClass>();
-            sphere->Initialize(camera_.get());
-        }
-        sphere->Update();
-    }
-    if (isActiveUtashTeapot) {
-        if (!utashTeapot) {
-            utashTeapot = std::make_unique<ObjClass>();
-            utashTeapot->Initialize(camera_.get(), "teapot.obj");
-        }
-        utashTeapot->Update("Utash Teapot");
-    }
-    if (isActiveStanfordBunny) {
-        if (!stanfordBunny) {
-            stanfordBunny = std::make_unique<ObjClass>();
-            stanfordBunny->Initialize(camera_.get(), "bunny.obj");
-        }
-        stanfordBunny->Update("Stanford Bunny");
-    }
-    if (isActiveMultiMesh) {
-        if (!multiMesh) {
-            multiMesh = std::make_unique<ObjClass>();
-            multiMesh->Initialize(camera_.get(),  "multiMesh.obj");
-        }
-        multiMesh->Update("MultiMesh");
-    }
-    if (isActiveMultiMaterial) {
-        if (!multiMaterial) {
-            multiMaterial = std::make_unique<ObjClass>();
-            multiMaterial->Initialize(camera_.get(), "multiMaterial.obj");
-        }
-        multiMaterial->Update("MultiMaterial");
-    }
-    if (isActiveSuzanne) {
-        if (!suzanne) {
-            suzanne = std::make_unique<ObjClass>();
-            suzanne->Initialize(camera_.get(), "suzanne.obj");
-        }
-        suzanne->Update("Suzanne");
-    }
-    if (isActiveFence_) {
-        if (!fence_) {
-            fence_ = std::make_unique<ObjClass>();
-            fence_->Initialize(camera_.get(), "fence.obj");
-        }
-        fence_->Update("Fence");
-    }
-    if (isActiveTerrain_) {
-        if (!terrain_) {
-            terrain_ = std::make_unique<ObjClass>();
-            terrain_->Initialize(camera_.get(), "terrain.obj");
-        }
-        terrain_->Update("Fence");
-    }
-    if (isActiveParticle) {
-        if (!particle) {
-            particle = std::make_unique <ParticleClass>();
-            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
-        }
-        particle->Update();
-    }
-
-    // 2D
-
-    if (isActiveSprite) {
-        if (!sprite) {
-            sprite = std::make_unique<Sprite>();
-            sprite->Initialize(camera_.get());
-        }
-        sprite->Update();
-    }
-
-
-
-    //キーが押されていたら
+    //pが押されていたら
     if (PressedVK('P')) {
         if (g_SceneManager) {
             g_SceneManager->Request(SceneName::result);
@@ -257,52 +116,54 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
 
-    if (isActiveObj) {
-        obj->Draw();
-    }
-    if (isActiveTriangle) {
-        engine_->GetDrawManager()->DrawByIndex(triangle->GetD3D12Resource());
-    }
-    if (isActiveSphere) {
-        sphere->Draw();
-    }
-    if (isActiveUtashTeapot) {
-        utashTeapot->Draw();
-    }
-    if (isActiveStanfordBunny) {
-        stanfordBunny->Draw();
-    }
-    if (isActiveMultiMesh) {
-        multiMesh->Draw();
-    }
-    if (isActiveMultiMaterial) {
-        multiMaterial->Draw();
-    }
-    if (isActiveSuzanne) {
-        suzanne->Draw();
-    }
-    if (isActiveFence_) {
-        fence_->Draw();
-    }
-    if (isActiveTerrain_) {
-        terrain_->Draw();
-    }
+    player_->Draw();
+
+
+    // ブロックの描画（Blocksが全インスタンスを描画）
+    engine_->ApplyBlocksPSO();
+    if (blocks_) { blocks_->Draw(); }
+
+    engine_->ApplyPSO();
+
+    // Particle
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
-
-    if (isActiveParticle) {
-        engine_->GetDrawManager()->DrawParticle(particle.get());
-    }
 
     // 2D
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
+}
 
-    if (isActiveSprite) {
-        sprite->Draw();
+
+void GameScene::GenerateBlocks() {
+
+    // 要素数
+    uint32_t numBlockVirtical = mapChipField_->GetNumBlockVirtical();
+    uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
+
+    // 要素数を変更する
+    // 列数を指定(縦方向のブロック数)
+    worldtransformBlocks_.resize(numBlockVirtical);
+    for (uint32_t i = 0; i < numBlockVirtical; ++i) {
+        // 1列の要素数を設定(横方向のブロック数)
+        worldtransformBlocks_[i].resize(numBlockHorizontal);
+    }
+
+    // ブロックの生成
+    // ブロックの生成（Blocks にインスタンスを積む）
+    for (uint32_t i = 0; i < numBlockVirtical; ++i) {
+        for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
+            if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
+                Transform* worldTransform = new Transform();
+                worldtransformBlocks_[i][j] = worldTransform;
+                worldtransformBlocks_[i][j]->translate = mapChipField_->GetMapChipPositionByIndex(j, i);
+                // Blocksにもインスタンスとして追加
+                if (blocks_) { blocks_->AddInstance(*worldtransformBlocks_[i][j]); }
+            }
+        }
     }
 }

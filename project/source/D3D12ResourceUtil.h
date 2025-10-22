@@ -143,6 +143,8 @@ public: //メンバ関数
 
     //バッファへの書き込みを閉鎖
     void UnMap();
+
+    void UpdateTransform3D(const Camera& camera);
 };
 
 class D3D12ResourceUtilParticle {

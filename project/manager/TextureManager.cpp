@@ -1,200 +1,98 @@
 #include "TextureManager.h"
 
-#include "../function/Function.h"
-
-/*テクスチャを貼ろう*/
-
-#include "../externals/DirectXTex/DirectXTex.h"
-
-/*テクスチャを正しく配置しよう*/
-
-///事前準備
-
-#include "externals/DirectXTex/d3dx12.h"
-#include "engine/directX/DirectXCommon.h"
-
 #include <filesystem>
 #include <algorithm>
-#include <string>
-#include <memory>
-#include <cassert>
-#include <wrl.h>
-#include <windows.h> 
+#include "../engine/directX/DirectXCommon.h"
 
-uint32_t Texture::index_ = 0;
-
-void TextureManager::Initialize(DirectXCommon*dxCommon) {
+// Initialize: DirectXCommon を保存し、Texture にも渡す
+void TextureManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;
     Texture::SetDirectXCommon(dxCommon_);
-
-    CreateWhiteDummyTexture();
 }
 
+// 画像拡張子かを簡易判定
+static bool IsImageExt(const std::string& extLower) {
+    static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
+    for (auto* e : exts) {
+        if (extLower == e) { return true; }
+    }
+    return false;
+}
+
+// 指定フォルダ配下を走査してロード（キーはフルパス文字列）
 void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
     namespace fs = std::filesystem;
+    fs::path root(folderPath);
+    if (!fs::exists(root)) { return; }
 
-    // --- 一時コマンドアロケータとコマンドリストを作成 ---
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    HRESULT hr = dxCommon_->GetDevice()->CreateCommandAllocator(
-        D3D12_COMMAND_LIST_TYPE_DIRECT,
-        IID_PPV_ARGS(&allocator)
-    );
-    assert(SUCCEEDED(hr));
+    for (auto& entry : fs::recursive_directory_iterator(root)) {
+        if (!entry.is_regular_file()) { continue; }
+        auto p = entry.path();
+        auto ext = p.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (!IsImageExt(ext)) { continue; }
 
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadCommandList;
-    hr = dxCommon_->GetDevice()->CreateCommandList(
-        0,
-        D3D12_COMMAND_LIST_TYPE_DIRECT,
-        allocator.Get(),
-        nullptr,
-        IID_PPV_ARGS(&uploadCommandList)
-    );
-    assert(SUCCEEDED(hr));
+        const std::string key = p.string();
+        // 既にあるならスキップ
+        if (textures_.find(key) != textures_.end()) { continue; }
 
-    // --- テクスチャの一括ロード ---
-    for (const auto& entry : fs::directory_iterator(folderPath)) {
-        if (entry.is_regular_file()) {
-            std::string extension = entry.path().extension().string();
-            std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-            if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".bmp") {
-                std::string filename = entry.path().filename().string();
-
-                // 既にロード済みならスキップ
-                if (textures_.count(filename) > 0) {
-                    continue;
-                }
-
-                std::string fullPath = folderPath + "/" + filename;
-
-                auto texture = std::make_shared<Texture>();
-                texture->Initialize(fullPath, dxCommon_->GetSrvDescriptorHeap(), uploadCommandList.Get());
-                textures_[filename] = texture;
-            }
-        }
+        // 遅延ロードを避けたい場合のみ即ロード
+        // ここでは実際にロードしてキャッシュ
+        auto tex = std::make_shared<Texture>();
+        tex->Initialize(key);
+        textures_.emplace(key, std::move(tex));
     }
-
-    // --- コマンドリストを閉じる ---
-    hr = uploadCommandList->Close();
-    assert(SUCCEEDED(hr));
-
-    // --- GPUに送信 ---
-    ID3D12CommandList* cmdLists[] = { uploadCommandList.Get() };
-    dxCommon_->GetCommandQueue()->ExecuteCommandLists(1, cmdLists);
-
-    // --- フェンスで同期 ---
-    Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-    hr = dxCommon_->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
-    assert(SUCCEEDED(hr));
-
-    HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    assert(fenceEvent);
-
-    uint64_t fenceValue = 1;
-    dxCommon_->GetCommandQueue()->Signal(fence.Get(), fenceValue);
-    if (fence->GetCompletedValue() < fenceValue) {
-        fence->SetEventOnCompletion(fenceValue, fenceEvent);
-        WaitForSingleObject(fenceEvent, INFINITE);
-    }
-    CloseHandle(fenceEvent);
-
-    // --- コマンドオブジェクトは関数終了時に自動解放される ---
 }
 
+// 取得（未ロードならロードしてキャッシュ）
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& name) const {
+    // 既存キー検索
     auto it = textures_.find(name);
     if (it != textures_.end()) {
         return it->second->GetTextureSrvHandleGPU();
     }
-    return {};
+
+    // constメソッドだがキャッシュを更新したい：mutable 運用にしたくないので
+    // const_cast で自分を外して登録（スレッド非安全、単純化のため）
+    auto* self = const_cast<TextureManager*>(this);
+
+    auto tex = std::make_shared<Texture>();
+    tex->Initialize(name);
+    auto handle = tex->GetTextureSrvHandleGPU();
+    self->textures_.emplace(name, std::move(tex));
+    return handle;
 }
 
 std::vector<std::string> TextureManager::GetTextureNames() const {
-    std::vector<std::string> names;
-    for (const auto& [name, _] : textures_) {
-        names.push_back(name);
+    std::vector<std::string> keys;
+    keys.reserve(textures_.size());
+    for (auto& kv : textures_) {
+        keys.push_back(kv.first);
     }
-    return names;
+    return keys;
 }
 
 void TextureManager::CreateWhiteDummyTexture() {
-    // 2x2の白画像（全画素RGBA=255,255,255,255）
-    uint32_t whitePixels[4] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    // 既に作成済みなら何もしない
+    if (whiteTextureHandle.ptr != 0) { return; }
 
-    D3D12_RESOURCE_DESC texDesc = {};
-    texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    texDesc.Alignment = 0;
-    texDesc.Width = 2; // ★ 2x2に
-    texDesc.Height = 2;
-    texDesc.DepthOrArraySize = 1;
-    texDesc.MipLevels = 1;
-    texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // ★ SRGBフォーマット
-    texDesc.SampleDesc.Count = 1;
-    texDesc.SampleDesc.Quality = 0;
-    texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    D3D12_HEAP_PROPERTIES heapProp = {};
-    heapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
-
-    // テクスチャリソース生成
-    dxCommon_->GetDevice()->CreateCommittedResource(
-        &heapProp, D3D12_HEAP_FLAG_NONE,
-        &texDesc, D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr, IID_PPV_ARGS(&whiteTextureResource)
-    );
-
-    // アップロードリソース作成
-    CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
-    D3D12_RESOURCE_DESC uploadDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(whitePixels));
-    Microsoft::WRL::ComPtr<ID3D12Resource> uploadResource;
-    dxCommon_->GetDevice()->CreateCommittedResource(
-        &heapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &uploadDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&uploadResource)
-    );
-
-    // ピクセルデータコピー
-    uint8_t* mapped = nullptr;
-    uploadResource->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
-    memcpy(mapped, whitePixels, sizeof(whitePixels));
-    uploadResource->Unmap(0, nullptr);
-
-    // ---- ここからコマンドリストでコピー処理が本来は必要 ----
-    // ・CopyTextureRegion
-    // ・ResourceBarrierでCOPY_DEST→PIXEL_SHADER_RESOURCE
-    // ※省略している場合、テクスチャの中身が正しく転送されません（実務では必須）
-
-    // SRVを作成
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // ★ SRGBフォーマット
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-    dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
-
-    whiteTextureHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
+    // 最も簡単な実装：既存の白画像ファイルを使う（例: resources/white.png）
+    // プロジェクトに用意されていない場合は、作成して追加する実装に差し替えてください。
+    const std::string whitePath = "resources/white.png";
+    whiteTextureHandle = GetTextureHandle(whitePath);
 }
 
-uint32_t TextureManager::GetSRVIndex()const {
+// 既存API互換：Texture 側の静的SRVインデックスに委譲
+uint32_t TextureManager::GetSRVIndex() const {
     return Texture::GetStaticSRVIndex();
 }
-
 void TextureManager::AddSRVIndex() {
     Texture::AddStaticSRVIndex();
 }
 
-// テクスチャ名から元サイズを取得
 bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const {
     auto it = textures_.find(name);
-    if (it == textures_.end() || !it->second) {
-        return false;
-    }
+    if (it == textures_.end()) { return false; }
     outWidth = it->second->GetWidth();
     outHeight = it->second->GetHeight();
     return true;

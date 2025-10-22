@@ -12,6 +12,7 @@
 TextureManager* ObjClass::textureManager_ = nullptr;
 DrawManager* ObjClass::drawManager_ = nullptr;
 DebugUI* ObjClass::ui_ = nullptr;
+
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     this->camera_ = camera;
@@ -72,7 +73,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         // テクスチャ
         auto tex = std::make_unique<Texture>();
         if (!mesh.material.textureFilePath.empty()) {
-            tex->Initialize(mesh.material.textureFilePath, res->GetDirectXCommon()->GetSrvDescriptorHeap(), res->GetDirectXCommon()->GetCommandList());
+            tex->Initialize(mesh.material.textureFilePath);
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
         } else if (!res->textureHandle_.ptr) {
             res->materialData_->hasTexture = false;
@@ -99,23 +100,23 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 }
 
 void ObjClass::Update(const char* objName) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string name = std::string("Obj: ") + objName;
-    ImGui::Begin(name.c_str());
-
-    for (size_t i = 0; i < resources_.size(); ++i) {
-        auto& res = resources_[i];
-        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
-        if (ImGui::TreeNode(meshLabel.c_str())) {
-            ui_->DebugTransform(res->transform_);
-            ui_->DebugMaterialBy3D(res->materialData_);
-            ui_->DebugDirectionalLight(res->directionalLightData_);
-            ui_->DebugUvTransform(res->uvTransform_);
-            ImGui::TreePop();
-        }
-    }
-    ImGui::End();
-#endif
+//#if defined(_DEBUG) || defined(DEVELOPMENT)
+//    std::string name = std::string("Obj: ") + objName;
+//    ImGui::Begin(name.c_str());
+//
+//    for (size_t i = 0; i < resources_.size(); ++i) {
+//        auto& res = resources_[i];
+//        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
+//        if (ImGui::TreeNode(meshLabel.c_str())) {
+//            ui_->DebugTransform(res->transform_);
+//            ui_->DebugMaterialBy3D(res->materialData_);
+//            ui_->DebugDirectionalLight(res->directionalLightData_);
+//            ui_->DebugUvTransform(res->uvTransform_);
+//            ImGui::TreePop();
+//        }
+//    }
+//    ImGui::End();
+//#endif
 
     for (auto& res : resources_) {
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
