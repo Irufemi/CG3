@@ -35,7 +35,8 @@ public:
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
         ShaderSet objectShaders,         // 既存：Object3D.VS/PS など
         ShaderSet particleShaders = {}, // パーティクル専用 VS/PS（なければ空でOK）
-        ShaderSet spriteShaders = {}
+        ShaderSet spriteShaders = {},
+        ShaderSet blocksShaders = {}
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
@@ -45,6 +46,9 @@ public:
     ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth);
 
     ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth);
+
+    // 
+    ID3D12PipelineState* GetBlocks(BlendMode b, DepthWrite d);
 
     void ClearCache();
 
@@ -64,6 +68,7 @@ private:
     ShaderSet objectShaders_{};
     ShaderSet particleShaders_{};
     ShaderSet spriteShaders_{};
+    ShaderSet blocksShaders_{};
 
     struct Key {
         uint64_t hash;

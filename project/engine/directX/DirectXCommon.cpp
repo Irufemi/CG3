@@ -504,6 +504,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> spritePSBlob = CompileShader(L"resources/shaders/Object2D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(spritePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> blocksVSBlob = CompileShader(L"resources/shaders/Blocks.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(blocksVSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -531,6 +534,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         spritePSBlob
     };
 
+    PSOManager::ShaderSet blocksShaders{
+        blocksVSBlob,
+        pixelShaderBlob   // PS は既存の Object3D.PS を流用
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -541,7 +549,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,  // 既存と同じ
         objectShaders,
         particleShaders,     // パーティクルは未使用なら空
-        spriteShaders
+        spriteShaders,
+        blocksShaders
     );
 
     //実際に生成
@@ -553,6 +562,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
     if (particleVSBlob) { particleVSBlob.Reset(); }
     if (particlePSBlob) { particlePSBlob.Reset(); }
+    if (spriteVSBlob) { particleVSBlob.Reset(); }
+    if (spritePSBlob) { particlePSBlob.Reset(); }
+    if (blocksVSBlob) { blocksVSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

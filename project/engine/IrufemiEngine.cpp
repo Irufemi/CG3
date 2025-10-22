@@ -63,6 +63,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
+    Blocks::SetDirectXCommon(dxCommon_.get());
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
@@ -75,7 +76,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
-    Blocks::SetDebugUI(ui.get());
 
     // 描画
     drawManager = std::make_unique<DrawManager>();
@@ -84,7 +84,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
-    Blocks::SetDrawManager(drawManager.get());
 
     // テクスチャ
 
@@ -247,4 +246,9 @@ void IrufemiEngine::ApplyParticlePSO() {
 void IrufemiEngine::ApplySpritePSO() {
     auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
     if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyBlocksPSO() {
+    auto* pso = GetPSOManager()->GetBlocks(currentBlend_, currentDepth_);
+    drawManager->BindPSO(pso);
 }

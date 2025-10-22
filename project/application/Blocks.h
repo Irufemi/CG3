@@ -1,67 +1,83 @@
 #pragma once
 
-#include <d3d12.h>
-#include <string>
-#include "../camera/Camera.h"
-#include "../source/D3D12ResourceUtil.h"
-#include "math/ObjModel.h"
-#include <wrl.h>
-#include <cstdint>
-#include <memory>
 #include <vector>
-#include <cassert>
+#include <memory>
+#include <string>
+#include <wrl.h>
+#include <d3d12.h>
 
-// 前方宣言
-class TextureManager;
-class DrawManager;
-class DebugUI;
+#include "engine/directX/DirectXCommon.h"
+#include "manager/TextureManager.h"
+#include "function/Function.h"      // VertexData / ObjModel / ObjMesh / ObjMaterial など
+#include "function/Math.h"          // Math::MakeAffineMatrix ほか
+#include "math/Transform.h"         // Transform
+
+class Camera;
 
 class Blocks {
-    ObjModel objModel_;
-    std::vector<std::unique_ptr<Texture>> textures_;                 // メッシュが持つテクスチャ（必要に応じて）
-    std::vector<std::unique_ptr<D3D12ResourceUtil>> resources_;      // 各ブロック用の描画リソース（1個=1描画分）
-
-#pragma region 外部参照
-    Camera* camera_ = nullptr;
-    static DebugUI* ui_;
-    static TextureManager* textureManager_;
-    static DrawManager* drawManager_;
-#pragma endregion
-
 public:
-    ~Blocks() = default;
+    // 初期化：OBJ 読み込みと共有テクスチャの取得
+    void Initialize(
+        Camera* camera,
+        const std::string& objFilename);
 
-    // OBJの読み込みと使用カメラの設定（インスタンスはここでは作らない）
-    void Initialize(Camera* camera, const std::string& filename = "block.obj");
-
-    // ブロックを1つ追加（Transformを指定）
+    // インスタンスを追加（Transformを保持）
     void AddInstance(const Transform& t);
 
-    // 一括更新・描画
-    void Update(const char* objName = " ");
+    // 全インスタンス削除
+    void ClearInstances();
+
+    // インスタンシングバッファ更新（必要時だけ再構築/更新）
+    void UpdateInstanceBuffer(bool force = false);
+
+    // 描画（事前に DrawManager::PreDraw 済みであること）
     void Draw();
 
-    // 便利
-    size_t Count() const { return resources_.size(); }
-    void Clear() { resources_.clear(); textures_.clear(); }
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dx_ = dxCommon; }
+    static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
 
-    // 位置/回転/スケール（必要なら）
-    const Vector3& GetPosition(uint32_t index = 0) const { return resources_[index]->transform_.translate; }
-    void SetPosition(const Vector3& position, uint32_t index = 0) { resources_[index]->transform_.translate = position; }
+private:
+    struct InstanceData {
+        Matrix4x4 WVP;
+        Matrix4x4 World;
+        Matrix4x4 WorldInverseTranspose;
+        Vector4   color; // 使わない場合は {1,1,1,1}
+    };
 
-    const Vector3& GetRotate(uint32_t index = 0) const { return resources_[index]->transform_.rotate; }
-    void SetRotate(const Vector3& rotate, uint32_t index = 0) { for (auto& res : resources_) { res->transform_.rotate = rotate; } }
+    // リソース生成ヘルパ
+    void CreateMeshBuffers(const ObjMesh& mesh);
+    void CreateMaterialResources(const ObjMesh& mesh);
+    void EnsureSharedTexture(const ObjMesh& mesh);
+    void EnsureLightAndCamera();
+    void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
 
-    const Vector3& GetScale(uint32_t index = 0) const { return resources_[index]->transform_.scale; }
-    void SetScale(const Vector3& scale) { for (auto& res : resources_) { res->transform_.scale = scale; } }
+private:
+    static DirectXCommon* dx_;
+    static TextureManager* textureManager_;
+    Camera* camera_ = nullptr;
 
-    const Transform& GetTransform(uint32_t index = 0) const { return resources_[index]->transform_; }
-    void SetTransform(Transform transform) { for (auto& res : resources_) { res->transform_ = transform; } }
+    ObjModel objModel_{};
 
-    const TransformationMatrix& GetTransformationMatrix(uint32_t index = 0) const { return resources_[index]->transformationMatrix_; }
-    void SetTransformationMatrix(TransformationMatrix mtx, uint32_t index = 0) { resources_[index]->transformationMatrix_ = mtx; }
+    // メッシュ（単一メッシュ想定）
+    Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
+    D3D12_VERTEX_BUFFER_VIEW               vertexBufferView_{};
+    UINT                                   vertexCount_ = 0;
 
-    static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
-    static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
-    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    // マテリアル/ライト/カメラ
+    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
+
+    // テクスチャ（共有SRV）
+    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
+
+    // インスタンシング用 StructuredBuffer と SRV
+    Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer_;
+    D3D12_CPU_DESCRIPTOR_HANDLE            instancingSrvCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
+    uint32_t                               instancingSrvIndex_ = UINT32_MAX; // 1ディスクリプタ固定で再利用
+
+    // インスタンス（Transform を保持）
+    std::vector<Transform> instances_;
+    bool                   instanceDirty_ = false;
 };

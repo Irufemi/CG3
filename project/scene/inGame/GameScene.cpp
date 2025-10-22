@@ -97,9 +97,6 @@ void GameScene::Update() {
         camera_->Update("Camera");
 
     }
-    // ブロックの更新
-    if (blocks_) { blocks_->Update(); }
-
 
     //pが押されていたら
     if (PressedVK('P')) {
@@ -121,8 +118,12 @@ void GameScene::Draw() {
 
     player_->Draw();
 
+
     // ブロックの描画（Blocksが全インスタンスを描画）
+    engine_->ApplyBlocksPSO();
     if (blocks_) { blocks_->Draw(); }
+
+    engine_->ApplyPSO();
 
     // Particle
 

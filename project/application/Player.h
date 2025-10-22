@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AABB.h"
+#include "math/shape/AABB.h"
 #include "MapChipField.h" // IndexSet/Rect を参照するためヘッダで include
 #include "PlayerState.h" // unique_ptr<IPlayerState> をメンバに持つため
 #include "math/Vector3.h"

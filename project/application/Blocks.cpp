@@ -1,124 +1,209 @@
 #include "Blocks.h"
 
-#include "source/Texture.h"
-#include "function/Function.h"
-#include "function/Math.h"
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
-#include "externals/imgui/imgui.h"
+#include <cassert>
+#include <cstring>
 #include "engine/directX/DirectXCommon.h"
+#include "camera/Camera.h"
+#include "manager/TextureManager.h"
+#include "function/Function.h" // LoadObjFileM, 型定義
+#include "function/Math.h"
+#include "math/Transform.h"
+#include "math/Material.h"   // Material
+#include "math/DirectionalLight.h"      // DirectionalLight
+#include "math/CameraForGPU.h"
 
-DebugUI* Blocks::ui_ = nullptr;
+DirectXCommon* Blocks::dx_ = nullptr;
 TextureManager* Blocks::textureManager_ = nullptr;
-DrawManager* Blocks::drawManager_ = nullptr;
 
-void Blocks::Initialize(Camera* camera, const std::string& filename) {
-    this->camera_ = camera;
+void Blocks::Initialize(
+    Camera* camera,
+    const std::string& objFilename) {
+    assert(camera);
+    camera_ = camera;
 
-    objModel_ = LoadObjFileM("resources/obj", filename);
-
-    textures_.clear();
-    resources_.clear();
-    // ここではインスタンスは作らない（AddInstanceで追加）
-}
-
-void Blocks::AddInstance(const Transform& t) {
-    assert(camera_ && "Blocks::Initialize() が呼ばれていません");
-
-    // 前提: block.obj は単一メッシュ想定。複数メッシュの場合は必要に応じて拡張。
+    // OBJ 読み込み（単一メッシュ前提）
+    objModel_ = LoadObjFileM("resources/obj", objFilename);
     assert(!objModel_.meshes.empty() && "objModel has no mesh");
     const auto& mesh = objModel_.meshes.front();
 
-    auto res = std::make_unique<D3D12ResourceUtil>();
+    // メッシュの VB 作成
+    CreateMeshBuffers(mesh);
 
-    // 頂点バッファ
-    res->vertexResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(VertexData) * mesh.vertices.size());
-    res->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    res->vertexBufferView_.BufferLocation = res->vertexResource_->GetGPUVirtualAddress();
-    res->vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * mesh.vertices.size());
-    res->vertexBufferView_.StrideInBytes = sizeof(VertexData);
+    // マテリアル/ライト/カメラ
+    CreateMaterialResources(mesh);
+    EnsureLightAndCamera();
 
-    res->vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->vertexData_));
-    res->vertexDataList_ = mesh.vertices;
-    std::memcpy(res->vertexData_, mesh.vertices.data(), sizeof(VertexData) * mesh.vertices.size());
+    // テクスチャ共有（SRV 再利用）
+    EnsureSharedTexture(mesh);
 
-    // マテリアル
-    res->materialResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(Material));
-    res->materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->materialData_));
-    res->materialData_->color = mesh.material.color;
-    res->materialData_->enableLighting = mesh.material.enableLighting;
-    res->materialData_->hasTexture = true;
-    res->materialData_->lightingMode = 2;
-    res->materialData_->uvTransform = mesh.material.uvTransform;
-    res->materialData_->shininess = 64.0f;
-
-    // Transform → WVP
-    res->transform_ = t;
-    res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
-    res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-    // 法線変換用：平行移動を除いた World を使う
-    Matrix4x4 worldForNormal = res->transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f;
-    worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-
-    // 逆転置行列を計算
-    res->transformationMatrix_.WorldInverseTranspose =
-        Math::Transpose(Math::Inverse(worldForNormal));
-
-    res->transformationResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-    res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
-
-    // 定数バッファへ全フィールドを書き込む
-    *res->transformationData_ = {
-        res->transformationMatrix_.WVP,
-        res->transformationMatrix_.world,
-        res->transformationMatrix_.WorldInverseTranspose
-    };
-
-    // テクスチャ
-    if (!mesh.material.textureFilePath.empty()) {
-        auto tex = std::make_unique<Texture>();
-        tex->Initialize(mesh.material.textureFilePath, res->GetDirectXCommon()->GetSrvDescriptorHeap(), res->GetDirectXCommon()->GetCommandList());
-        res->textureHandle_ = tex->GetTextureSrvHandleGPU();
-        textures_.push_back(std::move(tex)); // 初期化できた時だけ保持
-    } else {
-        res->materialData_->hasTexture = false;
-        // フォールバック（白）
-        if (textureManager_) {
-            res->textureHandle_ = textureManager_->GetWhiteTextureHandle();
-        } else {
-            res->textureHandle_ = {}; // nullでも描けるが色計算のみ
-        }
-    }
-
-    // ライト
-    res->directionalLightResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(DirectionalLight));
-    res->directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->directionalLightData_));
-    res->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    res->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    res->directionalLightData_->intensity = 1.0f;
-
-    res->cameraResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(CameraForGPU));
-    res->cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->cameraData_));
-    res->cameraData_->worldPosition = camera_->GetTranslate();
-
-    resources_.push_back(std::move(res));
+    // インスタンシングバッファは必要になった時に作成（最低1で良ければここで CreateOrResizeInstanceBuffer(1) でもOK）
 }
 
-void Blocks::Update(const char* /*objName*/) {
-    for (auto& res : resources_) {
-        res->UpdateTransform3D(*camera_);
-        *res->transformationData_ = { res->transformationMatrix_.WVP, res->transformationMatrix_.world ,res->transformationMatrix_.WorldInverseTranspose };;
-        res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
-        res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
+void Blocks::CreateMeshBuffers(const ObjMesh& mesh) {
+    vertexCount_ = static_cast<UINT>(mesh.vertices.size());
+    const size_t vbSize = sizeof(VertexData) * mesh.vertices.size();
+
+    vertexResource_ = dx_->CreateBufferResource(vbSize);
+    vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
+    vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
+    vertexBufferView_.SizeInBytes = static_cast<UINT>(vbSize);
+    vertexBufferView_.StrideInBytes = sizeof(VertexData);
+
+    // 転送
+    VertexData* vb = nullptr;
+    HRESULT hr = vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vb));
+    assert(SUCCEEDED(hr));
+    std::memcpy(vb, mesh.vertices.data(), vbSize);
+    vertexResource_->Unmap(0, nullptr);
+}
+
+void Blocks::CreateMaterialResources(const ObjMesh& mesh) {
+    // マテリアル
+    materialResource_ = dx_->CreateBufferResource(sizeof(Material));
+    Material* mat = nullptr;
+    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+    mat->color = mesh.material.color;
+    mat->enableLighting = mesh.material.enableLighting;
+    mat->hasTexture = !mesh.material.textureFilePath.empty();
+    mat->lightingMode = mesh.material.enableLighting ? 2 : 0;
+    mat->uvTransform = mesh.material.uvTransform;
+    mat->shininess = mesh.material.shininess;
+
+    // ライト
+    directionalLightResource_ = dx_->CreateBufferResource(sizeof(DirectionalLight));
+    DirectionalLight* dl = nullptr;
+    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&dl));
+    dl->color = { 1.0f,1.0f,1.0f,1.0f };
+    dl->direction = { 0.0f,-1.0f,0.0f };
+    dl->intensity = 1.0f;
+
+    // カメラ
+    cameraResource_ = dx_->CreateBufferResource(sizeof(CameraForGPU));
+    CameraForGPU* cam = nullptr;
+    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
+    cam->worldPosition = camera_->GetTranslate();
+}
+
+void Blocks::EnsureLightAndCamera() {
+    // 初期化済み。毎フレームのカメラ位置更新は Draw 内で行う
+}
+
+void Blocks::EnsureSharedTexture(const ObjMesh& mesh) {
+    if (!mesh.material.textureFilePath.empty()) {
+        textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
+    } else {
+        textureHandle_ = textureManager_->GetWhiteTextureHandle();
     }
+    assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
+}
+
+void Blocks::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
+    const UINT stride = sizeof(InstanceData);
+    const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride); // 最低1
+
+    // バッファを作り直し（Upload）
+    instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
+
+    // 初回のみディスクリプタ確保（1個固定、以後は書き換え）
+    if (instancingSrvIndex_ == UINT32_MAX) {
+        // 既存の SRV インデックス運用に合わせる（TextureManager 経由）
+        uint32_t next = textureManager_->GetSRVIndex() + 1;
+        textureManager_->AddSRVIndex();
+        instancingSrvIndex_ = next;
+
+        instancingSrvCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(instancingSrvIndex_);
+        instancingSrvGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(instancingSrvIndex_);
+    }
+
+    // SRV 描述子（StructuredBuffer）
+    D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+    srv.Format = DXGI_FORMAT_UNKNOWN;
+    srv.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srv.Buffer.FirstElement = 0;
+    srv.Buffer.NumElements = instanceCount;         // 要素数
+    srv.Buffer.StructureByteStride = stride;        // 構造体ストライド
+    srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
+}
+
+void Blocks::AddInstance(const Transform& t) {
+    instances_.push_back(t);
+    instanceDirty_ = true;
+}
+
+void Blocks::ClearInstances() {
+    instances_.clear();
+    instanceDirty_ = true;
+}
+
+// 変更: force を見るように
+void Blocks::UpdateInstanceBuffer(bool force) {
+    if (instances_.empty()) { return; }
+    if (!force && !instanceDirty_) { return; }
+
+    const UINT count = static_cast<UINT>(instances_.size());
+    const UINT stride = sizeof(InstanceData);
+    const UINT sizeInBytes = stride * count;
+
+    // バッファ確保・SRV更新（要素数が変わったときだけ作り直ししたい場合は、既存サイズを保持して条件分岐）
+    CreateOrResizeInstanceBuffer(count);
+
+    std::vector<InstanceData> temp(count);
+    const Matrix4x4 view = camera_->GetViewMatrix();
+    const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
+    for (UINT i = 0; i < count; ++i) {
+        const Transform& inst = instances_[i];
+
+        Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
+        Matrix4x4 wvp = Math::Multiply(world, Math::Multiply(view, proj));
+
+        Matrix4x4 worldForNormal = world;
+        worldForNormal.m[3][0] = 0.0f;
+        worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f;
+        worldForNormal.m[3][3] = 1.0f;
+
+        temp[i].WVP = wvp;
+        temp[i].World = world;
+        temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        temp[i].color = { 1,1,1,1 };
+    }
+
+    uint8_t* dst = nullptr;
+    HRESULT hr = instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&dst));
+    assert(SUCCEEDED(hr));
+    std::memcpy(dst, temp.data(), sizeInBytes);
+    instanceBuffer_->Unmap(0, nullptr);
+
+    instanceDirty_ = false;
 }
 
 void Blocks::Draw() {
-    for (auto& res : resources_) {
-        drawManager_->DrawByVertex(res.get());
+    if (vertexCount_ == 0 || instances_.empty()) { return; }
+
+    // カメラ位置更新
+    {
+        CameraForGPU* cam = nullptr;
+        cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
+        cam->worldPosition = camera_->GetTranslate();
     }
+
+    // インスタンスバッファ更新（毎フレームWVP再計算）
+    UpdateInstanceBuffer(true);
+
+    auto* cmd = dx_->GetCommandList();
+    cmd->SetGraphicsRootSignature(dx_->GetRootSignature());
+
+    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    cmd->IASetVertexBuffers(0, 1, &vertexBufferView_);
+
+    cmd->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());          // PS b0
+    cmd->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());  // PS b1
+    cmd->SetGraphicsRootConstantBufferView(5, cameraResource_->GetGPUVirtualAddress());            // PS b2
+    cmd->SetGraphicsRootDescriptorTable(2, textureHandle_);                                        // PS t0
+
+    cmd->SetGraphicsRootDescriptorTable(4, instancingSrvGPU_);                                     // VS t0
+    cmd->DrawInstanced(vertexCount_, static_cast<UINT>(instances_.size()), 0, 0);
 }

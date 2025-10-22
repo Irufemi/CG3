@@ -73,7 +73,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         // テクスチャ
         auto tex = std::make_unique<Texture>();
         if (!mesh.material.textureFilePath.empty()) {
-            tex->Initialize(mesh.material.textureFilePath, res->GetDirectXCommon()->GetSrvDescriptorHeap(), res->GetDirectXCommon()->GetCommandList());
+            tex->Initialize(mesh.material.textureFilePath);
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
         } else if (!res->textureHandle_.ptr) {
             res->materialData_->hasTexture = false;

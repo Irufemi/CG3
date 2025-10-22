@@ -16,8 +16,6 @@ protected:
     std::string filePath_;
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
     static uint32_t index_;
 
     // 読み込んだテクスチャの元サイズ
@@ -39,7 +37,7 @@ public:
     ~Texture() = default;
 
     //初期化
-    void Initialize(const std::string& filePath,const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+    void Initialize(const std::string& filePath);
 
     //ゲッター
 
