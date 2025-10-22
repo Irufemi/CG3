@@ -11,6 +11,11 @@
 #include <cassert>
 #include <map>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/material.h>
+
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename) {
     // 1. 中で必要となる変数の宣言
     // 2. ファイルを開く
@@ -243,6 +248,194 @@ ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filen
 
     if (!currentMesh.vertices.empty()) {
         objModel.meshes.push_back(currentMesh);
+    }
+
+    return objModel;
+}
+
+ModelData LoadObjFileAssimp(const std::string& directoryPath, const std::string& filename) {
+
+    ModelData modelData; //構築するModelData
+
+    /*いろんなフォーマットのモデルが読みたい*/
+
+    /// assimpでobjを読む
+    
+    // ファイルからassimpのSceneを構築する
+    // assimpのデータ構造 → https://learnopengl.com/Model-Loading/Assimp
+    Assimp::Importer importer;
+    std::string filePath = directoryPath + "/" + filename;
+    // assimpでは読み込む際にオプションを指定することができる
+    // 今回はobjからDirectX12の形式に合わせるために
+    // ・ aiProcess_FlipWindingOrder : 三角形の並び順を逆にする
+    // ・ aiProcess_FlipUVs : UVをフリップする(texcoord.y = 1.0f - texcoord.y;の処理)
+    // を指定した。
+    // ほかのオプション → https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h#L60
+    const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
+
+    /// meshを解析する
+
+    for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
+        aiMesh* mesh = scene->mMeshes[meshIndex];
+        assert(mesh->HasNormals()); // 法線がないMeshは今回は非対応
+        assert(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
+        // ここからMeshの中身(Face)の解析を行っていく
+
+        /// faceを解析する
+
+        for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
+            aiFace& face = mesh->mFaces[faceIndex];
+            assert(face.mNumIndices == 3); // 三角形のみサポート
+            // ここからfaceの中身(Vertex)の解析を行っていく
+
+            /// vertexを解析する
+            for (uint32_t element = 0; element < face.mNumIndices; ++element) {
+                uint32_t vertexIndex = face.mIndices[element];
+                aiVector3D& position = mesh->mVertices[vertexIndex];
+                aiVector3D& normal = mesh->mNormals[vertexIndex];
+                aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
+                VertexData vertex;
+                vertex.position = { position.x,position.y,position.z };
+                vertex.normal = { normal.x,normal.y,normal.z };
+                vertex.texcoord = { texcoord.x,texcoord.y };
+                // aiProcess_MakeLeftHandedはz*=-1で、右手->左手に変換するので手動で対処
+                vertex.position.x *= -1.0f;
+                vertex.normal.x *= -1.0f;
+                modelData.vertices.push_back(vertex);
+            }
+        }
+    }
+
+    /// materialを解析する
+
+    for (uint32_t materialIndex = 0; materialIndex < scene->mNumMaterials; ++materialIndex) {
+        aiMaterial* material = scene->mMaterials[materialIndex];
+        if (material->GetTextureCount(aiTextureType_DIFFUSE) != 0) {
+            aiString textureFilePath;
+            material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath);
+            modelData.material.textureFilePath = directoryPath + "/" + textureFilePath.C_Str();
+        }
+    }
+
+    return modelData;
+
+}
+
+
+ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename) {
+    ObjModel objModel;
+
+    Assimp::Importer importer;
+    const std::string filePath = directoryPath + "/" + filename;
+
+    // 三角形化 + 回り順反転 + UV反転（左手系化は手動でx *= -1）
+    const unsigned int flags =
+        aiProcess_Triangulate |
+        aiProcess_FlipWindingOrder |
+        aiProcess_FlipUVs;
+
+    const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
+    assert(scene && scene->HasMeshes());
+
+    // マテリアルをObjMaterialに変換（テクスチャ/色/不透明度/光沢など）
+    std::vector<ObjMaterial> convertedMaterials;
+    convertedMaterials.resize(scene->mNumMaterials);
+
+    for (uint32_t i = 0; i < scene->mNumMaterials; ++i) {
+        const aiMaterial* m = scene->mMaterials[i];
+        ObjMaterial out{};
+
+        // デフォルト値
+        out.textureFilePath = "";
+        out.color = { 1.0f,1.0f,1.0f,1.0f };
+        out.ambient = { 0.0f,0.0f,0.0f };
+        out.specular = { 0.0f,0.0f,0.0f };
+        out.shininess = 32.0f;
+        out.alpha = 1.0f;
+        out.enableLighting = true;
+        out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0,0,0 }, { 0,0,0 });
+
+        // テクスチャ（ディフューズ）
+        if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+            aiString texPath;
+            if (m->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS) {
+                // 埋め込みテクスチャ("*0"など)はここでは未対応。外部ファイルパスのみ対応。
+                std::string p = texPath.C_Str();
+                if (!p.empty() && p[0] != '*') {
+                    // 相対パスをリソースフォルダ基準に解決
+                    out.textureFilePath = directoryPath + "/" + p;
+                }
+            }
+        }
+
+        // カラー等（取得できる場合のみ）
+        aiColor3D kd;
+        if (m->Get(AI_MATKEY_COLOR_DIFFUSE, kd) == aiReturn_SUCCESS) {
+            out.color.x = kd.r;
+            out.color.y = kd.g;
+            out.color.z = kd.b;
+            out.color.w = 1.0f;
+        }
+        aiColor3D ka;
+        if (m->Get(AI_MATKEY_COLOR_AMBIENT, ka) == aiReturn_SUCCESS) {
+            out.ambient.x = ka.r; out.ambient.y = ka.g; out.ambient.z = ka.b;
+        }
+        aiColor3D ks;
+        if (m->Get(AI_MATKEY_COLOR_SPECULAR, ks) == aiReturn_SUCCESS) {
+            out.specular.x = ks.r; out.specular.y = ks.g; out.specular.z = ks.b;
+        }
+        float shininess = 0.0f;
+        if (m->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS) {
+            out.shininess = shininess;
+        }
+        float opacity = 1.0f;
+        if (m->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS) {
+            out.alpha = opacity;
+            out.color.w = opacity;
+        }
+
+        convertedMaterials[i] = out;
+    }
+
+    // メッシュを展開（頂点三角形ストリップ → 連続三角形リスト）
+    for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
+        aiMesh* mesh = scene->mMeshes[meshIndex];
+
+        ObjMesh outMesh;
+        // マテリアル割り当て
+        if (mesh->mMaterialIndex < convertedMaterials.size()) {
+            outMesh.material = convertedMaterials[mesh->mMaterialIndex];
+        }
+
+        // 頂点展開
+        assert(mesh->HasFaces());
+        // 法線がないモデルもあるため、生成済みでなくても安全に扱う
+        const bool hasNormals = mesh->HasNormals();
+        const bool hasUV0 = mesh->HasTextureCoords(0);
+
+        for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
+            const aiFace& face = mesh->mFaces[faceIndex];
+            assert(face.mNumIndices == 3); // Triangulate済み
+
+            for (uint32_t e = 0; e < 3; ++e) {
+                const uint32_t idx = face.mIndices[e];
+
+                const aiVector3D& p = mesh->mVertices[idx];
+                aiVector3D n = hasNormals ? mesh->mNormals[idx] : aiVector3D(0, 1, 0);
+                aiVector3D t = hasUV0 ? mesh->mTextureCoords[0][idx] : aiVector3D(0.5f, 0.5f, 0.0f);
+
+                VertexData v{};
+                // 左手系化（x反転のみ、回り順はフラグで反転済み）
+                v.position = { -p.x, p.y, p.z, 1.0f };
+                v.normal = { -n.x, n.y, n.z };
+                // UVは aiProcess_FlipUVs 済み。追加の反転は不要。
+                v.texcoord = { t.x, t.y };
+
+                outMesh.vertices.push_back(v);
+            }
+        }
+
+        objModel.meshes.push_back(std::move(outMesh));
     }
 
     return objModel;

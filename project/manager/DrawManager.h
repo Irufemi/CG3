@@ -13,8 +13,10 @@ class SphereClass;
 class ObjClass;
 class ParticleClass;
 class D3D12ResourceUtil;
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
+struct PointLight;
+class PointLightClass;
+struct SpotLight;
+class SpotLightClass;
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -31,11 +33,15 @@ private:
     void EnsurePointLightResource(); // 生成・初期化の遅延実行用
     void EnsureSpotLightResource(); // 生成・初期化の遅延実行用
 
+    // フォールバック込みで今フレーム使うGPUアドレスを取得
+    D3D12_GPU_VIRTUAL_ADDRESS GetPointLightVA();
+    D3D12_GPU_VIRTUAL_ADDRESS GetSpotLightVA();
+
 
 public: //メンバ関数
 
     void Initialize(DirectXCommon* dx) { dxCommon_ = dx; }
-    void Finalize() { dxCommon_ = nullptr; }
+    void Finalize();
 
     // 追加（保持はしないで即時バインド）
     void BindPSO(ID3D12PipelineState* pso);
@@ -68,8 +74,8 @@ public: //メンバ関数
     void DrawByVertex(D3D12ResourceUtil* resource);
 
     void SetPointLightClass(PointLightClass* pointLightClass) { pointLight_ = pointLightClass; }
-    void SetPointLight(PointLight& info) { pointLight_->SetData(&info); }
+    void SetPointLight(PointLight& info);
 
     void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
-    void SetSpotLight(SpotLight& info) { spotLight_->SetData(&info); }
+    void SetSpotLight(SpotLight& info);
 };

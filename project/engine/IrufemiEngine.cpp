@@ -102,6 +102,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
 void IrufemiEngine::Finalize() {
 
+    // できるだけ早くシーンを破棄（中でGPUリソースを持っている可能性が高い）
+    if (sceneManager_) {
+        sceneManager_.reset();
+    }
+
     // 入力系の解放
     if (inputManager_) {
         inputManager_.reset();
@@ -120,6 +125,10 @@ void IrufemiEngine::Finalize() {
     if (ui) {
         ui->Shutdown();
         ui.reset();
+    }
+    // テクスチャ（SRV/テクスチャリソースを解放）
+    if (textureManager) {
+        textureManager.reset();
     }
 
     if (dxCommon_) {
