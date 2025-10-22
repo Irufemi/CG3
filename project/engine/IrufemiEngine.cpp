@@ -12,6 +12,7 @@
 #include "2D/Sprite.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
+#include "3D/Region.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -62,6 +63,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
+    Region::SetDirectXCommon(dxCommon_.get());
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
@@ -93,6 +95,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
+    Region::SetTextureManager(textureManager.get());
 
 }
 
@@ -243,4 +246,9 @@ void IrufemiEngine::ApplyParticlePSO() {
 void IrufemiEngine::ApplySpritePSO() {
     auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
     if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyBlocksPSO() {
+    auto* pso = GetPSOManager()->GetBlocks(currentBlend_, currentDepth_);
+    drawManager->BindPSO(pso);
 }

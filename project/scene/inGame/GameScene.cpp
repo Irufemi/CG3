@@ -3,7 +3,7 @@
 #include "../SceneManager.h"
 #include "../SceneName.h"
 #include "engine/IrufemiEngine.h"
-#include "externals/imgui/imgui.h"
+#include "imgui.h"
 
 #include <algorithm>
 
@@ -24,7 +24,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     pointLight_ = std::make_unique <PointLightClass>();
     pointLight_->Initialize();
-    
+
     engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
 
     spotLight_ = std::make_unique <SpotLightClass>();
@@ -103,7 +103,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    
+
     ImGui::Begin("GameScene");
     // pointLight 
     pointLight_->Debug();
@@ -126,6 +126,7 @@ void GameScene::Update() {
     ImGui::Checkbox("Particle", &isActiveParticle);
     ImGui::End();
 
+
     ImGui::Begin("Texture");
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
@@ -135,6 +136,7 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
+    // カメラの更新
     if (debugMode) {
         debugCamera_->Update();
         camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
@@ -187,7 +189,7 @@ void GameScene::Update() {
     if (isActiveMultiMesh) {
         if (!multiMesh) {
             multiMesh = std::make_unique<ObjClass>();
-            multiMesh->Initialize(camera_.get(),  "multiMesh.obj");
+            multiMesh->Initialize(camera_.get(), "multiMesh.obj");
         }
         multiMesh->Update("MultiMesh");
     }
@@ -217,7 +219,7 @@ void GameScene::Update() {
             terrain_ = std::make_unique<ObjClass>();
             terrain_->Initialize(camera_.get(), "terrain.obj");
         }
-        terrain_->Update("Fence");
+        terrain_->Update("Terrain");
     }
     if (isActiveParticle) {
         if (!particle) {
@@ -237,9 +239,7 @@ void GameScene::Update() {
         sprite->Update();
     }
 
-
-
-    //キーが押されていたら
+    //pが押されていたら
     if (PressedVK('P')) {
         if (g_SceneManager) {
             g_SceneManager->Request(SceneName::result);
@@ -296,13 +296,40 @@ void GameScene::Draw() {
         engine_->GetDrawManager()->DrawParticle(particle.get());
     }
 
+
     // 2D
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
+}
 
-    if (isActiveSprite) {
-        sprite->Draw();
+
+void GameScene::GenerateBlocks() {
+
+    // 要素数
+    uint32_t numBlockVirtical = mapChipField_->GetNumBlockVirtical();
+    uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
+
+    // 要素数を変更する
+    // 列数を指定(縦方向のブロック数)
+    worldtransformBlocks_.resize(numBlockVirtical);
+    for (uint32_t i = 0; i < numBlockVirtical; ++i) {
+        // 1列の要素数を設定(横方向のブロック数)
+        worldtransformBlocks_[i].resize(numBlockHorizontal);
+    }
+
+    // ブロックの生成
+    // ブロックの生成（Blocks にインスタンスを積む）
+    for (uint32_t i = 0; i < numBlockVirtical; ++i) {
+        for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
+            if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
+                Transform* worldTransform = new Transform();
+                worldtransformBlocks_[i][j] = worldTransform;
+                worldtransformBlocks_[i][j]->translate = mapChipField_->GetMapChipPositionByIndex(j, i);
+                // Blocksにもインスタンスとして追加
+                if (blocks_) { blocks_->AddInstance(*worldtransformBlocks_[i][j]); }
+            }
+        }
     }
 }
