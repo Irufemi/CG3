@@ -52,6 +52,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     };
     collisionResult_[0] = {};
     collisionResult_[1] = {};
+
+    cylinder_ = std::make_unique<CylinderClass>();
+    cylinder_->Initialize(camera_.get());
 }
 
 // 更新
@@ -85,6 +88,8 @@ void GameScene::Update() {
         camera_->Update("Camera");
 
     }
+
+    cylinder_->Update();
 
     player_->Input();
     player_->SpeedCalculation();
@@ -176,6 +181,8 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
+
+    cylinder_->Draw();
 
     // Player
     player_->Draw();

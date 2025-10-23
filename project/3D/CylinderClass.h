@@ -55,7 +55,7 @@ public: // メンバ関数
     ~CylinderClass() = default;
 
     // 初期化
-    void Initialize(Camera* camera, const std::string& textureName = "uvChecker.png");
+    void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
 
     // 更新
     void Update(const char* cylinderName = " ");
@@ -79,5 +79,11 @@ public: // メンバ関数
     void SetRadius(float radius) { info_.radius = radius; }
     void SetHeight(float height) { info_.height = height; }
     void SetRotate(const Vector3& rotate) { resource_->transform_.rotate = rotate; }
+
+private:
+    // 上下面キャップを個別に作るヘルパー
+    // top == true => +Y 側のキャップ（上蓋）
+    // doubleSided == true => 各三角形の逆順も追加して両面にする
+    void AddCap(bool top, bool doubleSided = false);
 };
 

@@ -9,6 +9,7 @@
 #include "3D/SphereClass.h"
 #include "3D/ObjClass.h"
 #include "3D/ParticleClass.h"
+#include "3D/CylinderClass.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "audio/Bgm.h"
@@ -54,7 +55,9 @@ private: // メンバ変数(ゲーム部分)
 
     std::unique_ptr<Bgm> bgm = nullptr;
 
-private: // メンバ変数
+private: // メンバ変数(システム)
+
+    std::unique_ptr<CylinderClass> cylinder_ = nullptr;
 
     // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;

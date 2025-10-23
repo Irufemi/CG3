@@ -3,6 +3,7 @@
 #include "engine/Input/InputManager.h"
 #include "camera/Camera.h"
 #include "3D/SphereClass.h"
+#include "3D/CylinderClass.h"
 #include <dinput.h>
 
 
@@ -40,29 +41,39 @@ static float ScreenRadiusToWorld(const Camera* cam, const Vector2& center, float
 
 void Player::Initialize (InputManager* inputManager, Camera* camera) {
 
-	camera_ = camera;
-	inputManager_ = inputManager;
+    camera_ = camera;
+    inputManager_ = inputManager;
 
-	pos_ = { 100.0f, 400.0f };
-	radius_ = { 30.0f, 30.0f };
-	velocity_ = {-1.0f, 0.0f};
+    pos_ = { 100.0f, 400.0f };
+    radius_ = { 30.0f, 30.0f };
+    velocity_ = {-1.0f, 0.0f};
 
-	cannonPos_ = { pos_.x, pos_.y - radius_.y };
-	cannonRadius_ = { 12.0f, 24.0f };
-	cannonOffset_ = { 0.0f, -30.0f };
-	angle_ = 0.0f;
-	rad_ = 0.0f;
-	sinf_ = 0.0f;
-	cosf_ = 0.0f;
+    cannonPos_ = { pos_.x, pos_.y - radius_.y };
+    cannonRadius_ = { 12.0f, 24.0f };
+    cannonOffset_ = { 0.0f, -30.0f };
+    angle_ = 0.0f;
+    rad_ = 0.0f;
+    sinf_ = 0.0f;
+    cosf_ = 0.0f;
 
-	for (auto& b : bullet) {
-		b.Initialize (pos_, sinf_, cosf_);
-	}
+    for (auto& b : bullet) {
+        b.Initialize (pos_, sinf_, cosf_);
+    }
 
-	sphere_ = std::make_unique<SphereClass>();
-	sphere_->SetInfo(Sphere{ Vector3{pos_.x,pos_.y,0.0f},radius_.x });
-	sphere_->Initialize(camera);
+    sphere_ = std::make_unique<SphereClass>();
+    sphere_->SetInfo(Sphere{ Vector3{pos_.x,pos_.y,0.0f},radius_.x });
+    sphere_->Initialize(camera);
 
+    // 砲塔（Cylinder）を生成
+    cylinder_ = std::make_unique<CylinderClass>();
+    {
+        // 初期位置をZ=0平面のワールドに変換して半径/高さもワールド化
+        Vector3 wcCannon = ScreenToWorldOnZ(camera, cannonPos_, 0.0f);
+        float  rWorld    = ScreenRadiusToWorld(camera, cannonPos_, cannonRadius_.x, 0.0f);
+        float  hWorld    = ScreenRadiusToWorld(camera, cannonPos_, cannonRadius_.y, 0.0f) * 2.0f; // 矩形の高さ相当
+        cylinder_->SetInfo(Cylinder{ wcCannon, rWorld, hWorld });
+    }
+    cylinder_->Initialize(camera);
 }
 
 void Player::Jump () {
@@ -140,53 +151,49 @@ void Player::Update () {
 }
 
 void Player::DrawSet() {
-	Vector3 wc = ScreenToWorldOnZ(camera_, pos_, 0.0f);
-	float wr = ScreenRadiusToWorld(camera_, pos_, radius_.x, 0.0f);
-	sphere_->SetInfo(Sphere{ wc, wr });
-	// 2Dの角度(angle_ → rad_)をZ回転として適用
-	sphere_->SetRotate(Vector3{ 0.0f, 0.0f, -rad_ });
-	sphere_->Update("PlayerSphere");
+    Vector3 wc = ScreenToWorldOnZ(camera_, pos_, 0.0f);
+    float wr = ScreenRadiusToWorld(camera_, pos_, radius_.x, 0.0f);
+    sphere_->SetInfo(Sphere{ wc, wr });
+    // 2D角度（rad_）をZ回転へ
+    sphere_->SetRotate(Vector3{ 0.0f, 0.0f, -rad_ });
+    sphere_->Update("PlayerSphere");
 
+    // 砲塔のローカル矩形を更新（弾の発射座標算出などで使うなら残す）
+    Vector2 local[4] = {
+        {-cannonRadius_.x, -cannonRadius_.y},
+        { cannonRadius_.x, -cannonRadius_.y},
+        {-cannonRadius_.x,  cannonRadius_.y},
+        { cannonRadius_.x,  cannonRadius_.y},
+    };
+    for (int i = 0; i < 4; i++) {
+        float x = local[i].x;
+        float y = local[i].y;
+        local[i].x = x * cosf(rad_) - y * sinf(rad_);
+        local[i].y = x * sinf(rad_) + y * cosf(rad_);
+        local[i].x += cannonPos_.x;
+        local[i].y += cannonPos_.y;
+    }
 
-	// 回転行列を使って4点を回す
-	Vector2 local[4] = {
-		{-cannonRadius_.x, -cannonRadius_.y},
-		{ cannonRadius_.x, -cannonRadius_.y},
-		{-cannonRadius_.x,  cannonRadius_.y},
-		{ cannonRadius_.x,  cannonRadius_.y},
-	};
+    // 砲塔（Cylinder）を毎フレーム反映
+    {
+        Vector3 wcCannon = ScreenToWorldOnZ(camera_, cannonPos_, 0.0f);
+        float  rWorld    = ScreenRadiusToWorld(camera_, cannonPos_, cannonRadius_.x, 0.0f);
+        float  hWorld    = ScreenRadiusToWorld(camera_, cannonPos_, cannonRadius_.y, 0.0f) * 2.0f;
 
-	for (int i = 0; i < 4; i++) {
-		float x = local[i].x;
-		float y = local[i].y;
-		local[i].x = x * cosf(rad_) - y * sinf(rad_);
-		local[i].y = x * sinf(rad_) + y * cosf(rad_);
-		local[i].x += cannonPos_.x;
-		local[i].y += cannonPos_.y;
-	}
-
-
-
+        cylinder_->SetInfo(Cylinder{ wcCannon, rWorld, hWorld });
+        // 2D回転をZ回転として適用（CylinderはY軸が高さ）
+        cylinder_->SetRotate(Vector3{ 0.0f, 0.0f, -rad_ });
+        cylinder_->Update("Cannon");
+    }
 }
 
 void Player::Draw () {
-	//player
-	
-	sphere_->Draw();
-	
-	//Shape::DrawEllipse (pos_.x, pos_.y, radius_.x, radius_.y, 0.0f, WHITE, kFillModeSolid);
-	//cannon
+    // 砲塔 → プレイヤーの順でもOK（深度有効なら順不同）
+    cylinder_->Draw();
+    sphere_->Draw();
 
-	/*Shape::DrawQuad (
-		local[0].x, local[0].y,
-		local[1].x, local[1].y,
-		local[2].x, local[2].y,
-		local[3].x, local[3].y,
-		0, 0, 0, 0, 0, BLACK
-	);*/
-
-	//弾
-	for (auto& b : bullet) {
-		b.Draw ();
-	}
+    // 弾
+    for (auto& b : bullet) {
+        b.Draw ();
+    }
 }

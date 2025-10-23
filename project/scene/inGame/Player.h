@@ -6,6 +6,7 @@
 #include <memory>
 
 class SphereClass;
+class CylinderClass;
 class Camera;
 
 class InputManager;
@@ -34,6 +35,7 @@ public:
 private:
 	// 描画用生成物
 	std::unique_ptr<SphereClass> sphere_ = nullptr;
+	std::unique_ptr<CylinderClass> cylinder_ = nullptr;
 
 private:
 	//position

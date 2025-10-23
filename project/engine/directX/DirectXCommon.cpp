@@ -74,7 +74,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DebugLayer(デバッグレイヤー)
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
@@ -148,7 +148,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///エラー・警告、即ち停止
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
     if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
         //ヤバイエラー時に止まる

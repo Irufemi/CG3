@@ -265,14 +265,14 @@
     <ClCompile Include="math\Vector2.cpp">
       <Filter>math</Filter>
     </ClCompile>
-    <ClCompile Include="scene\inGame\CollisionResult.h">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\CylinderClass.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="3D\Region.cpp">
       <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\CylinderClass.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\CollisionResult.h">
+      <Filter>Application\Scene\content</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -523,7 +523,7 @@
       <Filter>Application\Scene\content</Filter>
     </ClInclude>
     <ClInclude Include="3D\CylinderClass.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>3D</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
