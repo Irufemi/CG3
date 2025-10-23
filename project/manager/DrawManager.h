@@ -12,6 +12,7 @@ class Sprite;
 class SphereClass;
 class ObjClass;
 class ParticleClass;
+class CylinderClass;
 class D3D12ResourceUtil;
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
@@ -60,6 +61,8 @@ public: //メンバ関数
     void DrawSprite(Sprite* sprite);
 
     void DrawSphere(SphereClass* sphere);
+
+    void DrawCylinder(CylinderClass* cylinder);
 
     void DrawParticle(ParticleClass* resource);
 

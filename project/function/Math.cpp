@@ -5,13 +5,14 @@
 #include <math.h>
 #include <cmath>
 #include <algorithm> 
+#include <limits> 
 
 #include "Ease.h"
-#include "../math/shape/AABB.h"
-#include "../math/shape/LinePrimitive.h"
-#include "../math/shape/Plane.h"
-#include "../math/shape/Sphere.h"
-#include "../math/shape/Triangle.h"
+#include "math/shape/AABB.h"
+#include "math/shape/LinePrimitive.h"
+#include "math/shape/Plane.h"
+#include "math/shape/Sphere.h"
+#include "math/shape/Triangle.h"
 
 namespace Math {
 
@@ -20,10 +21,19 @@ namespace Math {
     // 加算
     Vector2 Add(const Vector2& a, const Vector2& b) { return { a.x + b.x, a.y + b.y }; }
 
+    // 減算
+    Vector2 Subtract(const Vector2& a, const Vector2& b) { return { a.x - b.x, a.y - b.y }; }
+
     // スカラー倍
     Vector2 Multiply(const float scalar, const Vector2 vector) { return { vector.x * scalar, vector.y * scalar }; }
 
+    // 内積
+    float Dot(const Vector2& a, const Vector2& b) { return a.x * b.x + a.y * b.y; }
 
+    // ノルム(長さ)
+    float Length(const Vector2& vector) { return std::sqrt(Dot(vector, vector)); }
+
+    // 正規化
     Vector2 Normalize(Vector2 vector) {
         float length = sqrtf(powf(vector.x, 2.0f) + powf(vector.y, 2.0f));
         if (length == 0.0f) {
@@ -32,6 +42,24 @@ namespace Math {
         // 長さが0の場合はゼロベクトルを返す
         Vector2 result = { vector.x / length, vector.y / length };
         return result;
+    }
+
+    // 点と線分(2D)の最近接点（Segment2D: endは終点座標）
+    Vector2 ClosestPoint(const Vector2& point, const Segment2D& segment) {
+        Vector2 ab = Subtract(segment.end, segment.origin);
+        Vector2 ap = Subtract(point, segment.origin);
+
+        float t = Dot(ap, ab) / (powf(ab.x, 2) + powf(ab.y, 2));
+
+        if (t < 0) {
+            return segment.origin;
+        }
+        if (t > 1) {
+            return segment.end;
+        } else {
+            Vector2 projection = Add(segment.origin, Multiply(t, ab));
+            return projection;
+        }
     }
 
     // 2次ベジェ曲線上の点を求める関数

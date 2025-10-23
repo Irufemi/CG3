@@ -4,16 +4,21 @@
 
 #include <memory>
 
-#include "../../3D/TriangleClass.h"
-#include "../../2D/Sprite.h"
-#include "../../3D/SphereClass.h"
-#include "../../3D/ObjClass.h"
-#include "../../3D/ParticleClass.h"
-#include "../../3D/PointLightClass.h"
-#include "../../3D/SpotLightClass.h"
-#include "../../audio/Bgm.h"
-#include "../../camera/Camera.h"
-#include "../../camera/DebugCamera.h"
+#include "3D/TriangleClass.h"
+#include "2D/Sprite.h"
+#include "3D/SphereClass.h"
+#include "3D/ObjClass.h"
+#include "3D/ParticleClass.h"
+#include "3D/PointLightClass.h"
+#include "3D/SpotLightClass.h"
+#include "audio/Bgm.h"
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
+#include "math/Vector2.h"
+#include "math/shape/LinePrimitive.h"
+#include "CollisionResult.h"
+
+#include "Player.h"
 
 //BGM
 #include <xaudio2.h>
@@ -27,6 +32,24 @@ class IrufemiEngine;
 /// ゲーム
 /// </summary>
 class GameScene : public IScene {
+private:
+
+    //反発係数
+    static inline const float kCOR = 0.70f;
+
+private: // メンバ変数(ゲーム部分)
+
+    std::unique_ptr<Player> player_;
+
+    //地面
+    Segment2D ground[2];
+    CollisionResult collisionResult_[2];
+    //反射のx成分を反転したかのフラグ
+    bool xRef[2] = { false, false };
+    bool boundWall[2] = { false, false };
+    //反射させる
+    Vector2 reflect;
+
 private: // メンバ変数
 
     // カメラ
@@ -38,42 +61,6 @@ private: // メンバ変数
     std::unique_ptr<PointLightClass> pointLight_ = nullptr;
 
     std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
-    
-    std::unique_ptr<ObjClass> obj = nullptr;
-    bool isActiveObj = false;
-
-    std::unique_ptr<Sprite> sprite = nullptr;
-    bool isActiveSprite = false;
-
-    std::unique_ptr<TriangleClass> triangle = nullptr;
-    bool isActiveTriangle = false;
-
-    std::unique_ptr<SphereClass> sphere = nullptr;
-    bool isActiveSphere = true;
-
-    std::unique_ptr<ObjClass> utashTeapot = nullptr;
-    bool isActiveUtashTeapot = false;
-
-    std::unique_ptr<ObjClass> stanfordBunny = nullptr;
-    bool isActiveStanfordBunny = false;
-
-    std::unique_ptr<ObjClass> multiMesh = nullptr;
-    bool isActiveMultiMesh = false;
-
-    std::unique_ptr<ObjClass> multiMaterial = nullptr;
-    bool isActiveMultiMaterial = false;
-
-    std::unique_ptr<ObjClass> suzanne = nullptr;
-    bool isActiveSuzanne = false;
-
-    std::unique_ptr<ObjClass> fence_ = nullptr;
-    bool isActiveFence_ = false;
-
-    std::unique_ptr<ObjClass> terrain_ = nullptr;
-    bool isActiveTerrain_ = false;
-
-    std::unique_ptr<ParticleClass> particle = nullptr;
-    bool isActiveParticle = false;
 
     std::unique_ptr<Bgm> bgm = nullptr;
 

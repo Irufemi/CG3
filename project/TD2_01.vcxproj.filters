@@ -79,6 +79,9 @@
     <Filter Include="Engine\winApp">
       <UniqueIdentifier>{b2ee8d91-6e9d-4fe1-ac98-96b44fa3a1d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application\Scene\content">
+      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -249,6 +252,24 @@
     </ClCompile>
     <ClCompile Include="3D\SpotLightClass.cpp">
       <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\Player.cpp">
+      <Filter>Application\Scene\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\Bullet.cpp">
+      <Filter>Application\Scene\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\InGameFunction.cpp">
+      <Filter>Application\Scene\content</Filter>
+    </ClCompile>
+    <ClCompile Include="math\Vector2.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\CollisionResult.h">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\CylinderClass.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -485,6 +506,18 @@
     </ClInclude>
     <ClInclude Include="3D\SpotLightClass.h">
       <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\Player.h">
+      <Filter>Application\Scene\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\Bullet.h">
+      <Filter>Application\Scene\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\InGameFunction.h">
+      <Filter>Application\Scene\content</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CylinderClass.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

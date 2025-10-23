@@ -10,6 +10,8 @@
 #include "function/Math.h"
 #include <string>
 #include <algorithm>
+#include <cstdio>
+#include <Windows.h>
 
 TextureManager* SphereClass::textureManager_ = nullptr;
 DrawManager* SphereClass::drawManager_ = nullptr;
@@ -169,7 +171,25 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
             selectedTextureIndex_ = 0;
         }
 
+    } else {
+        resource_->textureHandle_.ptr = 0;
     }
+
+    // --- 追加: 実行時チェックとフォールバック ---
+    if (resource_->textureHandle_.ptr == 0) {
+        resource_->materialData_->hasTexture = false;
+        OutputDebugStringA("[SphereClass] textureHandle is NULL -> using no-texture fallback\n");
+    } else {
+        resource_->materialData_->hasTexture = true;
+        char buf[256];
+        sprintf_s(buf, "[SphereClass] textureHandle.ptr = %llu\n", static_cast<unsigned long long>(resource_->textureHandle_.ptr));
+        OutputDebugStringA(buf);
+    }
+
+    // 一時テスト: テクスチャを無効化して単色で描画する
+resource_->materialData_->hasTexture = false;
+resource_->materialData_->color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤
+OutputDebugStringA("[SphereClass] FORCED: material.hasTexture = 0, color=red\n");
 
     resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
@@ -240,6 +260,11 @@ void SphereClass::Update(const char* sphereName) {
         resource_->transformationMatrix_.world,
         resource_->transformationMatrix_.WorldInverseTranspose
     };
+
+    // SRVが無効なら毎フレーム保険で hasTexture をオフ
+    if (resource_->textureHandle_.ptr == 0) {
+        resource_->materialData_->hasTexture = false;
+    }
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 

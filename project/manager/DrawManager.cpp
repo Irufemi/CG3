@@ -9,6 +9,7 @@
 #include "../3D/ObjClass.h"
 #include "../3D/TriangleClass.h"
 #include "../3D/ParticleClass.h"
+#include "../3D/CylinderClass.h"
 
 #include "../source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
@@ -311,6 +312,55 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(sphere->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
+
+}
+
+void DrawManager::DrawCylinder(CylinderClass* cylinder) {
+
+    /*三角形を表示しよう*/
+    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &cylinder->GetD3D12Resource()->vertexBufferView_); // VBVを設定
+    //IBVを設定
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&cylinder->GetD3D12Resource()->indexBufferView_);
+    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    /*三角形の色を変えよう*/
+
+    ///CBVを設定する
+
+    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, cylinder->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+
+    /*三角形を動かそう*/
+
+    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, cylinder->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, cylinder->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
+
+    /*PhongReflectionModel*/
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, cylinder->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
+
+    /*テクスチャを貼ろう*/
+
+    ///DescriptorTableを設定する
+
+    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, cylinder->GetD3D12Resource()->textureHandle_);
+
+    EnsurePointLightResource();
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
+
+    EnsureSpotLightResource();
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+
+    /*三角形を表示しよう*/
+
+    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cylinder->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 
 }
 
