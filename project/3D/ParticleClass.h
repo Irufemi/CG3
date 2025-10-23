@@ -69,7 +69,7 @@ public: // メンバ関数
     /// <summary>
     /// 初期化
     /// </summary>
-    void Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "uvChecker.png");
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName = "resources/circle.png");
 
     /// <summary>
     /// 更新

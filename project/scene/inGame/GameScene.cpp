@@ -32,52 +32,52 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
-    isActiveObj = false;
-    isActiveSprite = false;
-    isActiveTriangle = false;
-    isActiveSphere = true;
-    isActiveStanfordBunny = false;
-    isActiveUtashTeapot = false;
-    isActiveMultiMesh = false;
-    isActiveMultiMaterial = false;
-    isActiveSuzanne = false;
+    isActiveObj_ = false;
+    isActiveSprite_ = false;
+    isActiveTriangle_ = false;
+    isActiveSphere_ = true;
+    isActiveStanfordBunny_ = false;
+    isActiveUtashTeapot_ = false;
+    isActiveMultiMesh_ = false;
+    isActiveMultiMaterial_ = false;
+    isActiveSuzanne_ = false;
     isActiveFence_ = false;
     isActiveTerrain_ = true;
-    isActiveParticle = false;
+    isActiveParticle_ = false;
 
-    if (isActiveObj) {
+    if (isActiveObj_) {
         obj = std::make_unique <ObjClass>();
         obj->Initialize(camera_.get());
     }
-    if (isActiveSprite) {
+    if (isActiveSprite_) {
         sprite = std::make_unique <Sprite>();
         sprite->Initialize(camera_.get());
     }
-    if (isActiveTriangle) {
+    if (isActiveTriangle_) {
         triangle = std::make_unique <TriangleClass>();
         triangle->Initialize(camera_.get());
     }
-    if (isActiveSphere) {
+    if (isActiveSphere_) {
         sphere = std::make_unique <SphereClass>();
         sphere->Initialize(camera_.get());
     }
-    if (isActiveStanfordBunny) {
+    if (isActiveStanfordBunny_) {
         stanfordBunny = std::make_unique <ObjClass>();
         stanfordBunny->Initialize(camera_.get(), "bunny.obj");
     }
-    if (isActiveUtashTeapot) {
+    if (isActiveUtashTeapot_) {
         utashTeapot = std::make_unique <ObjClass>();
         utashTeapot->Initialize(camera_.get(), "teapot.obj");
     }
-    if (isActiveMultiMesh) {
+    if (isActiveMultiMesh_) {
         multiMesh = std::make_unique <ObjClass>();
         multiMesh->Initialize(camera_.get(), "multiMesh.obj");
     }
-    if (isActiveMultiMaterial) {
+    if (isActiveMultiMaterial_) {
         multiMaterial = std::make_unique <ObjClass>();
         multiMaterial->Initialize(camera_.get(), "multiMaterial.obj");
     }
-    if (isActiveSuzanne) {
+    if (isActiveSuzanne_) {
         suzanne = std::make_unique <ObjClass>();
         suzanne->Initialize(camera_.get(), "suzanne.obj");
     }
@@ -89,9 +89,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         terrain_ = std::make_unique <ObjClass>();
         terrain_->Initialize(camera_.get(), "terrain.obj");
     }
-    if (isActiveParticle) {
+    if (isActiveParticle_) {
         particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
+        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "resources/circle.png");
     }
 
     bgm = std::make_unique<Bgm>();
@@ -113,17 +113,18 @@ void GameScene::Update() {
     ImGui::End();
 
     ImGui::Begin("Activation");
-    ImGui::Checkbox("Obj", &isActiveObj);
-    ImGui::Checkbox("Sprite", &isActiveSprite);
-    ImGui::Checkbox("Triangle", &isActiveTriangle);
-    ImGui::Checkbox("Sphere", &isActiveSphere);
-    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot);
-    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny);
-    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh);
-    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial);
-    ImGui::Checkbox("Suzanne", &isActiveSuzanne);
+    ImGui::Checkbox("Obj", &isActiveObj_);
+    ImGui::Checkbox("Sprite", &isActiveSprite_);
+    ImGui::Checkbox("Triangle", &isActiveTriangle_);
+    ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
+    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
+    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh_);
+    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial_);
+    ImGui::Checkbox("Suzanne", &isActiveSuzanne_);
     ImGui::Checkbox("Fence", &isActiveFence_);
-    ImGui::Checkbox("Particle", &isActiveParticle);
+    ImGui::Checkbox("Terrain", &isActiveTerrain_);
+    ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::End();
 
 
@@ -151,56 +152,56 @@ void GameScene::Update() {
 
     // 3D
 
-    if (isActiveObj) {
+    if (isActiveObj_) {
         if (!obj) {
             obj = std::make_unique<ObjClass>();
             obj->Initialize(camera_.get());
         }
         obj->Update("Plane");
     }
-    if (isActiveTriangle) {
+    if (isActiveTriangle_) {
         if (!triangle) {
             triangle = std::make_unique<TriangleClass>();
             triangle->Initialize(camera_.get());
         }
         triangle->Update();
     }
-    if (isActiveSphere) {
+    if (isActiveSphere_) {
         if (!sphere) {
             sphere = std::make_unique<SphereClass>();
             sphere->Initialize(camera_.get());
         }
         sphere->Update();
     }
-    if (isActiveUtashTeapot) {
+    if (isActiveUtashTeapot_) {
         if (!utashTeapot) {
             utashTeapot = std::make_unique<ObjClass>();
             utashTeapot->Initialize(camera_.get(), "teapot.obj");
         }
         utashTeapot->Update("Utash Teapot");
     }
-    if (isActiveStanfordBunny) {
+    if (isActiveStanfordBunny_) {
         if (!stanfordBunny) {
             stanfordBunny = std::make_unique<ObjClass>();
             stanfordBunny->Initialize(camera_.get(), "bunny.obj");
         }
         stanfordBunny->Update("Stanford Bunny");
     }
-    if (isActiveMultiMesh) {
+    if (isActiveMultiMesh_) {
         if (!multiMesh) {
             multiMesh = std::make_unique<ObjClass>();
             multiMesh->Initialize(camera_.get(), "multiMesh.obj");
         }
         multiMesh->Update("MultiMesh");
     }
-    if (isActiveMultiMaterial) {
+    if (isActiveMultiMaterial_) {
         if (!multiMaterial) {
             multiMaterial = std::make_unique<ObjClass>();
             multiMaterial->Initialize(camera_.get(), "multiMaterial.obj");
         }
         multiMaterial->Update("MultiMaterial");
     }
-    if (isActiveSuzanne) {
+    if (isActiveSuzanne_) {
         if (!suzanne) {
             suzanne = std::make_unique<ObjClass>();
             suzanne->Initialize(camera_.get(), "suzanne.obj");
@@ -221,7 +222,7 @@ void GameScene::Update() {
         }
         terrain_->Update("Terrain");
     }
-    if (isActiveParticle) {
+    if (isActiveParticle_) {
         if (!particle) {
             particle = std::make_unique <ParticleClass>();
             particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
@@ -231,7 +232,7 @@ void GameScene::Update() {
 
     // 2D
 
-    if (isActiveSprite) {
+    if (isActiveSprite_) {
         if (!sprite) {
             sprite = std::make_unique<Sprite>();
             sprite->Initialize(camera_.get());
@@ -257,28 +258,28 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
 
-    if (isActiveObj) {
+    if (isActiveObj_) {
         obj->Draw();
     }
-    if (isActiveTriangle) {
+    if (isActiveTriangle_) {
         engine_->GetDrawManager()->DrawByIndex(triangle->GetD3D12Resource());
     }
-    if (isActiveSphere) {
+    if (isActiveSphere_) {
         sphere->Draw();
     }
-    if (isActiveUtashTeapot) {
+    if (isActiveUtashTeapot_) {
         utashTeapot->Draw();
     }
-    if (isActiveStanfordBunny) {
+    if (isActiveStanfordBunny_) {
         stanfordBunny->Draw();
     }
-    if (isActiveMultiMesh) {
+    if (isActiveMultiMesh_) {
         multiMesh->Draw();
     }
-    if (isActiveMultiMaterial) {
+    if (isActiveMultiMaterial_) {
         multiMaterial->Draw();
     }
-    if (isActiveSuzanne) {
+    if (isActiveSuzanne_) {
         suzanne->Draw();
     }
     if (isActiveFence_) {
@@ -292,7 +293,7 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
 
-    if (isActiveParticle) {
+    if (isActiveParticle_) {
         engine_->GetDrawManager()->DrawParticle(particle.get());
     }
 
@@ -302,34 +303,4 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
-}
-
-
-void GameScene::GenerateBlocks() {
-
-    // 要素数
-    uint32_t numBlockVirtical = mapChipField_->GetNumBlockVirtical();
-    uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
-
-    // 要素数を変更する
-    // 列数を指定(縦方向のブロック数)
-    worldtransformBlocks_.resize(numBlockVirtical);
-    for (uint32_t i = 0; i < numBlockVirtical; ++i) {
-        // 1列の要素数を設定(横方向のブロック数)
-        worldtransformBlocks_[i].resize(numBlockHorizontal);
-    }
-
-    // ブロックの生成
-    // ブロックの生成（Blocks にインスタンスを積む）
-    for (uint32_t i = 0; i < numBlockVirtical; ++i) {
-        for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-            if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
-                Transform* worldTransform = new Transform();
-                worldtransformBlocks_[i][j] = worldTransform;
-                worldtransformBlocks_[i][j]->translate = mapChipField_->GetMapChipPositionByIndex(j, i);
-                // Blocksにもインスタンスとして追加
-                if (blocks_) { blocks_->AddInstance(*worldtransformBlocks_[i][j]); }
-            }
-        }
-    }
 }
