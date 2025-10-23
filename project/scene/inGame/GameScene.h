@@ -52,28 +52,6 @@ private: // メンバ変数(ゲーム部分)
     //反射させる
     Vector2 reflect;
 
-private: // メンバ変数
-
-    bool isActiveObj_ = false;
-    bool isActiveSprite_ = false;
-    bool isActiveTriangle_ = false;
-    bool isActiveSphere_ = true;
-    bool isActiveStanfordBunny_ = false;
-    bool isActiveUtashTeapot_ = false;
-    bool isActiveMultiMesh_ = false;
-    bool isActiveMultiMaterial_ = false;
-    bool isActiveSuzanne_ = false;
-    bool isActiveFence_ = false;
-    bool isActiveTerrain_ = true;
-    bool isActiveParticle_ = false;
-
-    std::unique_ptr <Sprite> sprite = nullptr;
-
-    std::unique_ptr <TriangleClass> triangle = nullptr;
-
-    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
-
-    std::unique_ptr<Bgm> bgm = nullptr;
     std::unique_ptr<Bgm> bgm = nullptr;
 
 private: // メンバ変数

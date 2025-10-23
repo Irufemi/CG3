@@ -2,7 +2,7 @@
 #include "Bullet.h"
 #include <array>
 
-#include "Vector2.h"
+#include "math/Vector2.h"
 #include <memory>
 
 class SphereClass;

@@ -227,6 +227,9 @@ void SphereClass::Update(const char* sphereName) {
 
 #endif // _DEBUG
 
+    // Release でも必ず論理情報を実トランスフォームに反映する
+    resource_->transform_.translate = info_.center;
+
     // 実スケール = 半径 × 係数
     Vector3 effectiveScale{
         info_.radius * resource_->transform_.scale.x,
