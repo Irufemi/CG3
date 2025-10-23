@@ -186,11 +186,6 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
         OutputDebugStringA(buf);
     }
 
-    // 一時テスト: テクスチャを無効化して単色で描画する
-resource_->materialData_->hasTexture = false;
-resource_->materialData_->color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤
-OutputDebugStringA("[SphereClass] FORCED: material.hasTexture = 0, color=red\n");
-
     resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
     resource_->directionalLightData_->intensity = 1.0f;
