@@ -3,7 +3,7 @@
 #include "../SceneManager.h"
 #include "../SceneName.h"
 #include "engine/IrufemiEngine.h"
-#include "externals/imgui/imgui.h"
+#include "imgui.h"
 
 #include "InGameFunction.h"
 
@@ -76,6 +76,7 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
+    // カメラの更新
     if (debugMode) {
         debugCamera_->Update();
         camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());

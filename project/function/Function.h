@@ -52,6 +52,10 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 
 ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
 
+ModelData LoadObjFileAssimp(const std::string& directoryPath, const std::string& filename);
+
+ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename);
+
 // f行の頂点データを安全にパースする関数例
 bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
 

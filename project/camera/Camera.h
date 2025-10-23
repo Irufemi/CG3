@@ -9,7 +9,7 @@ class Camera {
 private: // メンバ変数
 
     //カメラの位置。ワールド座標。
-    Vector3 translate_ = { 0.0f,0.0f,-10.0f };
+    Vector3 translate_ = { 0.0f,0.0f,-50.0f };
 
     //カメラの回転角度
     Vector3 rotate_ = { 0.0f,0.0f,0.0f };
@@ -51,7 +51,7 @@ private: // メンバ変数
     float nearZ_ = 0.1f;
 
     //深度限界(奥側)
-    float farZ_ = 100.0f;
+    float farZ_ = 1000.0f;
 
 #pragma endregion
 

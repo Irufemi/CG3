@@ -271,6 +271,9 @@
     <ClCompile Include="3D\CylinderClass.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="3D\Region.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -507,6 +510,9 @@
     <ClInclude Include="3D\SpotLightClass.h">
       <Filter>3D</Filter>
     </ClInclude>
+    <ClInclude Include="3D\Region.h">
+      <Filter>3D</Filter>
+    </ClInclude>
     <ClInclude Include="scene\inGame\Player.h">
       <Filter>Application\Scene\content</Filter>
     </ClInclude>
@@ -542,6 +548,9 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="resources\shaders\Object2D.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\Region.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>

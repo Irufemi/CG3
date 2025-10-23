@@ -18,7 +18,9 @@ void PSOManager::Initialize(
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
     ShaderSet objectShaders,
     ShaderSet particleShaders,
-    ShaderSet spriteShaders)
+    ShaderSet spriteShaders,
+    ShaderSet regionShaders
+)
 {
     device_ = device;
     rootSig_ = rootSig;
@@ -33,6 +35,7 @@ void PSOManager::Initialize(
     objectShaders_ = objectShaders; // 既存 VS/PS（Object3D）
     particleShaders_ = particleShaders; // パーティクル VS/PS（あれば）
     spriteShaders_ = spriteShaders;
+    blocksShaders_ = regionShaders;
 
 
     cache_.clear();
@@ -126,6 +129,20 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
     assert(SUCCEEDED(hr));
     cache_.emplace(key, pso);
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetBlocks(BlendMode b, DepthWrite d)
+{
+    // 既存のキャッシュ Key 生成を流用（Hash(blocksShaders_, b, d)）
+    Key k{ Hash(blocksShaders_, b, d) };
+    auto it = cache_.find(k);
+    if (it != cache_.end()) return it->second.Get();
+
+    auto blend = MakeBlend(b);
+    auto depth = MakeDepth(d);
+    auto pso = CreatePSO(blocksShaders_, blend, depth);
+    cache_[k] = pso;
     return pso.Get();
 }
 

@@ -32,6 +32,12 @@ void DirectXCommon::Finalize() {
         fenceEvent_ = nullptr;
     }
 
+    // PSO キャッシュを解放（PSO/RSの参照を切る）
+    if (psoManager_) {
+        psoManager_->ClearCache();
+        psoManager_.reset();
+    }
+
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
     rootSignature_.Reset();
     depthStencilResource_.Reset();
@@ -47,7 +53,7 @@ void DirectXCommon::Finalize() {
     swapChain_.Reset();
     device_.Reset();
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     debugController_.Reset();
 #endif
 
@@ -498,6 +504,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> spritePSBlob = CompileShader(L"resources/shaders/Object2D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(spritePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> regionVSBlob = CompileShader(L"resources/shaders/Region.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(regionVSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -525,6 +534,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         spritePSBlob
     };
 
+    PSOManager::ShaderSet blocksShaders{
+        regionVSBlob,
+        pixelShaderBlob   // PS は既存の Object3D.PS を流用
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -535,7 +549,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,  // 既存と同じ
         objectShaders,
         particleShaders,     // パーティクルは未使用なら空
-        spriteShaders
+        spriteShaders,
+        blocksShaders
     );
 
     //実際に生成
@@ -547,6 +562,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
     if (particleVSBlob) { particleVSBlob.Reset(); }
     if (particlePSBlob) { particlePSBlob.Reset(); }
+    if (spriteVSBlob) { particleVSBlob.Reset(); }
+    if (spritePSBlob) { particlePSBlob.Reset(); }
+    if (regionVSBlob) { regionVSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

@@ -143,5 +143,6 @@ public: // セッター
     void ApplyPSO();
     void ApplyParticlePSO();
     void ApplySpritePSO();
+    void ApplyBlocksPSO();
 };
 

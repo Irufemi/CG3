@@ -4,6 +4,13 @@
 #include <cassert>
 
 #include <dxgidebug.h>
+#include "3D/SphereClass.h"
+#include "2D/Sprite.h"
+#include "3D/ObjClass.h"
+#include "3D/TriangleClass.h"
+#include "3D/ParticleClass.h"
+#include "3D/PointLightClass.h"
+#include "3D/SpotLightClass.h"
 #include "../3D/SphereClass.h"
 #include "../2D/Sprite.h"
 #include "../3D/ObjClass.h"
@@ -11,8 +18,60 @@
 #include "../3D/ParticleClass.h"
 #include "../3D/CylinderClass.h"
 
-#include "../source/D3D12ResourceUtil.h"
+#include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
+
+
+
+namespace {
+    // cpp内限定のヌルCBV
+    Microsoft::WRL::ComPtr<ID3D12Resource> gNullPointLight;
+    Microsoft::WRL::ComPtr<ID3D12Resource> gNullSpotLight;
+    D3D12_GPU_VIRTUAL_ADDRESS gNullPointLightVA = 0;
+    D3D12_GPU_VIRTUAL_ADDRESS gNullSpotLightVA = 0;
+
+    void EnsureNullPointLight(DirectXCommon* dx) {
+        if (gNullPointLight) return;
+        gNullPointLight = dx->CreateBufferResource(sizeof(PointLight));
+        PointLight* p = nullptr;
+        gNullPointLight->Map(0, nullptr, reinterpret_cast<void**>(&p));
+        p->color = { 0,0,0,0 }; p->position = { 0,0,0 }; p->intensity = 0.0f;
+        gNullPointLightVA = gNullPointLight->GetGPUVirtualAddress();
+    }
+
+    void EnsureNullSpotLight(DirectXCommon* dx) {
+        if (gNullSpotLight) return;
+        gNullSpotLight = dx->CreateBufferResource(sizeof(SpotLight));
+        SpotLight* s = nullptr;
+        gNullSpotLight->Map(0, nullptr, reinterpret_cast<void**>(&s));
+        s->color = { 0,0,0,0 };
+        s->position = { 0,0,0 };
+        s->intensity = 0.0f;
+        s->direction = { 0, -1, 0 };
+        s->distance = 0.0f;
+        s->decay = 1.0f;
+        s->cosAngle = 1.0f;
+        gNullSpotLightVA = gNullSpotLight->GetGPUVirtualAddress();
+    }
+} // anonymous
+
+void DrawManager::Finalize() {
+    // 静的フォールバックCBVを解放（デバイス参照を外す）
+    if (gNullPointLight) {
+        // マップ済みでもUnmap不要だが、気になるなら解除
+        // gNullPointLight->Unmap(0, nullptr);
+        gNullPointLight.Reset();
+        gNullPointLightVA = 0;
+    }
+    if (gNullSpotLight) {
+        // gNullSpotLight->Unmap(0, nullptr);
+        gNullSpotLight.Reset();
+        gNullSpotLightVA = 0;
+    }
+    pointLight_ = nullptr;
+    spotLight_ = nullptr;
+    dxCommon_ = nullptr;
+}
 
 void DrawManager::BindPSO(ID3D12PipelineState* pso) {
     if (!pso) { return; }
@@ -159,16 +218,17 @@ void DrawManager::PostDraw() {
 }
 
 void DrawManager::EnsurePointLightResource() {
-    if (pointLight_) return;
-
-    pointLight_->Initialize();
-
+    if (!pointLight_) return;
+    if (!pointLight_->GetResource()) {
+        pointLight_->Initialize();
+    }
 }
 
 void DrawManager::EnsureSpotLightResource() {
-    if (spotLight_) return;
-
-    spotLight_->Initialize();
+    if (!spotLight_) return;
+    if (!spotLight_->GetResource()) {
+        spotLight_->Initialize();
+    }
 
 }
 
@@ -209,11 +269,8 @@ void DrawManager::DrawTriangle(
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-    EnsurePointLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
-
-    EnsureSpotLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -302,11 +359,8 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, sphere->GetD3D12Resource()->textureHandle_);
 
-    EnsurePointLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
-
-    EnsureSpotLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -436,11 +490,8 @@ void DrawManager::DrawByIndex(D3D12ResourceUtil* resource) {
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
-    EnsurePointLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
-
-    EnsureSpotLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -483,11 +534,8 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
-    EnsurePointLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, pointLight_->GetResource()->GetGPUVirtualAddress());
-
-    EnsureSpotLightResource();
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, spotLight_->GetResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -496,3 +544,28 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
 
 }
 
+// SetPointLight / SetSpotLight はクラス保持のデータ差し替え用（任意）
+void DrawManager::SetPointLight(PointLight& info) {
+    if (!pointLight_) return;
+    pointLight_->SetData(&info);
+}
+void DrawManager::SetSpotLight(SpotLight& info) {
+    if (!spotLight_) return;
+    spotLight_->SetData(&info);
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DrawManager::GetPointLightVA() {
+    EnsureNullPointLight(dxCommon_);
+    EnsurePointLightResource();
+    return (pointLight_ && pointLight_->GetResource())
+        ? pointLight_->GetResource()->GetGPUVirtualAddress()
+        : gNullPointLightVA;
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DrawManager::GetSpotLightVA() {
+    EnsureNullSpotLight(dxCommon_);
+    EnsureSpotLightResource();
+    return (spotLight_ && spotLight_->GetResource())
+        ? spotLight_->GetResource()->GetGPUVirtualAddress()
+        : gNullSpotLightVA;
+}

@@ -9,14 +9,13 @@
 #include "engine/directX/DirectXCommon.h"
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
+uint32_t Texture::index_ = 0;
 
-void Texture::Initialize(const std::string& filePath, const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
+void Texture::Initialize(const std::string& filePath) {
 
     index_ += 1;
 
     this->filePath_ = filePath;
-    this->srvDescriptorHeap_ = srvDescriptorHeap;
-    this->commandList_ = commandList;
 
     /*テクスチャを貼ろう*/
 

@@ -72,10 +72,28 @@ void D3D12ResourceUtil::UnMap() {
     if (indexResource_) {
         indexResource_->Unmap(0, nullptr);
     }
-    materialResource_->Unmap(0, nullptr);
-    transformationResource_->Unmap(0, nullptr);
-    directionalLightResource_->Unmap(0, nullptr);
-    cameraResource_->Unmap(0, nullptr);
+    if (materialResource_) {
+        materialResource_->Unmap(0, nullptr);
+    }
+    if (transformationResource_) {
+        transformationResource_->Unmap(0, nullptr);
+    }
+    if (directionalLightResource_) {
+        directionalLightResource_->Unmap(0, nullptr);
+    }
+}
+
+void D3D12ResourceUtil::UpdateTransform3D(const Camera& camera) {
+    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));// 法線変換用：平行移動を除いた World を使う
+    Matrix4x4 worldForNormal = transformationMatrix_.world;
+    worldForNormal.m[3][0] = 0.0f;
+    worldForNormal.m[3][1] = 0.0f;
+    worldForNormal.m[3][2] = 0.0f;
+    worldForNormal.m[3][3] = 1.0f;
+    // 逆転置行列を計算
+    transformationMatrix_.WorldInverseTranspose =
+        Math::Transpose(Math::Inverse(worldForNormal));
 }
 
 

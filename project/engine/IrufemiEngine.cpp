@@ -16,6 +16,7 @@
 #include "3D/CylinderClass.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
+#include "3D/Region.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -66,6 +67,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
+    Region::SetDirectXCommon(dxCommon_.get());
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
@@ -100,10 +102,16 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
     CylinderClass::SetTextureManager(textureManager.get());
+    Region::SetTextureManager(textureManager.get());
 
 }
 
 void IrufemiEngine::Finalize() {
+
+    // できるだけ早くシーンを破棄（中でGPUリソースを持っている可能性が高い）
+    if (sceneManager_) {
+        sceneManager_.reset();
+    }
 
     // 入力系の解放
     if (inputManager_) {
@@ -123,6 +131,10 @@ void IrufemiEngine::Finalize() {
     if (ui) {
         ui->Shutdown();
         ui.reset();
+    }
+    // テクスチャ（SRV/テクスチャリソースを解放）
+    if (textureManager) {
+        textureManager.reset();
     }
 
     if (dxCommon_) {
@@ -241,4 +253,9 @@ void IrufemiEngine::ApplyParticlePSO() {
 void IrufemiEngine::ApplySpritePSO() {
     auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
     if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyBlocksPSO() {
+    auto* pso = GetPSOManager()->GetBlocks(currentBlend_, currentDepth_);
+    drawManager->BindPSO(pso);
 }
