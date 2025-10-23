@@ -19,7 +19,7 @@ void PSOManager::Initialize(
     ShaderSet objectShaders,
     ShaderSet particleShaders,
     ShaderSet spriteShaders,
-    ShaderSet blocksShaders
+    ShaderSet regionShaders
 )
 {
     device_ = device;
@@ -35,7 +35,7 @@ void PSOManager::Initialize(
     objectShaders_ = objectShaders; // 既存 VS/PS（Object3D）
     particleShaders_ = particleShaders; // パーティクル VS/PS（あれば）
     spriteShaders_ = spriteShaders;
-    blocksShaders_ = blocksShaders;
+    blocksShaders_ = regionShaders;
 
 
     cache_.clear();

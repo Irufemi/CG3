@@ -15,10 +15,6 @@
 #include "../../camera/Camera.h"
 #include "../../camera/DebugCamera.h"
 
-#include "application/Player.h"
-#include "application/Blocks.h"
-#include "application/MapChipField.h"
-
 //BGM
 #include <xaudio2.h>
 
@@ -33,6 +29,47 @@ class InputManager;
 /// ゲーム
 /// </summary>
 class GameScene : public IScene {
+private: // 描画物その他
+
+    bool isActiveObj_ = false;
+    bool isActiveSprite_ = false;
+    bool isActiveTriangle_ = false;
+    bool isActiveSphere_ = true;
+    bool isActiveStanfordBunny_ = false;
+    bool isActiveUtashTeapot_ = false;
+    bool isActiveMultiMesh_ = false;
+    bool isActiveMultiMaterial_ = false;
+    bool isActiveSuzanne_ = false;
+    bool isActiveFence_ = false;
+    bool isActiveTerrain_ = true;
+    bool isActiveParticle_ = false;
+
+    std::unique_ptr <Sprite> sprite = nullptr;
+
+    std::unique_ptr <TriangleClass> triangle = nullptr;
+
+    std::unique_ptr<ObjClass>  obj = nullptr;
+
+    std::unique_ptr<SphereClass>  sphere = nullptr;
+
+    std::unique_ptr<ObjClass>  stanfordBunny = nullptr;
+
+    std::unique_ptr<ObjClass>  utashTeapot = nullptr;
+
+    std::unique_ptr<ObjClass>  multiMesh = nullptr;
+
+    std::unique_ptr<ObjClass>  multiMaterial = nullptr;
+
+    std::unique_ptr<ObjClass>  suzanne = nullptr;
+
+    std::unique_ptr<ObjClass>  fence_ = nullptr;
+
+    std::unique_ptr<ObjClass>  terrain_ = nullptr;
+
+    std::unique_ptr<ParticleClass>  particle = nullptr;
+
+    std::unique_ptr<Bgm> bgm = nullptr;
+
 private: // メンバ変数
 
     // カメラ
@@ -48,23 +85,6 @@ private: // メンバ変数
     int loadTexture = false;
 
     bool debugMode = false;
-
-    /// マップチップフィールド
-    std::unique_ptr<MapChipField> mapChipField_ = nullptr;
-
-    /// ブロック
-
-    // ブロック群
-    std::unique_ptr<class Region> blocks_ = nullptr;
-    // ワールドトランスフォーム(ブロック)
-    std::vector<std::vector<Transform*>> worldtransformBlocks_;
-
-    /// 自キャラ
-
-    // 自キャラ
-    std::shared_ptr<Player> player_ = nullptr;
-    // 3Dモデルデータ(自キャラ)
-    std::unique_ptr<ObjClass> modelplayer_ = nullptr;
 
     // ポインタ参照
 
@@ -90,6 +110,4 @@ public: // メンバ関数
     /// 描画
     /// </summary>
     void Draw() override;
-
-    void GenerateBlocks();
 };

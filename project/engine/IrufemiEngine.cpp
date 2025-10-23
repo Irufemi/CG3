@@ -12,7 +12,7 @@
 #include "2D/Sprite.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
-#include "application/Blocks.h"
+#include "3D/Region.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
