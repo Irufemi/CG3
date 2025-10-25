@@ -14,6 +14,9 @@ class ObjClass;
 class ParticleClass;
 class CylinderClass;
 class D3D12ResourceUtil;
+class Region;
+class SphereRegion; 
+class TetraRegion; 
 struct PointLight;
 class PointLightClass;
 struct SpotLight;
@@ -52,9 +55,7 @@ public: //メンバ関数
         float clearDepth = 1.0f,
         uint8_t clearStencil = 0
     );
-
-    void PostDraw(
-    );
+    void PostDraw();
 
     void DrawTriangle(
         D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
@@ -71,6 +72,12 @@ public: //メンバ関数
     void DrawCylinder(CylinderClass* cylinder);
 
     void DrawParticle(ParticleClass* resource);
+
+    void DrawRegion(Region* region);
+
+    void DrawSphereRegion(SphereRegion* region);
+
+    void DrawTetraRegion(TetraRegion* region);
 
     void DrawByIndex(D3D12ResourceUtil* resource);
 

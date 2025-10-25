@@ -20,6 +20,7 @@
 #include "CollisionResult.h"
 
 #include "Player.h"
+#include "EnemyManager.h"
 
 //BGM
 #include <xaudio2.h>
@@ -35,29 +36,59 @@ class InputManager;
 /// ゲーム
 /// </summary>
 class GameScene : public IScene {
+
+private: // メンバ関数(ゲーム部分)
+	
+    void Reflection();
+    void BulletRecovery();
+
 private:
 
     //反発係数
-    static inline const float kCOR = 0.70f;
+    const float kCOR = 0.80f;
+    const float deltaTime = 1.0f / 60.0f;
+
+    //敵の生成間隔の最小値、最大値
+    const float kMinSpawnTime = 1.0f;
+    const float kMaxSpawnTime = 5.0f;
 
 private: // メンバ変数(ゲーム部分)
 
     std::unique_ptr<Player> player_;
+    //エネミーマネージャー
+    std::unique_ptr<EnemyManager> e_Manager_;
 
     //地面
     Segment2D ground[2];
-    CollisionResult collisionResult_[2];
-    //反射のx成分を反転したかのフラグ
-    bool xRef[2] = { false, false };
-    bool boundWall[2] = { false, false };
-    //反射させる
-    Vector2 reflect;
+    CollisionResult p_result_[2];
+    CollisionResult b_result_[2];
+
+    //コア
+    Sphere circle_;
+    int coreHp_;
+    //弾とサークルの距離
+    Vector2 vec_[10];
+    float dis_[10];
+
+    //===乱数生成器===///
+    //生成エンジンの型
+    using RNG_Engine = std::mt19937;
+    //乱数エンジン
+    RNG_Engine randomEngine_;
+    //使う分布
+    std::uniform_real_distribution<float> enemy_x_;
+
+    //===敵のランダム生成===//
+    //経過時間のカウント
+    float ingameTimer_;
+    //生成した乱数を入れる箱
+    float time_;
+    //乱数の分布(敵を生成する目標時間)
+    std::uniform_real_distribution<float> spawnTime_;
 
     std::unique_ptr<Bgm> bgm = nullptr;
 
 private: // メンバ変数(システム)
-
-    std::unique_ptr<CylinderClass> cylinder_ = nullptr;
 
     // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;

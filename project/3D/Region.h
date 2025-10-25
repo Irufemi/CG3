@@ -6,13 +6,14 @@
 #include <wrl.h>
 #include <d3d12.h>
 
-#include "engine/directX/DirectXCommon.h"
-#include "manager/TextureManager.h"
 #include "function/Function.h"      // VertexData / ObjModel / ObjMesh / ObjMaterial など
 #include "function/Math.h"          // Math::MakeAffineMatrix ほか
 #include "math/Transform.h"         // Transform
 
 class Camera;
+class DirectXCommon;
+class TextureManager;
+class DrawManager;
 
 class Region {
 public:
@@ -35,6 +36,17 @@ public:
 
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dx_ = dxCommon; }
     static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
+    static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
+
+    // --- 追加: DrawManager から参照する Getter 群 ---
+    D3D12_VERTEX_BUFFER_VIEW&       GetVertexBufferView() { return vertexBufferView_; }
+    ID3D12Resource*                 GetMaterialResource() { return materialResource_.Get(); }
+    ID3D12Resource*                 GetDirectionalLightResource() { return directionalLightResource_.Get(); }
+    ID3D12Resource*                 GetCameraResource() { return cameraResource_.Get(); }
+    D3D12_GPU_DESCRIPTOR_HANDLE     GetTextureHandle() const { return textureHandle_; }
+    D3D12_GPU_DESCRIPTOR_HANDLE     GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
+    UINT                            GetVertexCount() const { return vertexCount_; }
+    UINT                            GetInstanceCount() const { return static_cast<UINT>(instances_.size()); }
 
 private:
     struct InstanceData {
@@ -54,6 +66,7 @@ private:
 private:
     static DirectXCommon* dx_;
     static TextureManager* textureManager_;
+    static DrawManager* drawManager_;
     Camera* camera_ = nullptr;
 
     ObjModel objModel_{};

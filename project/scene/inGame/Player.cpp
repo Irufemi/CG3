@@ -44,21 +44,26 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
     camera_ = camera;
     inputManager_ = inputManager;
 
-    pos_ = { 100.0f, 400.0f };
-    radius_ = { 30.0f, 30.0f };
-    velocity_ = {-1.0f, 0.0f};
+	pos_ = { 100.0f, 400.0f };
+	radius_ = { 40.0f, 40.0f };
+	velocity_ = { -1.0f, 0.0f };
 
-    cannonPos_ = { pos_.x, pos_.y - radius_.y };
-    cannonRadius_ = { 12.0f, 24.0f };
-    cannonOffset_ = { 0.0f, -30.0f };
-    angle_ = 0.0f;
-    rad_ = 0.0f;
-    sinf_ = 0.0f;
-    cosf_ = 0.0f;
+	cannonPos_ = { pos_.x, pos_.y - radius_.y };
+	cannonRadius_ = { 18.0f, 30.0f };
+	cannonOffset_ = { 0.0f, -30.0f };
+	angle_ = 0.0f;
+	rad_ = 0.0f;
+	sinf_ = 0.0f;
+	cosf_ = 0.0f;
+	reflect_ = { 0.0f, 0.0f };
+	wallTouch_ = false;
+	bulletNum_ = 10;
+	isStan_ = false;
+	stanTime_ = 60;
 
-    for (auto& b : bullet) {
-        b.Initialize (pos_, sinf_, cosf_);
-    }
+	for (auto& b : bullet) {
+		b.Initialize(pos_, sinf_, cosf_,camera_);
+	}
 
     sphere_ = std::make_unique<SphereClass>();
     sphere_->SetInfo(Sphere{ Vector3{pos_.x,pos_.y,0.0f},radius_.x });
@@ -77,7 +82,7 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
 }
 
 void Player::Jump () {
-	if (inputManager_->IsKeyPressedDIK(DIK_SPACE)) {
+	if (inputManager_->IsKeyPressedDIK(DIK_SPACE) && bulletNum_ > 0) {
 		if (pos_.x <= 250.0f) {
 			velocity_.x = 4.0f;
 			velocity_.y = 6.0f;
@@ -102,8 +107,8 @@ void Player::Rotate () {
 
 	// --- 回転を適用（オフセットを回転） ---
 	Vector2 rotatedOffset;
-	rotatedOffset.x = cannonOffset_.x * cosf (rad_) - cannonOffset_.y * sinf (rad_);
-	rotatedOffset.y = cannonOffset_.x * sinf (rad_) + cannonOffset_.y * cosf (rad_);
+	rotatedOffset.x = cannonOffset_.x * cosf(rad_) - cannonOffset_.y * sinf(rad_);
+	rotatedOffset.y = cannonOffset_.x * sinf(rad_) + cannonOffset_.y * cosf(rad_);
 
 	// --- プレイヤー位置を中心に戻す ---
 	cannonPos_.x = pos_.x + rotatedOffset.x;
@@ -111,11 +116,12 @@ void Player::Rotate () {
 }
 
 void Player::Fire () {
-	if (inputManager_->IsKeyPressedDIK(DIK_SPACE)) {
+	if (inputManager_->IsKeyPressedDIK(DIK_SPACE) && bulletNum_ > 0) {
 		for (auto& b : bullet) {
-			if (!b.GetIsActive ()) {
-				b.Initialize (cannonPos_, sinf (rad_), cosf (rad_));
-				b.SetIsActive ();
+			if (!b.GetIsActive()) {
+				b.Initialize(pos_, sinf(rad_), cosf(rad_), camera_);
+				b.SetIsActive();
+				bulletNum_--;
 				break;
 			}
 		}
@@ -124,6 +130,7 @@ void Player::Fire () {
 
 void Player::SpeedCalculation () {
 	if (pos_.x - radius_.x <= 0.0f || pos_.x + radius_.x >= 500.0f) {
+		wallTouch_ = true;
 		velocity_.x *= -1.0f;
 	}
 	if (pos_.y - radius_.y <= 0.0f) {
@@ -136,17 +143,46 @@ void Player::SpeedCalculation () {
 void Player::Input () {
 	Jump ();
 	Fire ();
+}
 
+bool Player::Stan() {
+	isStan_ = true;
+
+	if (isStan_) {
+		stanTime_--;
+	}
+
+	return isStan_;
 }
 
 void Player::Update () {
+	//bulletNumの上限
+	if (bulletNum_ >= kMaxBullet) {
+		bulletNum_ = kMaxBullet;
+	}
+
 	//座標更新
 	pos_.x += velocity_.x;
 	pos_.y -= velocity_.y;
+
+	//壁へのめり込み予防
+	if (pos_.x - radius_.x - velocity_.x <= 0.0f) {
+		pos_.x = pos_.x + kPos;
+	}
+	if (pos_.x + radius_.x + velocity_.x >= 500.0f) {
+		pos_.x = pos_.x - kPos;
+	}
+
 	//大砲
-	Rotate ();
+	Rotate();
+
+	//弾
 	for (auto& b : bullet) {
-		b.Update ();
+		b.Update();
+		if (b.GetIsActive() && b.GetRecoverTime() == 0) {
+			bulletNum_++;
+			break;
+		}
 	}
 }
 
@@ -191,9 +227,12 @@ void Player::Draw () {
     // 砲塔 → プレイヤーの順でもOK（深度有効なら順不同）
     cylinder_->Draw();
     sphere_->Draw();
+}
 
-    // 弾
-    for (auto& b : bullet) {
-        b.Draw ();
-    }
+void Player::BulletDraw() {
+
+	// 弾
+	for (auto& b : bullet) {
+		b.Draw();
+	}
 }

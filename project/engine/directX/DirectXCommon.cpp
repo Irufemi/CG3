@@ -5,9 +5,9 @@
 #include <format>
 
 #include "../Log.h"
-#include "../../function/Function.h"
-#include "../../function/StringUtility.h"
-#include "../../math/VertexData.h"
+#include "function/Function.h"
+#include "function/StringUtility.h"
+#include "math/VertexData.h"
 #include "externals/DirectXTex/d3dx12.h"
 #include <thread>
 

@@ -182,6 +182,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="math\Vector2.cpp" />
     <ClCompile Include="scene\inGame\Bullet.cpp" />
     <ClCompile Include="scene\inGame\CollisionResult.h" />
+    <ClCompile Include="scene\inGame\Enemy.cpp" />
+    <ClCompile Include="scene\inGame\EnemyManager.cpp" />
     <ClCompile Include="scene\inGame\InGameFunction.cpp" />
     <ClCompile Include="scene\inGame\Player.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
@@ -232,6 +234,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="source\Texture.cpp" />
     <ClCompile Include="function\StringUtility.cpp" />
     <ClCompile Include="3D\SpotLightClass.cpp" />
+    <ClCompile Include="3D\SphereRegion.cpp" />
+    <ClCompile Include="3D\TetraRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
@@ -304,6 +308,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\PSOManager.h" />
     <ClInclude Include="3D\PointLightClass.h" />
     <ClInclude Include="scene\inGame\Bullet.h" />
+    <ClInclude Include="scene\inGame\Enemy.h" />
+    <ClInclude Include="scene\inGame\EnemyManager.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\inGame\InGameFunction.h" />
     <ClInclude Include="scene\inGame\Player.h" />
@@ -317,6 +323,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="source\Texture.h" />
     <ClInclude Include="function\StringUtility.h" />
     <ClInclude Include="3D\SpotLightClass.h" />
+    <ClInclude Include="3D\SphereRegion.h" />
+    <ClInclude Include="3D\TetraRegion.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

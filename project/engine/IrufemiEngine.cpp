@@ -17,6 +17,8 @@
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/Region.h"
+#include "3D/SphereRegion.h"
+#include "3D/TetraRegion.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -68,7 +70,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
     Region::SetDirectXCommon(dxCommon_.get());
-
+    SphereRegion::SetDirectXCommon(dxCommon_.get());
+    TetraRegion::SetDirectXCommon(dxCommon_.get());
+    
     // 入力
     inputManager_ = std::make_unique<InputManager>();
     inputManager_->Initialize();
@@ -90,6 +94,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
     CylinderClass::SetDrawManager(drawManager.get());
+    Region::SetDrawManager(drawManager.get());
+    SphereRegion::SetDrawManager(drawManager.get());
+    TetraRegion::SetDrawManager(drawManager.get());
 
     // テクスチャ
 
@@ -103,6 +110,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TriangleClass::SetTextureManager(textureManager.get());
     CylinderClass::SetTextureManager(textureManager.get());
     Region::SetTextureManager(textureManager.get());
+    SphereRegion::SetTextureManager(textureManager.get());
+    TetraRegion::SetTextureManager(textureManager.get());
 
 }
 
@@ -255,7 +264,7 @@ void IrufemiEngine::ApplySpritePSO() {
     if (pso) { drawManager->BindPSO(pso); }
 }
 
-void IrufemiEngine::ApplyBlocksPSO() {
-    auto* pso = GetPSOManager()->GetBlocks(currentBlend_, currentDepth_);
+void IrufemiEngine::ApplyRegionPSO() {
+    auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_);
     drawManager->BindPSO(pso);
 }

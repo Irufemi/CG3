@@ -5,6 +5,7 @@
 #include "engine/directX/DirectXCommon.h"
 #include "camera/Camera.h"
 #include "manager/TextureManager.h"
+#include "manager/DrawManager.h"
 #include "function/Function.h" // LoadObjFileM, 型定義
 #include "function/Math.h"
 #include "math/Transform.h"
@@ -14,6 +15,7 @@
 
 DirectXCommon* Region::dx_ = nullptr;
 TextureManager* Region::textureManager_ = nullptr;
+DrawManager* Region::drawManager_ = nullptr;
 
 void Region::Initialize(
     Camera* camera,
@@ -193,17 +195,6 @@ void Region::Draw() {
     // インスタンスバッファ更新（毎フレームWVP再計算）
     BuildInstanceBuffer(true);
 
-    auto* cmd = dx_->GetCommandList();
-    cmd->SetGraphicsRootSignature(dx_->GetRootSignature());
+    drawManager_->DrawRegion(this);
 
-    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    cmd->IASetVertexBuffers(0, 1, &vertexBufferView_);
-
-    cmd->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());          // PS b0
-    cmd->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());  // PS b1
-    cmd->SetGraphicsRootConstantBufferView(5, cameraResource_->GetGPUVirtualAddress());            // PS b2
-    cmd->SetGraphicsRootDescriptorTable(2, textureHandle_);                                        // PS t0
-
-    cmd->SetGraphicsRootDescriptorTable(4, instancingSrvGPU_);                                     // VS t0
-    cmd->DrawInstanced(vertexCount_, static_cast<UINT>(instances_.size()), 0, 0);
 }
