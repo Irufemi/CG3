@@ -3,6 +3,7 @@
 #include <array>
 
 #include "math/Vector2.h"
+#include "audio/Se.h"
 #include <memory>
 
 class SphereClass;
@@ -46,6 +47,8 @@ private:
 	// 描画用生成物
 	std::unique_ptr<SphereClass> sphere_ = nullptr;
 	std::unique_ptr<CylinderClass> cylinder_ = nullptr;
+
+	std::unique_ptr<Se> se_playerAction_ = nullptr;
 
 private:
 	//position

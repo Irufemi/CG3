@@ -37,8 +37,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
     bgm = std::make_unique<Bgm>();
-    bgm->Initialize(engine_->GetAudioManager());
-    bgm->PlayFirstTrack();
+    bgm->Initialize("resources/bgm/BGM_InGame.mp3");
+    bgm->PlayFixed();
 
     player_ = std::make_unique<Player>();
     player_->Initialize(engine_->GetInputManager(),camera_.get());
@@ -98,6 +98,7 @@ void GameScene::Update() {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
     }
     ImGui::Checkbox("debugMode", &debugMode);
+
     ImGui::End();
 
 #endif // _DEBUG
@@ -111,6 +112,65 @@ void GameScene::Update() {
         camera_->Update("Camera");
 
     }
+
+    // ゲームシステムの更新
+    GameSystem();
+
+    // BGM
+    bgm->Update();
+
+    //キーが押されていたら
+    if (PressedVK('P')) {
+        if (g_SceneManager) {
+            g_SceneManager->Request(SceneName::result);
+        }
+    }
+
+}
+
+// 描画
+void GameScene::Draw() {
+
+    // 3D
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplyPSO();
+
+    // 回収部分
+    // Shape::DrawEllipse(circle_.pos.x, circle_.pos.y, circle_.radius.x, circle_.radius.y, 0.0f, BLUE, kFillModeSolid);
+
+    // Player
+    player_->Draw();
+
+    engine_->ApplyRegionPSO();
+    player_->BulletDraw();
+
+    // 個別 e.Draw() ループを削除し、まとめて描画
+    e_Manager_->Draw(camera_.get());
+
+    engine_->ApplyPSO();
+
+
+    // 地面
+    //Shape::DrawLine(ground[0].origin.x, ground[0].origin.y, ground[0].diff.x, ground[0].diff.y, BLACK);
+    //Shape::DrawLine(ground[1].origin.x, ground[1].origin.y, ground[1].diff.x, ground[1].diff.y, BLACK);
+
+    // Particle
+
+    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->ApplyParticlePSO();
+
+    // 2D
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplySpritePSO();
+
+}
+
+void GameScene::GameSystem() {
 
     player_->Input();
     player_->SpeedCalculation();
@@ -163,61 +223,8 @@ void GameScene::Update() {
 
     e_Manager_->Update(deltaTime);
 
-    // BGM
-    bgm->Update();
-
     // playerの座標などを描画物に反映
     player_->DrawSet();
-
-    //キーが押されていたら
-    if (PressedVK('P')) {
-        if (g_SceneManager) {
-            g_SceneManager->Request(SceneName::result);
-        }
-    }
-
-}
-
-// 描画
-void GameScene::Draw() {
-
-    // 3D
-
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplyPSO();
-
-    // 回収部分
-    // Shape::DrawEllipse(circle_.pos.x, circle_.pos.y, circle_.radius.x, circle_.radius.y, 0.0f, BLUE, kFillModeSolid);
-
-    // Player
-    player_->Draw();
-
-    engine_->ApplyRegionPSO();
-    player_->BulletDraw();
-
-    // 個別 e.Draw() ループを削除し、まとめて描画
-    e_Manager_->Draw(camera_.get());
-
-    engine_->ApplyPSO();
-
-
-    // 地面
-    //Shape::DrawLine(ground[0].origin.x, ground[0].origin.y, ground[0].diff.x, ground[0].diff.y, BLACK);
-    //Shape::DrawLine(ground[1].origin.x, ground[1].origin.y, ground[1].diff.x, ground[1].diff.y, BLACK);
-
-    // Particle
-
-    engine_->SetBlend(BlendMode::kBlendModeAdd);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplyParticlePSO();
-
-    // 2D
-
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplySpritePSO();
-
 }
 
 void GameScene::Reflection() {

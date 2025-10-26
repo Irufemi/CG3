@@ -3,6 +3,8 @@
 #include <string>
 #include <cassert>
 #include <format>
+#include <filesystem>
+#include <comdef.h>
 
 #include "../Log.h"
 #include "function/Function.h"
@@ -822,18 +824,36 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
 ///Textureデータを読む
 
 DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
-    //テクスチャファイルを読み込んでプログラムで扱えるようにする
-    DirectX::ScratchImage image{};
+    using namespace DirectX;
+
+    ScratchImage image{};
     std::wstring filePathW = ConvertString(filePath);
-    HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-    assert(SUCCEEDED(hr));
 
-    //ミニマップの作成
-    DirectX::ScratchImage mipImages{};
-    hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-    assert(SUCCEEDED(hr));
+    if (!std::filesystem::exists(filePathW)) {
+        std::wstring msg = L"[LoadTexture] File not found: " + filePathW + L"\n";
+        OutputDebugStringW(msg.c_str());
+        assert(false && "Texture file not found");
+    }
 
-    //ミニマップ付きのデータを返す
+    HRESULT hr = LoadFromWICFile(filePathW.c_str(), WIC_FLAGS_FORCE_SRGB, nullptr, image);
+    if (FAILED(hr)) {
+        _com_error err(hr);
+        std::wstring msg = L"[LoadTexture] WIC load failed (" + std::to_wstring(hr) +
+                           L"): " + filePathW + L" - " + err.ErrorMessage() + L"\n";
+        OutputDebugStringW(msg.c_str());
+        assert(false && "LoadFromWICFile failed");
+    }
+
+    ScratchImage mipImages{};
+    hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+                         TEX_FILTER_SRGB, 0, mipImages);
+    if (FAILED(hr)) {
+        _com_error err(hr);
+        std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
+        OutputDebugStringW(msg.c_str());
+        assert(false && "GenerateMipMaps failed");
+    }
+
     return mipImages;
 }
 

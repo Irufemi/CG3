@@ -28,6 +28,7 @@ static Vector3 ScreenToWorldOnZ(const Camera* cam, const Vector2& screen, float 
 	}
 	float t = (targetZ - p0.z) / denom;
 	return Math::Add(p0, Math::Multiply(t, dir));
+
 }
 
 // 画面半径[pixels]をZ=targetZ平面でのワールド半径に変換
@@ -79,6 +80,10 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
         cylinder_->SetInfo(Cylinder{ wcCannon, rWorld, hWorld });
     }
     cylinder_->Initialize(camera);
+
+	se_playerAction_ = std::make_unique<Se>();
+	se_playerAction_->Initialize("resources/se/SE_PlayerAction.mp3");
+	se_playerAction_->SetVolume(0.01f);
 }
 
 void Player::Jump () {
@@ -117,6 +122,7 @@ void Player::Rotate () {
 
 void Player::Fire () {
 	if (inputManager_->IsKeyPressedDIK(DIK_SPACE) && bulletNum_ > 0) {
+		se_playerAction_->Play();
 		for (auto& b : bullet) {
 			if (!b.GetIsActive()) {
 				b.Initialize(pos_, sinf(rad_), cosf(rad_), camera_);

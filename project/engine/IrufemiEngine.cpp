@@ -19,6 +19,8 @@
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
+#include "audio/Bgm.h"
+#include "audio/Se.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -59,6 +61,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     audioManager_->Initialize();
     // "resources"フォルダから音声ファイルをすべてロード
     audioManager_->LoadAllSoundsFromFolder("resources/");
+    Bgm::SetAudioManager(audioManager_.get());
+    Se::SetAudioManager(audioManager_.get());
 
     // DirectX 基盤
     dxCommon_ = std::make_unique<DirectXCommon>();

@@ -97,6 +97,7 @@
     <None Include="resources\shaders\Object2D.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
+    <None Include="3D\ObjClass" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -288,6 +289,9 @@
     </ClCompile>
     <ClCompile Include="3D\SphereRegion.cpp">
       <Filter>3D\Region</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Se.cpp">
+      <Filter>audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -551,6 +555,9 @@
     </ClInclude>
     <ClInclude Include="3D\SphereRegion.h">
       <Filter>3D\Region</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Se.h">
+      <Filter>audio</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -38,6 +38,8 @@ class InputManager;
 class GameScene : public IScene {
 
 private: // メンバ関数(ゲーム部分)
+
+    void GameSystem();
 	
     void Reflection();
     void BulletRecovery();

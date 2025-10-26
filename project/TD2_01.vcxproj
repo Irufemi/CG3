@@ -160,6 +160,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="3D\ObjClass" />
     <None Include="resources\shaders\Object2D.hlsli" />
     <None Include="resources\shaders\Object3d.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -186,6 +187,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="scene\inGame\EnemyManager.cpp" />
     <ClCompile Include="scene\inGame\InGameFunction.cpp" />
     <ClCompile Include="scene\inGame\Player.cpp" />
+    <ClCompile Include="audio\Se.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -318,6 +320,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="scene\SceneManager.h" />
     <ClInclude Include="scene\SceneName.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
+    <ClInclude Include="audio\Se.h" />
     <ClInclude Include="source\D3D12ResourceUtil.h" />
     <ClInclude Include="source\Sound.h" />
     <ClInclude Include="source\Texture.h" />
