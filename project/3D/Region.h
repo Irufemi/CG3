@@ -14,6 +14,7 @@ class Camera;
 class DirectXCommon;
 class TextureManager;
 class DrawManager;
+class DescriptorAllocator; // 追加
 
 class Region {
 public:
@@ -34,9 +35,12 @@ public:
     // 描画（事前に DrawManager::PreDraw 済みであること）
     void Draw();
 
-    static void SetDirectXCommon(DirectXCommon* dxCommon) { dx_ = dxCommon; }
-    static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
-    static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
+    static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
+    static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
+    static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
+
+    // 追加: SRV アロケータ注入
+    static void SetSrvAllocator(DescriptorAllocator* alloc) { srvAllocator_ = alloc; }
 
     // --- 追加: DrawManager から参照する Getter 群 ---
     D3D12_VERTEX_BUFFER_VIEW&       GetVertexBufferView() { return vertexBufferView_; }
@@ -64,9 +68,11 @@ private:
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
 
 private:
-    static DirectXCommon* dx_;
+    static DirectXCommon*  dx_;
     static TextureManager* textureManager_;
-    static DrawManager* drawManager_;
+    static DrawManager*    drawManager_;
+    static DescriptorAllocator* srvAllocator_; // 追加
+
     Camera* camera_ = nullptr;
 
     ObjModel objModel_{};

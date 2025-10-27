@@ -1,13 +1,24 @@
 #include "SphereRegion.h"
-
 #include "engine/directX/DirectXCommon.h"
 #include "camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
+#include "engine/DescriptorAllocator.h" // 追加
 
 DirectXCommon* SphereRegion::dx_ = nullptr;
 TextureManager* SphereRegion::textureManager_ = nullptr;
 DrawManager* SphereRegion::drawManager_ = nullptr;
+DescriptorAllocator* SphereRegion::srvAllocator_ = nullptr; // 追加
+
+SphereRegion::~SphereRegion() {
+    // SRV スロットを遅延解放で返す
+    if (instancingSrvIndex_ != UINT32_MAX && srvAllocator_ && dx_) {
+        srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
+        instancingSrvIndex_ = UINT32_MAX;
+        instancingSrvCPU_ = {};
+        instancingSrvGPU_ = {};
+    }
+}
 
 void SphereRegion::Initialize(Camera* camera, const std::string& textureName, uint32_t subdivision) {
     assert(dx_ && "Call SphereRegion::SetDirectXCommon first");
@@ -163,16 +174,17 @@ void SphereRegion::EnsureLightAndCamera() {
 
 void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
-    const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride); // 最低1
+    const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
 
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
-    // 初回のみ SRV スロット確保（1個固定）
     if (instancingSrvIndex_ == UINT32_MAX) {
-        textureManager_->AddSRVIndex();
-        instancingSrvIndex_ = textureManager_->GetSRVIndex();
-        instancingSrvCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(instancingSrvIndex_);
-        instancingSrvGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(instancingSrvIndex_);
+        assert(srvAllocator_ && "SphereRegion::SetSrvAllocator 未設定");
+        uint32_t idx = srvAllocator_->Allocate();
+        if (idx == DescriptorAllocator::kInvalid) { OutputDebugStringA("SphereRegion: SRV Allocate failed\n"); return; }
+        instancingSrvIndex_ = idx;
+        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
@@ -184,6 +196,7 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     srv.Buffer.StructureByteStride = stride;
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
+    // 同じハンドルに上書き（再利用）
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
 }
 

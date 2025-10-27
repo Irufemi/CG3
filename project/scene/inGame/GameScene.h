@@ -21,6 +21,7 @@
 
 #include "Player.h"
 #include "EnemyManager.h"
+#include "../contents/CommonVisual.h"  // 追加
 
 //BGM
 #include <xaudio2.h>
@@ -36,6 +37,13 @@ class InputManager;
 /// ゲーム
 /// </summary>
 class GameScene : public IScene {
+private: // 追加（床のワールド固定）
+    // ワールド側の床（描画用）
+    Segment2D groundWorld_[2]{};
+    // 床帯の半径（ワールド）
+    float groundRadiusWorld_ = 0.0f;
+    // 床をワールドへ変換し終えたか
+    bool groundConverted_ = false;
 
 private: // メンバ関数(ゲーム部分)
 
@@ -43,6 +51,10 @@ private: // メンバ関数(ゲーム部分)
 	
     void Reflection();
     void BulletRecovery();
+    void EnemyProcess();
+
+    // 追加: 地面シリンダーの更新（スクリーン→ワールド反映）
+    void UpdateGroundObjects();
 
 private:
 
@@ -60,10 +72,18 @@ private: // メンバ変数(ゲーム部分)
     //エネミーマネージャー
     std::unique_ptr<EnemyManager> e_Manager_;
 
+    //ゲームオーバーフラグ
+    bool gameOver_;
+
     //地面
     Segment2D ground[2];
     CollisionResult p_result_[2];
     CollisionResult b_result_[2];
+
+    // 追加: 地面描画用シリンダー
+    std::unique_ptr<CylinderClass> groundObj_[2];
+    // 追加: 地面の太さ [pixels]
+    float groundThicknessPx_ = Visual::kGroundThicknessPx; // 共通化
 
     //コア
     Sphere circle_;

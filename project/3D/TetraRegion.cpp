@@ -1,6 +1,6 @@
 #include "TetraRegion.h"
-
 #include "engine/directX/DirectXCommon.h"
+#include "engine/DescriptorAllocator.h" // 追加
 #include "camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
@@ -13,6 +13,7 @@
 DirectXCommon* TetraRegion::dx_ = nullptr;
 TextureManager* TetraRegion::textureManager_ = nullptr;
 DrawManager* TetraRegion::drawManager_ = nullptr;
+DescriptorAllocator* TetraRegion::srvAllocator_ = nullptr; // 追加
 
 void TetraRegion::Initialize(Camera* camera, const std::string& textureName) {
     assert(dx_ && "Call TetraRegion::SetDirectXCommon first");
@@ -137,14 +138,15 @@ void TetraRegion::EnsureLightAndCamera() {
 void TetraRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
-
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
     if (instancingSrvIndex_ == UINT32_MAX) {
-        textureManager_->AddSRVIndex();
-        instancingSrvIndex_ = textureManager_->GetSRVIndex();
-        instancingSrvCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(instancingSrvIndex_);
-        instancingSrvGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(instancingSrvIndex_);
+        if (!srvAllocator_) { OutputDebugStringA("TetraRegion: srvAllocator_ is null\n"); return; }
+        uint32_t idx = srvAllocator_->Allocate();
+        if (idx == DescriptorAllocator::kInvalid) { OutputDebugStringA("TetraRegion: SRV Allocate failed\n"); return; }
+        instancingSrvIndex_ = idx;
+        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
@@ -153,7 +155,7 @@ void TetraRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srv.Buffer.FirstElement = 0;
     srv.Buffer.NumElements = instanceCount;
-    srv.Buffer.StructureByteStride = sizeof(InstanceData);
+    srv.Buffer.StructureByteStride = stride;
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
@@ -280,4 +282,16 @@ void TetraRegion::SetEdge(float edge) {
     BuildTetraMesh(vertices, indices);
     CreateMeshBuffers(vertices, indices);
     meshDirty_ = false;
+}
+
+// --- 追加: ヘッダで宣言した静的セッターの実体定義 ---
+// これをファイルの先頭近く（既にある静的メンバ定義の直後など）に追加してください。
+void TetraRegion::SetDirectXCommon(DirectXCommon* dx) {
+    dx_ = dx;
+}
+void TetraRegion::SetTextureManager(TextureManager* tm) {
+    textureManager_ = tm;
+}
+void TetraRegion::SetDrawManager(DrawManager* dm) {
+    drawManager_ = dm;
 }

@@ -22,7 +22,8 @@ public:
 	void Fire();
 	void SpeedCalculation();
 	void Input();
-	bool Stan();
+	void Stan();
+	void disCalculation(Vector2 pos);
 	void Update();
 	void Draw();
 	void BulletDraw () ;
@@ -40,8 +41,16 @@ public:
 	void SetWallTouch() { wallTouch_ = false; }
 	int GetBulletNum() { return bulletNum_; }
 	void SetBulletNum() { bulletNum_++; }
+	bool GetIsStan() { return isStan_; }
+	void SetIsStan() {
+		stanTime_ = 60;
+		isStan_ = true;
+	}
+	float GetDisToCore() { return disToCore_; }
+
 	//弾
 	std::array<Bullet, 10>& GetBullet() { return bullet; }
+	void CollectBullet(int num);
 
 private:
 	// 描画用生成物
@@ -77,6 +86,8 @@ private:
 	//スタン
 	bool isStan_;
 	int stanTime_;
+	//コアとの距離を常に取っておく
+	float disToCore_;
 
 	//弾
 	std::array<Bullet, 10> bullet;

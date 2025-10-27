@@ -160,7 +160,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
-    <None Include="3D\ObjClass" />
     <None Include="resources\shaders\Object2D.hlsli" />
     <None Include="resources\shaders\Object3d.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -178,6 +177,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
+    <ClCompile Include="engine\DescriptorAllocator.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
     <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="math\Vector2.cpp" />
@@ -250,6 +250,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />
     <ClInclude Include="3D\CylinderClass.h" />
+    <ClInclude Include="engine\DescriptorAllocator.h" />
     <ClInclude Include="engine\directX\DirectXCommon.h" />
     <ClInclude Include="engine\D3DResourceLeakChecker.h" />
     <ClInclude Include="engine\IrufemiEngine.h" />
@@ -309,6 +310,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\VertexData.h" />
     <ClInclude Include="engine\PSOManager.h" />
     <ClInclude Include="3D\PointLightClass.h" />
+    <ClInclude Include="scene\contents\CommonVisual.h" />
     <ClInclude Include="scene\inGame\Bullet.h" />
     <ClInclude Include="scene\inGame\Enemy.h" />
     <ClInclude Include="scene\inGame\EnemyManager.h" />

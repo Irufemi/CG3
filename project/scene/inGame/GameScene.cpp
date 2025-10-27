@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "GameScene.h"
 
 #include "../SceneManager.h"
@@ -8,7 +9,35 @@
 #include "InGameFunction.h"
 
 #include <algorithm>
+#include <cmath>
 
+// --- Player と同等のスクリーン→ワールド変換ヘルパー ---
+static Vector3 ScreenToWorldOnZ(const Camera* cam, const Vector2& screen, float targetZ) {
+    Matrix4x4 view = cam->GetViewMatrix();
+    Matrix4x4 proj = cam->GetPerspectiveFovMatrix();
+    Matrix4x4 vp = cam->GetViewportMatrix();
+    Matrix4x4 vpv = Math::Multiply(view, Math::Multiply(proj, vp));
+    Matrix4x4 inv = Math::Inverse(vpv);
+
+    Vector3 p0 = Math::Transform(Vector3{ screen.x, screen.y, 0.0f }, inv);
+    Vector3 p1 = Math::Transform(Vector3{ screen.x, screen.y, 1.0f }, inv);
+    Vector3 dir = Math::Subtract(p1, p0);
+
+    float denom = dir.z;
+    if (std::fabs(denom) < 1e-6f) {
+        return p0;
+    }
+    float t = (targetZ - p0.z) / denom;
+    return Math::Add(p0, Math::Multiply(t, dir));
+}
+
+// 画面半径[pixels]→Z=targetZ平面でのワールド半径
+static float ScreenRadiusToWorld(const Camera* cam, const Vector2& center, float radiusPx, float targetZ) {
+    Vector3 wc = ScreenToWorldOnZ(cam, center, targetZ);
+    Vector3 wx = ScreenToWorldOnZ(cam, Vector2{ center.x + radiusPx, center.y }, targetZ);
+    Vector2 d = Math::Subtract(Vector2{ wx.x, wx.y }, Vector2{ wc.x, wc.y });
+    return Math::Length(d);
+}
 
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
@@ -19,6 +48,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     camera_ = std::make_unique <Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    // Titleと同じカメラレイアウトに統一
+    camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
+    camera_->UpdateMatrix();
 
     debugCamera_ = std::make_unique <DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
@@ -41,10 +73,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     bgm->PlayFixed();
 
     player_ = std::make_unique<Player>();
-    player_->Initialize(engine_->GetInputManager(),camera_.get());
+    player_->Initialize(engine_->GetInputManager(), camera_.get());
 
     e_Manager_ = std::make_unique<EnemyManager>();
-    e_Manager_->Initialize(camera_.get()); 
+    e_Manager_->Initialize(camera_.get());
+
+    gameOver_ = false;
+
     ground[0] = {
         {0.0f, 650.0f},
         {250.0f, 700.0f},
@@ -59,7 +94,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     }
     circle_ = {
         {250.0f, 700.0f},
-        {30.0f},
+        {90.0f},
     };
     coreHp_ = 3;
     for (int i = 0; i < 10; i++) {
@@ -67,12 +102,78 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         dis_[i] = {};
     }
 
+    // 地面用Cylinder生成
+    for (int i = 0; i < 2; i++) {
+        groundObj_[i] = std::make_unique<CylinderClass>();
+        groundObj_[i]->Initialize(camera_.get(),"resources/whiteTexture.png");
+    }
+
+    // --- 床をスクリーン→ワールドに一度だけ変換して固定 ---
+    // 内側の継ぎ目で小さく重ねるピクセル量（画面ピクセル単位）
+    const float innerOverlapPx = 4.0f; // 見た目で調整してください（2〜8pxが目安）
+    const float kPi = 3.14159265f;
+
+    float radii[2] = { 0.0f, 0.0f };
+    for (int i = 0; i < 2; i++) {
+        Vector2 p0s = ground[i].origin;
+        Vector2 p1s = ground[i].end;
+
+        Vector2 d = Math::Subtract(p1s, p0s);
+        float L = Math::Length(d);
+        Vector2 dir = (L > 0.0f) ? Math::Multiply(1.0f / L, d) : Vector2{ 1.0f, 0.0f };
+
+        // 左（i==0）は内側を前方へ少し伸ばす、右（i==1）は内側を後方へ少し伸ばす
+        Vector2 p0v, p1v;
+        if (i == 0) {
+            p0v = p0s; // 外側はそのまま
+            p1v = Math::Add(p1s, Math::Multiply(innerOverlapPx, dir)); // 内側を少し拡張
+        } else {
+            p0v = Math::Add(p0s, Math::Multiply(-innerOverlapPx, dir)); // 内側を少し前方へ移動（重ねる）
+            p1v = p1s; // 外側はそのまま
+        }
+
+        Vector3 w0 = ScreenToWorldOnZ(camera_.get(), p0v, 0.0f);
+        Vector3 w1 = ScreenToWorldOnZ(camera_.get(), p1v, 0.0f);
+
+        groundWorld_[i].origin = Vector2{ w0.x, w0.y };
+        groundWorld_[i].end = Vector2{ w1.x, w1.y };
+
+        Vector3 center = Math::Multiply(0.5f, Math::Add(w0, w1));
+        center.z += 0.1f; // わずかに手前へ
+        Vector2 d2 = Vector2{ w1.x - w0.x, w1.y - w0.y };
+        float length = Math::Length(d2);
+        Vector2 centerPx = Math::Multiply(0.5f, Math::Add(p0v, p1v));
+        float radius = ScreenRadiusToWorld(camera_.get(), centerPx, groundThicknessPx_ * 0.5f, 0.0f);
+
+        groundObj_[i]->SetInfo(Cylinder{ center, radius, length });
+
+        float theta = std::atan2(d2.y, d2.x);
+        float zAngle = theta - (kPi * 0.5f);
+        groundObj_[i]->SetRotate(Vector3{ 0.0f, 0.0f, zAngle });
+
+        radii[i] = radius;
+    }
+
+    // 両側の半径の大きい方をシーン共通の床半径として使う（当たり判定用）
+    groundRadiusWorld_ = std::max(radii[0], radii[1]);
+
+    // 両シリンダーの Z 中心を揃えて段差を減らす
+    {
+        Vector3 c0 = groundObj_[0]->GetInfo().center;
+        Vector3 c1 = groundObj_[1]->GetInfo().center;
+        float commonZ = std::max(c0.z, c1.z);
+        c0.z = c1.z = commonZ;
+        groundObj_[0]->SetCenter(c0);
+        groundObj_[1]->SetCenter(c1);
+    }
+
+    groundConverted_ = true;
+
     //乱数生成機
-    // 実行ごとに異なるシード値を取得するでやんす
+    // 実行ごとに異なるシード値を取得する
     std::random_device rd;
-    // std::mt19937 エンジンのインスタンスを作成し、rd()の結果で初期化するでやんす
+    // std::mt19937 エンジンのインスタンスを作成し、rd()の結果で初期化する
     randomEngine_.seed(rd());
-    //分布の初期化
     enemy_x_ = std::uniform_real_distribution<float>(25.0f, 475.0f);
     spawnTime_ = std::uniform_real_distribution<float>(kMinSpawnTime, kMaxSpawnTime);
 
@@ -137,11 +238,19 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
 
-    // 回収部分
-    // Shape::DrawEllipse(circle_.pos.x, circle_.pos.y, circle_.radius.x, circle_.radius.y, 0.0f, BLUE, kFillModeSolid);
+    // 地面（3D）
+    for (int i = 0; i < 2; i++) {
+        if (groundObj_[i]) { groundObj_[i]->Draw(); }
+    }
 
     // Player
     player_->Draw();
+
+
+    //倍率ゾーン
+    //DrawEllipse(circle_.center.x, circle_.center.y, 750.0f, 750.0f, 0.0f, 0xffff00ff, kFillModeSolid);
+    //DrawEllipse(circle_.center.x, circle_.center.y, 583.2f, 583.2f, 0.0f, 0xbbbb00ff, kFillModeSolid);
+    //DrawEllipse(circle_.center.x, circle_.center.y, 316.6f, 316.6f, 0.0f, 0x888800ff, kFillModeSolid);
 
     engine_->ApplyRegionPSO();
     player_->BulletDraw();
@@ -152,35 +261,48 @@ void GameScene::Draw() {
     engine_->ApplyPSO();
 
 
-    // 地面
-    //Shape::DrawLine(ground[0].origin.x, ground[0].origin.y, ground[0].diff.x, ground[0].diff.y, BLACK);
-    //Shape::DrawLine(ground[1].origin.x, ground[1].origin.y, ground[1].diff.x, ground[1].diff.y, BLACK);
-
     // Particle
-
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
 
     // 2D
-
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
-
 }
 
 void GameScene::GameSystem() {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
+    ImGui::Text("coreHp %d", coreHp_);
+    ImGui::Text("bulletNum : %d", player_->GetBulletNum());
+    ImGui::Text("enemyNum : %d", e_Manager_->GetEnemies().size());
+    ImGui::Text("playerToCore :%f", player_->GetDisToCore());
+#endif
+    //時間のカウント
+    ingameTimer_ += deltaTime;
     player_->Input();
     player_->SpeedCalculation();
+    player_->disCalculation(Vector2{ circle_.center.x,circle_.center.y });
     player_->Update();
     BulletRecovery();
 
     Reflection();
+    EnemyProcess();
 
-    //時間のカウント
-    ingameTimer_ += deltaTime;
+    if (coreHp_ == 0) {
+        gameOver_ = true;
+    }
+
+    // playerの座標などを描画物に反映
+    player_->DrawSet();
+
+    // 地面のワールド反映（カメラ更新後毎フレーム）
+    UpdateGroundObjects();
+}
+
+void GameScene::EnemyProcess() {
 
     if (ingameTimer_ >= time_) {
         //敵を生成する	
@@ -207,24 +329,32 @@ void GameScene::GameSystem() {
         for (auto& b : player_->GetBullet())
             if (e.IsCollision(b.GetPositon(), b.GetRadius().x)) {
                 e.SetIsAlive();
+
+                if (player_->GetDisToCore() <= 316.6f) {
+                    player_->CollectBullet(1);
+                } else if (player_->GetDisToCore() <= 583.2f) {
+                    player_->CollectBullet(2);
+                } else if (player_->GetDisToCore() <= 750.0f) {
+                    player_->CollectBullet(3);
+                }
             }
 
         //敵とプレイヤー
         if (e.IsCollision(player_->GetPositon(), player_->GetRadius().x)) {
             e.SetIsAlive();
+            player_->SetIsStan();
         }
     }
 
     e_Manager_->EraseEnemy();
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 
     ImGui::Text("coreHp %d", coreHp_);
     ImGui::Text("bulletNum : %d", player_->GetBulletNum());
     ImGui::Text("enemyNum : %d", e_Manager_->GetEnemies().size());
-
+#endif
     e_Manager_->Update(deltaTime);
 
-    // playerの座標などを描画物に反映
-    player_->DrawSet();
 }
 
 void GameScene::Reflection() {
@@ -253,9 +383,9 @@ void GameScene::Reflection() {
                 if (player_->GetVelocity().x > 0.0f && player_->GetWallTouch()) {
                     reflect.x = std::abs(reflect.x);
                     reflect.x += 4.0f;
-                } else if (player_->GetVelocity().x > 0.0f) {
+                } else if (player_->GetVelocity().x >= 0.0f) {
                     reflect.x = std::abs(reflect.x);
-                } else if (player_->GetVelocity().x < 0.0f) {
+                } else if (player_->GetVelocity().x <= 0.0f) {
                     reflect.x *= -1.0f;
                 }
             }
@@ -263,12 +393,13 @@ void GameScene::Reflection() {
                 if (player_->GetVelocity().x < 0.0f && player_->GetWallTouch()) {
                     reflect.x = -std::abs(reflect.x);
                     reflect.x -= 4.0f;
-                } else if (player_->GetVelocity().x < 0.0f) {
+                } else if (player_->GetVelocity().x <= 0.0f) {
                     reflect.x = -std::abs(reflect.x);
-                } else if (player_->GetVelocity().x > 0.0f) {
+                } else if (player_->GetVelocity().x >= 0.0f) {
                     reflect.x *= -1.0f;
                 }
             }
+
             player_->SetWallTouch();
             //プレイヤーの速度に掛ける
             player_->SetVelocity(reflect * kCOR);
@@ -290,11 +421,9 @@ void GameScene::Reflection() {
                     if (b.GetVelocity().x > 0.0f && b.GetWallTouch()) {
                         reflect.x = std::abs(reflect.x);
                         reflect.x += 4.0f;
-                    }
-                    if (b.GetVelocity().x > 0.0f) {
+                    } else if (b.GetVelocity().x >= 0.0f) {
                         reflect.x = std::abs(reflect.x);
-                    }
-                    if (b.GetVelocity().x < 0.0f) {
+                    } else if (b.GetVelocity().x <= 0.0f) {
                         reflect.x *= -1.0f;
                     }
                 }
@@ -302,11 +431,9 @@ void GameScene::Reflection() {
                     if (b.GetVelocity().x < 0.0f && b.GetWallTouch()) {
                         reflect.x = -std::abs(reflect.x);
                         reflect.x -= 4.0f;
-                    }
-                    if (b.GetVelocity().x < 0.0f) {
+                    } else if (b.GetVelocity().x <= 0.0f) {
                         reflect.x = -std::abs(reflect.x);
-                    }
-                    if (b.GetVelocity().x > 0.0f) {
+                    } else if (b.GetVelocity().x >= 0.0f) {
                         reflect.x *= -1.0f;
                     }
                 }
@@ -326,9 +453,75 @@ void GameScene::BulletRecovery() {
         dis_[i] = { Math::Length(vec_[i]) };
 
         //弾の速度が0且つサークルに当たってたら
-        if (dis_[i] <= circle_.radius && b.GetVelocity().x <= 0.02f && b.GetVelocity().y <= 0.02f) {
+        if (b.GetIsActive() && dis_[i] <= circle_.radius + b.GetRadius().y && b.GetVelocity().x <= 0.01f && b.GetVelocity().y <= 0.01f) {
             b.Recover();
         }
+
         i++;
+    }
+}
+
+// 追加: 地面シリンダーをスクリーン→ワールドに反映
+void GameScene::UpdateGroundObjects() {
+    // 内側で重ねる px（画面ピクセル）
+    const float innerOverlapPx = 4.0f;
+
+    for (int i = 0; i < 2; i++) {
+        if (!groundObj_[i]) continue;
+
+        Vector2 p0s = ground[i].origin;
+        Vector2 p1s = ground[i].end;
+
+        Vector2 d = Math::Subtract(p1s, p0s);
+        float L = Math::Length(d);
+        Vector2 dir = (L > 0.0f) ? Math::Multiply(1.0f / L, d) : Vector2{ 1.0f, 0.0f };
+
+        Vector2 p0v, p1v;
+        if (i == 0) {
+            p0v = p0s;
+            p1v = Math::Add(p1s, Math::Multiply(innerOverlapPx, dir)); // 左床の内側を少し拡張
+        } else {
+            p0v = Math::Add(p0s, Math::Multiply(-innerOverlapPx, dir)); // 右床の内側を少し左へ寄せる
+            p1v = p1s;
+        }
+
+        // スクリーン→Z=0ワールド
+        Vector3 w0 = ScreenToWorldOnZ(camera_.get(), p0v, 0.0f);
+        Vector3 w1 = ScreenToWorldOnZ(camera_.get(), p1v, 0.0f);
+
+        // 中点・長さ・向き
+        Vector3 center = Math::Multiply(0.5f, Math::Add(w0, w1));
+        // keep a small front offset like Initialize
+        center.z += 0.1f;
+        Vector2 d2 = Vector2{ w1.x - w0.x, w1.y - w0.y };
+        float   length = Math::Length(d2);
+
+        // 太さ（ピクセル→ワールド半径） ... use center of the stretched segment in screen space
+        Vector2 centerPx = Math::Multiply(0.5f, Math::Add(p0v, p1v));
+        float radius = ScreenRadiusToWorld(camera_.get(), centerPx, groundThicknessPx_ * 0.5f, 0.0f);
+
+        groundObj_[i]->SetInfo(Cylinder{ center, radius, length });
+
+        // 向き: Cylinderの軸(Y+)を線分方向へ。zAngle = theta - 90deg
+        float theta = std::atan2(d2.y, d2.x);
+        float zAngle = theta - (3.14159265f * 0.5f);
+        groundObj_[i]->SetRotate(Vector3{ 0.0f, 0.0f, zAngle });
+
+        // Update debug name / UI
+        groundObj_[i]->Update(i == 0 ? "Ground0" : "Ground1");
+    }
+
+    // 両側の半径を合わせ、Zを揃える（視覚差を抑える）
+    if (groundObj_[0] && groundObj_[1]) {
+        float r0 = groundObj_[0]->GetInfo().radius;
+        float r1 = groundObj_[1]->GetInfo().radius;
+        groundRadiusWorld_ = std::max(r0, r1);
+
+        Vector3 c0 = groundObj_[0]->GetInfo().center;
+        Vector3 c1 = groundObj_[1]->GetInfo().center;
+        float commonZ = std::max(c0.z, c1.z);
+        c0.z = c1.z = commonZ;
+        groundObj_[0]->SetCenter(c0);
+        groundObj_[1]->SetCenter(c1);
     }
 }

@@ -1,10 +1,13 @@
 #include "Player.h"
 #include <cmath>
 #include "engine/Input/InputManager.h"
+#include "engine/Input/GamePad.h"
 #include "camera/Camera.h"
 #include "3D/SphereClass.h"
 #include "3D/CylinderClass.h"
 #include <dinput.h>
+#include <imgui.h>
+#include "InGameFunction.h"
 
 
 // 画面座標(sx,sy)をZ=targetZ平面上のワールド座標へ逆変換
@@ -44,6 +47,10 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
 
     camera_ = camera;
     inputManager_ = inputManager;
+    // GamePad のデッドゾーンを設定（左スティックのノイズを無視）
+    if (inputManager_ && inputManager_->GetGamePad()) {
+        inputManager_->GetGamePad()->SetLeftDeadZone(0.25f);
+    }
 
 	pos_ = { 100.0f, 400.0f };
 	radius_ = { 40.0f, 40.0f };
@@ -61,6 +68,7 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
 	bulletNum_ = 10;
 	isStan_ = false;
 	stanTime_ = 60;
+	disToCore_ = 0.0f;
 
 	for (auto& b : bullet) {
 		b.Initialize(pos_, sinf_, cosf_,camera_);
@@ -87,7 +95,11 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
 }
 
 void Player::Jump () {
-	if (inputManager_->IsKeyPressedDIK(DIK_SPACE) && bulletNum_ > 0) {
+	if (!inputManager_) return;
+	GamePad* gp = inputManager_->GetGamePad();
+	bool gpA = gp ? gp->IsButtonPressed(XINPUT_GAMEPAD_A) : false;
+
+	if ((inputManager_->IsKeyPressedDIK(DIK_SPACE) || gpA) && bulletNum_ > 0) {
 		if (pos_.x <= 250.0f) {
 			velocity_.x = 4.0f;
 			velocity_.y = 6.0f;
@@ -100,12 +112,26 @@ void Player::Jump () {
 }
 
 void Player::Rotate () {
-	if (inputManager_->IsKeyDownDIK(DIK_A)) {
-		angle_ -= 5.0f;
+	if (!inputManager_) return;
+
+	constexpr float kGamepadDeadzone = 0.25f;
+	GamePad* gp = inputManager_->GetGamePad();
+
+	bool leftDown  = inputManager_->IsKeyDownDIK(DIK_A);
+	bool rightDown = inputManager_->IsKeyDownDIK(DIK_D);
+
+	// 左スティック（アナログ）を優先してチェック
+	if (gp) {
+		float lx = gp->GetLeftStickX();
+		if (lx < -kGamepadDeadzone) leftDown = true;
+		if (lx >  kGamepadDeadzone) rightDown = true;
+		// 十字キーも許可
+		if (gp->DPadLeft())  leftDown = true;
+		if (gp->DPadRight()) rightDown = true;
 	}
-	if (inputManager_->IsKeyDownDIK(DIK_D)) {
-		angle_ += 5.0f;
-	}
+
+	if (leftDown)  angle_ -= 5.0f;
+	if (rightDown) angle_ += 5.0f;
 
 	// --- ラジアン変換 ---
 	rad_ = angle_ * (3.14159265f / 180.0f);
@@ -121,12 +147,16 @@ void Player::Rotate () {
 }
 
 void Player::Fire () {
-	if (inputManager_->IsKeyPressedDIK(DIK_SPACE) && bulletNum_ > 0) {
+	if (!inputManager_) return;
+	GamePad* gp = inputManager_->GetGamePad();
+	bool gpA = gp ? gp->IsButtonPressed(XINPUT_GAMEPAD_A) : false;
+
+	if ((inputManager_->IsKeyPressedDIK(DIK_SPACE) || gpA) && bulletNum_ > 0) {
 		se_playerAction_->Play();
 		for (auto& b : bullet) {
 			if (!b.GetIsActive()) {
 				b.Initialize(pos_, sinf(rad_), cosf(rad_), camera_);
-				b.SetIsActive();
+				b.SetIsActive(true);
 				bulletNum_--;
 				break;
 			}
@@ -147,21 +177,31 @@ void Player::SpeedCalculation () {
 }
 
 void Player::Input () {
-	Jump ();
-	Fire ();
+	if (!isStan_) {
+		Jump();
+		Fire();
+	}
 }
 
-bool Player::Stan() {
-	isStan_ = true;
-
-	if (isStan_) {
+void Player::Stan() {
+	if (stanTime_ >= 0) {
 		stanTime_--;
 	}
 
-	return isStan_;
+	if (stanTime_ == 0) {
+		isStan_ = false;
+	}
+}
+
+void Player::disCalculation(Vector2 pos) {
+	Vector2 vec = Math::Subtract(pos, pos_);
+	disToCore_ = { Math::Length(vec) };
 }
 
 void Player::Update () {
+
+	Stan();
+
 	//bulletNumの上限
 	if (bulletNum_ >= kMaxBullet) {
 		bulletNum_ = kMaxBullet;
@@ -185,9 +225,9 @@ void Player::Update () {
 	//弾
 	for (auto& b : bullet) {
 		b.Update();
-		if (b.GetIsActive() && b.GetRecoverTime() == 0) {
-			bulletNum_++;
-			break;
+		if (b.IsRecovered()) {
+			bulletNum_ += 1;
+			b.SetIsActive(false);
 		}
 	}
 }
@@ -240,5 +280,23 @@ void Player::BulletDraw() {
 	// 弾
 	for (auto& b : bullet) {
 		b.Draw();
+	}
+}
+
+void Player::CollectBullet(int num) {
+	int collectedCount = 0;
+
+	for (size_t i = 0; i < bullet.size(); ++i) {
+		//現在の弾
+		auto& b = bullet[i];
+
+		if (b.GetIsActive()) {
+			b.Collect();
+			collectedCount++;
+		}
+
+		if (collectedCount >= num) {
+			break;
+		}
 	}
 }

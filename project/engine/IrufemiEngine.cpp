@@ -21,6 +21,7 @@
 #include "3D/TetraRegion.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
+#include "source/Texture.h"
 
 #include "scene/IScene.h"
 #include "scene/title/TitleScene.h"
@@ -76,7 +77,59 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetDirectXCommon(dxCommon_.get());
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());
-    
+
+    // SRV デスクリプタアロケータの作成（3）
+    // --- SRV デスクリプタアロケータを先に作る（DirectX 初期化直後） ---
+    const uint32_t srvDescriptorInc = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    {
+        ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
+        srvAllocator_ = std::make_unique<DescriptorAllocator>(srvHeap, srvDescriptorInc);
+
+        // ImGui 等が先頭を使っているなら予約
+        srvAllocator_->ReservePrefix(1);
+
+        // 注入：Texture と SphereRegion（他クラスも同様に SetXXXAllocator を用意して注入）
+        Texture::SetDescriptorAllocator(srvAllocator_.get());
+        SphereRegion::SetSrvAllocator(srvAllocator_.get());
+        Region::SetSrvAllocator(srvAllocator_.get());        
+        TetraRegion::SetSrvAllocator(srvAllocator_.get());   
+        ParticleClass::SetSrvAllocator(srvAllocator_.get()); 
+    }
+
+    // --- ここでテクスチャ管理を初期化（注入済みなので Texture::Initialize はアロケータ経由で確保します） ---
+    textureManager = std::make_unique<TextureManager>();
+    textureManager->Initialize(dxCommon_.get());
+    textureManager->LoadAllFromFolder("resources/");
+
+    // --- ロード後：もし ImGui など既存のSRVがあるなら走査して free-list を再構築する（任意だが推奨） ---
+    {
+        ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
+        auto toIndex = [&](D3D12_GPU_DESCRIPTOR_HANDLE h)->uint32_t {
+            if (h.ptr == 0) return DescriptorAllocator::kInvalid;
+            const auto heapStart = srvHeap->GetGPUDescriptorHandleForHeapStart().ptr;
+            const uint64_t diff = (h.ptr - heapStart);
+            return static_cast<uint32_t>(diff / srvDescriptorInc);
+            };
+
+        std::vector<uint32_t> used;
+        // 白テクスチャ
+        if (auto white = textureManager->GetWhiteTextureHandle(); white.ptr != 0) {
+            if (auto idx = toIndex(white); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
+        }
+        // テクスチャキャッシュ
+        for (auto& name : textureManager->GetTextureNames()) {
+            auto h = textureManager->GetTextureHandle(name);
+            if (auto idx = toIndex(h); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
+        }
+        // 先頭予約も used に
+        for (uint32_t i = 0; i < srvAllocator_->BaseIndex(); ++i) used.push_back(i);
+
+        std::sort(used.begin(), used.end());
+        used.erase(std::unique(used.begin(), used.end()), used.end());
+
+        srvAllocator_->RebuildFreeListExcept(used);
+    }
+
     // 入力
     inputManager_ = std::make_unique<InputManager>();
     inputManager_->Initialize();
@@ -103,10 +156,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetDrawManager(drawManager.get());
 
     // テクスチャ
-
-    textureManager = std::make_unique <TextureManager>();
-    textureManager->Initialize(dxCommon_.get());
-    textureManager->LoadAllFromFolder("resources/");
     ui->SetTextureManager(textureManager.get());
     Sprite::SetTextureManager(textureManager.get());
     ObjClass::SetTextureManager(textureManager.get());
@@ -245,10 +294,14 @@ void IrufemiEngine::ProcessFrame() {
 void IrufemiEngine::EndFrame() {
 
     // 描画後処理
-
     ui->QueuePostDrawCommands();
-
     drawManager->PostDraw();
+
+    // 5) フレーム終端で遅延解放の回収（フェンス完了値を渡す）
+    if (srvAllocator_) {
+        const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
+        srvAllocator_->GarbageCollect(completed);
+    }
 }
 
 void IrufemiEngine::ApplyPSO() {

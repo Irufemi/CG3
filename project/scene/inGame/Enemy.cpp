@@ -2,9 +2,6 @@
 #include "function/Math.h"
 #include <imgui.h>
 
-//敵の速さ
-const float kEnemySpeed = 0.8f;
-
 void Enemy::Initialize (float x, Vector2 goal) {
 	hp_ = 1;
 	isAlive_ = true;

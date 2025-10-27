@@ -21,12 +21,14 @@ class DirectXCommon;
 class Camera;                       
 class TextureManager;
 class DrawManager;
+class DescriptorAllocator; // 追加
 
 class TetraRegion {
 public:
-    static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
-    static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
-    static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
+    static void SetDirectXCommon(DirectXCommon* dx);
+    static void SetTextureManager(TextureManager* tm);
+    static void SetDrawManager(DrawManager* dm);
+    static void SetSrvAllocator(DescriptorAllocator* alloc) { srvAllocator_ = alloc; } // 追加
 
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
 
@@ -79,6 +81,7 @@ private:
     static DirectXCommon* dx_;
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
+    static DescriptorAllocator* srvAllocator_; // 追加
 
     Camera* camera_ = nullptr;
 

@@ -79,6 +79,7 @@ public: // メンバ関数
     void SetRadius(float radius) { info_.radius = radius; }
     void SetHeight(float height) { info_.height = height; }
     void SetRotate(const Vector3& rotate) { resource_->transform_.rotate = rotate; }
+    void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
 
 private:
     // 上下面キャップを個別に作るヘルパー

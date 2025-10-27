@@ -6,7 +6,7 @@
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 500;
-const int32_t kClientHeight = 700;
+const int32_t kClientHeight = 800;
 
 // タイトル
 const std::wstring kTitle = L"2126_だんだんリサイクル";

@@ -55,5 +55,8 @@ private:
 	Vector2 normal_;
 	//目標までの距離
 	float dis_;
+
+	//敵の速さ
+	static inline const float kEnemySpeed = 0.8f;
 };
 

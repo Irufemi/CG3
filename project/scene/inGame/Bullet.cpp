@@ -1,5 +1,6 @@
 #include "Bullet.h"
 #include <cmath>
+#include <imgui.h>
 #include "camera/Camera.h"
 #include "function/Math.h"
 
@@ -40,7 +41,7 @@ void Bullet::Initialize(Vector2 pos, float sin, float cos, Camera* camera) {
 
     sphereRegion_ = std::make_unique<SphereRegion>();
     // テクスチャ名は適宜差し替え
-    sphereRegion_->Initialize(camera_, "resources/uvChecker.png", 16);
+    sphereRegion_->Initialize(camera_, "resources/whiteTexture.png", 16);
 }
 
 void Bullet::JudgeScreen() {
@@ -60,7 +61,16 @@ void Bullet::SpeedCalculation() {
 void Bullet::Recover() {
     if (recoverTime_ >= 0) {
         recoverTime_--;
-        if (recoverTime_ < 0) { isActive_ = false; }
+
+        if (recoverTime_ == 0) {
+            isActive_ = false;
+        }
+    }
+}
+
+void Bullet::Collect() {
+    if (isActive_) {
+        recoverTime_ = 0;
     }
 }
 
