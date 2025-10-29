@@ -80,6 +80,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     se_playerdamage = std::make_unique<Se>();
     se_playerdamage->Initialize("resources/se/SE_PlayerDamage.mp3");
 
+    se_playerstan = std::make_unique<Se>();
+    se_playerstan->Initialize("resources/se/sword1.mp3");
+
+    se_playertoutch = std::make_unique<Se>();
+    se_playertoutch->Initialize("resources/se/by_chance.mp3");
+
     bgm = std::make_unique<Bgm>();
     bgm->Initialize("resources/bgm/BGM_InGame.mp3");
     bgm->PlayFixed();
@@ -117,7 +123,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // 地面用Cylinder生成
     for (int i = 0; i < 2; i++) {
         groundObj_[i] = std::make_unique<CylinderClass>();
-        groundObj_[i]->Initialize(camera_.get(),"resources/whiteTexture.png");
+        groundObj_[i]->Initialize(camera_.get(), "resources/whiteTexture.png");
     }
 
     // --- 床をスクリーン→ワールドに一度だけ変換して固定 ---
@@ -214,6 +220,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         zoneCircles_[2]->SetColor(Vector4{ 1.0f, 0.95f, 0.4f, 0.35f });
     }
 
+    text_period_ = std::make_unique<Sprite>();
+    text_period_->Initialize(camera_.get(), "resources/texture/gameText_period.png");
+    text_period_->SetAnchor(0.5f, 0.5f);
+    text_period_->SetPosition(camera_->GetViewportWidth() / 2.0f, 32.0f);
+
     text_addEnemy_ = std::make_unique<Sprite>();
     text_addEnemy_->Initialize(camera_.get(), "resources/texture/gameText_addEnemy.png");
     text_addEnemy_->SetAnchor(0.5f, 0.5f);
@@ -222,22 +233,22 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     text_pleaseAlive_ = std::make_unique<Sprite>();
     text_pleaseAlive_->Initialize(camera_.get(), "resources/texture/gametext_PlaeaseAlive.png");
     text_pleaseAlive_->SetAnchor(0.5f, 0.5f);
-    text_pleaseAlive_->SetPosition(camera_->GetViewportWidth() / 2.0f, camera_->GetViewportHeight() / 2.0f-100.0f);
+    text_pleaseAlive_->SetPosition(camera_->GetViewportWidth() / 2.0f, camera_->GetViewportHeight() / 2.0f - 100.0f);
 
     text_bullet_ = std::make_unique<Sprite>();
     text_bullet_->Initialize(camera_.get(), "resources/texture/gameText_bullet.png");
-    text_bullet_->SetSize(96.0f,38.0f);
-    text_bullet_->SetPosition(300.0f, 740.0f);
-    
+    text_bullet_->SetSize(96.0f, 38.0f);
+    text_bullet_->SetPosition(300.0f, 720.0f);
+
     text_HP_ = std::make_unique<Sprite>();
     text_HP_->Initialize(camera_.get(), "resources/texture/gameText_HP.png");
     text_HP_->SetSize(48.0f, 38.0f);
-    text_HP_->SetPosition(10.0f, 740.0f);
+    text_HP_->SetPosition(10.0f, 720.0f);
 
     text_slash_ = std::make_unique<Sprite>();
     text_slash_->Initialize(camera_.get(), "resources/texture/gameText_slash.png");
     text_slash_->SetSize(19.0f, 38.0f);
-    text_slash_->SetPosition(438.0f, 740.0f);
+    text_slash_->SetPosition(438.0f, 720.0f);
 
     // ==== 弾数UI ====
     bulletNowText_ = std::make_unique<NumberText>();
@@ -305,6 +316,22 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         // 初期表示位置は画面上部中央（ImGuiで調整可）
         gameTimerCenter_ = Vector2{ vw * 0.5f, 32.0f };
     }
+
+    // === Initialize 内（coreCircle_ の直後に挿入） ===
+    // HPアイコン初期化（SphereClass で描画）
+    for (int i = 0; i < kMaxHpIcons; ++i) {
+        hpIcons_[i] = std::make_unique<SphereClass>();
+        hpIcons_[i]->Initialize(camera_.get(), "resources/whiteTexture.png"); // テクスチャ無し（必要なら指定）
+        // スクリーン中心をワールドへ変換
+        Vector2 screenCenter{ hpIconsPos_.x + i * (hpIconScreenRadius_ * 2.0f + hpIconSpacing_), hpIconsPos_.y };
+        Vector3 worldCenter = ScreenToWorldOnZ(camera_.get(), screenCenter, hpIconTargetZ_);
+        worldCenter.z += 0.05f; // わずかに手前へ（必要に応じ調整）
+        float worldRadius = ScreenRadiusToWorld(camera_.get(), screenCenter, hpIconScreenRadius_, hpIconTargetZ_);
+        Sphere s; s.center = worldCenter; s.radius = worldRadius;
+        hpIcons_[i]->SetInfo(s);
+        hpIcons_[i]->SetColor(hpIconColor_);
+        hpIcons_[i]->Update(false);
+    }
 }
 
 // 更新
@@ -313,21 +340,23 @@ void GameScene::Update() {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 
     ImGui::Begin("GameScene");
-    // pointLight 
+    // pointLight / spotLight のデバッグ表示（既存）
     pointLight_->Debug();
-    // spotLight 
     spotLight_->Debug();
 
-    ImGui::End();
-
-    ImGui::Begin("Texture");
-    if (ImGui::Button("allLoadActivate")) {
-        engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+    // HPアイコン調整パネル
+    ImGui::SeparatorText("HP Icons");
+    ImGui::Checkbox("Show HP Icons", &hpIconsVisible_);
+    ImGui::DragFloat2("HP Icons Pos (px)", &hpIconsPos_.x, 1.0f, 0.0f, camera_->GetViewportWidth());
+    ImGui::DragFloat("HP Icon Spacing (px)", &hpIconSpacing_, 1.0f, 0.0f, 300.0f);
+    ImGui::DragFloat("HP Icon Screen Radius (px)", &hpIconScreenRadius_, 0.5f, 1.0f, 200.0f);
+    ImGui::DragFloat("HP Icon Target Z", &hpIconTargetZ_, 0.01f, -50.0f, 50.0f);
+    float col[4] = { hpIconColor_.x, hpIconColor_.y, hpIconColor_.z, hpIconColor_.w };
+    if (ImGui::ColorEdit4("HP Icon Color", col)) {
+        hpIconColor_ = Vector4{ col[0], col[1], col[2], col[3] };
     }
-    ImGui::Checkbox("debugMode", &debugMode);
 
     ImGui::End();
-
 #endif // _DEBUG
 
     // カメラの更新（既存処理）
@@ -370,6 +399,7 @@ void GameScene::Update() {
     text_slash_->Update(false);
     text_pleaseAlive_->Update(false);
     text_addEnemy_->Update(false);
+    text_period_->Update(true,"text_period_");
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
     // デバッグ UI
@@ -416,7 +446,7 @@ void GameScene::Update() {
         gameOverAnimActive_ = true;
         gameOverAnimPlayed_ = true; // 二度目以降は入らない
 
-        gameOverAnimTime_   = 0.0f;
+        gameOverAnimTime_ = 0.0f;
 
         // ウィンドウサイズが変わっている可能性に備えて取り直し
         const float vw = camera_->GetViewportWidth();
@@ -432,7 +462,7 @@ void GameScene::Update() {
     // --- GameOver 拡大アニメーション ---
     if (gameOverAnimActive_ && gameOverPlate_) {
         gameOverAnimTime_ += deltaTime;
-        const float t  = Smooth01(gameOverAnimTime_ / gameOverAnimDuration_);
+        const float t = Smooth01(gameOverAnimTime_ / gameOverAnimDuration_);
         const float cw = gameOverTargetSize_.x * t;
         const float ch = gameOverTargetSize_.y * t;
         gameOverPlate_->SetSize(cw, ch);
@@ -472,9 +502,9 @@ void GameScene::Draw() {
     /*Shape::DrawEllipse(circle_.pos.x, circle_.pos.y, circle_.radius.x, circle_.radius.y, 0.0f,
         BLUE, kFillModeSolid);*/
 
-    // --- 以降は既存の3Dなど ---
+        // --- 以降は既存の3Dなど ---
 
-    // 3D
+        // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
@@ -509,14 +539,14 @@ void GameScene::Draw() {
     // ==== 弾数UI描画 ====
     if (bulletNowText_ && bulletMaxText_) {
         const size_t nowSlotDigits = 2; // 0～10想定で2桁スロット
-        const size_t maxDigits     = 2; // 「10」
+        const size_t maxDigits = 2; // 「10」
 
         // 現在弾数ブロックの右端座標（左上から固定幅で算出）
         const float nowRight = bulletUiLeftTop_.x + bulletNowText_->GetWidthForDigits(nowSlotDigits);
         bulletNowText_->SetPosRightTop(Vector2{ nowRight, bulletUiLeftTop_.y });
 
         // 「/」分の余白 + ブロック間余白を空けて最大値ブロックを配置
-        const float maxLeft  = nowRight + bulletUiSlashGap_ + bulletUiBlockGap_;
+        const float maxLeft = nowRight + bulletUiSlashGap_ + bulletUiBlockGap_;
         const float maxRight = maxLeft + bulletMaxText_->GetWidthForDigits(maxDigits);
         bulletMaxText_->SetPosRightTop(Vector2{ maxRight, bulletUiLeftTop_.y });
 
@@ -529,6 +559,25 @@ void GameScene::Draw() {
     text_bullet_->Draw();
     text_HP_->Draw();
     text_slash_->Draw();
+    text_period_->Draw();
+
+    // === Draw 内：UI 描画エリア（text_bullet_ 等を描く前）へ追加 ===
+    // HPアイコン描画（表示数は coreHp_）
+    if (hpIconsVisible_) {
+        const int drawCount = std::clamp(coreHp_, 0, kMaxHpIcons);
+        if (drawCount > 0) {
+            // 深度バッファを汚さないため DepthWrite を無効化して描画（Z位置での前寄せも併用）
+            engine_->SetBlend(BlendMode::kBlendModeNormal);
+            engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+            engine_->ApplyPSO();
+            for (int i = 0; i < drawCount; ++i) {
+                if (hpIcons_[i]) hpIcons_[i]->Draw();
+            }
+            // 後続の描画のため DepthWrite を戻す
+            engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+            engine_->ApplyPSO();
+        }
+    }
 
     if (showGameTimer_ && gameTimerText_) {
         // 最前面の 2D 表示状態を確実にする
@@ -605,7 +654,7 @@ void GameScene::GameSystem() {
     BulletRecovery();
     EnemyProcess();
 
-    if (coreHp_ == 0 ) {
+    if (coreHp_ == 0) {
         gameOver_ = true;
     }
 
@@ -668,6 +717,8 @@ void GameScene::EnemyProcess() {
         if (e.IsCollision(player_->GetPositon(), player_->GetRadius().x)) {
             e.SetIsAlive();
             player_->SetIsStan();
+
+            se_playerstan->Play();
         }
     }
 
@@ -696,6 +747,8 @@ void GameScene::Reflection() {
         //プレイヤーと地面の当たり判定
         p_result_[i] = isCollision(player_->GetPositon(), player_->GetRadius(), ground[i]);
         if (p_result_[i].isColliding) {
+
+            se_playertoutch->Play();
             //めり込みを直す
             player_->SetPosition(player_->GetPositon() + (p_result_[i].penetration * p_result_[i].normal));
             //反射ベクトル更新
@@ -726,6 +779,7 @@ void GameScene::Reflection() {
             }
             //プレイヤーの速度に掛ける
             player_->SetVelocity(reflect * kCOR);
+
             player_->SetWallTouch();
         }
 

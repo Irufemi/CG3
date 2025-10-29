@@ -91,7 +91,14 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
 
 	se_playerAction_ = std::make_unique<Se>();
 	se_playerAction_->Initialize("resources/se/SE_PlayerAction.mp3");
-	se_playerAction_->SetVolume(0.01f);
+
+	se_bullet = std::make_unique<Se>();
+	se_bullet->Initialize("resources/se/SE_Bullet.mp3");
+
+	se_playertoutch = std::make_unique<Se>();
+	se_playertoutch->Initialize("resources/se/by_chance.mp3");
+
+	
 }
 
 void Player::Jump () {
@@ -167,6 +174,7 @@ void Player::Fire () {
 void Player::SpeedCalculation () {
 	if (pos_.x - radius_.x <= 0.0f || pos_.x + radius_.x >= 500.0f) {
 		wallTouch_ = true;
+		se_playertoutch->Play();
 		velocity_.x *= -1.0f;
 	}
 	if (pos_.y - radius_.y <= 0.0f) {
@@ -234,6 +242,7 @@ void Player::Update () {
 			b.SetIsReturn(true);
 			b.SetIsActive(false); 
 			bulletNum_ += 1;
+			se_bullet->Play();
 		}
 
 		if (b.GetIsReturn()) {

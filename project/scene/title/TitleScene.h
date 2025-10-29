@@ -5,6 +5,7 @@
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "math/shape/LinePrimitive.h"
+#include "2D/Sprite.h"
 #include "3D/ObjClass.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
@@ -72,6 +73,8 @@ private: // メンバ変数
     std::unique_ptr<ObjClass> text_i = nullptr;
     std::unique_ptr<ObjClass> text_ku = nullptr;
     std::unique_ptr<ObjClass> text_ru = nullptr;
+
+    std::unique_ptr<Sprite> text_press = nullptr;
 
     std::unique_ptr<PointLightClass> pointLight_ = nullptr;
     std::unique_ptr<SpotLightClass> spotLight_ = nullptr;

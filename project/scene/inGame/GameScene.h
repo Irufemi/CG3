@@ -120,6 +120,10 @@ private: // メンバ変数(ゲーム部分)
 
     std::unique_ptr<Se> se_playerdamage = nullptr;
 
+    std::unique_ptr<Se> se_playerstan = nullptr;
+
+    std::unique_ptr<Se> se_playertoutch = nullptr;
+
 
     // --- private メンバ（適切な private セクションに追加） ---
     std::unique_ptr<NumberText> gameTimerText_;
@@ -145,6 +149,9 @@ private: // メンバ変数(ゲーム内描画物)
 
     // 文字(敵増える)
     std::unique_ptr<Sprite> text_addEnemy_ = nullptr;
+
+    // 文字(敵増える)
+    std::unique_ptr<Sprite> text_period_ = nullptr;
 
     // 背景の倍率ゾーン
     std::unique_ptr<Circle2D> zoneCircles_[3];
@@ -173,7 +180,7 @@ private: // メンバ変数(システム)
     // ==== 追加: 弾数UI ====
     std::unique_ptr<NumberText> bulletNowText_;
     std::unique_ptr<NumberText> bulletMaxText_;
-    Vector2 bulletUiLeftTop_{ 400.0f, 740.0f }; // 全体の左上
+    Vector2 bulletUiLeftTop_{ 400.0f, 720.0f }; // 全体の左上
     float  bulletUiSlashGap_ = 2.0f;        // スラッシュ予定位置の隙間（後で'/'を入れるための余白）
     float  bulletUiBlockGap_ = 10.0f;         // ブロック間の余白
     int    bulletUiMaxValue_ = 10;           // 表示する最大値（固定表示「10」）
@@ -197,6 +204,17 @@ private: // メンバ変数(システム)
     int   countdownStartSeconds_ = 3;         // 開始秒（デフォルト3）
     Vector2 countdownCenter_{ 0.0f, 0.0f };   // 表示中心（画面中心を初期化時に設定）
     int   countdownDisplayDigits_ = 1;        // 現在の桁数（内部管理）
+
+    // --- HP アイコン（調整可能） ---
+    static inline const int kMaxHpIcons = 10;
+    std::unique_ptr<SphereClass> hpIcons_[kMaxHpIcons];
+    Vector2 hpIconsPos_{ 70.0f, 740.0f };       // 第1アイコンの中心（px）
+    float   hpIconSpacing_ = 8.0f;              // アイコン間のギャップ（px）
+    float   hpIconScreenRadius_ = 12.0f;        // 表示半径（px）
+    float   hpIconTargetZ_ = 0.1f;              // スクリーン→ワールド変換で使う Z 平面
+    Vector4 hpIconColor_ = Vector4{ 1.0f, 0.0f, 0.0f, 1.0f }; // RGBA
+    bool    hpIconsVisible_ = true;
+
 public: // メンバ関数
 
     // デストラクタ

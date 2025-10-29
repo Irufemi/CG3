@@ -139,6 +139,9 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     text_ku    = std::make_unique<ObjClass>();  text_ku->Initialize(camera_.get(), "text_ku.obj");
     text_ru    = std::make_unique<ObjClass>();  text_ru->Initialize(camera_.get(), "text_ru.obj");
 
+    text_press = std::make_unique<Sprite>();
+    text_press->Initialize(camera_.get(), "resources/texture/titleText_press.png");
+    
     // 文字プレースホルダ作成
     const int nLetters = 7;
     ObjClass* objs[nLetters] = {

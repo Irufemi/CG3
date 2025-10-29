@@ -60,7 +60,7 @@ public: //メンバ関数
     void Initialize(Camera* camera,  const std::string& textureName = "resources/uvChecker.png");
 
     // 更新
-    void Update(const char* sphereName = " ");
+    void Update(bool debug = true, const char* sphereName = " ");
 
     // 描画
     void Draw();

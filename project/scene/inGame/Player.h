@@ -64,6 +64,10 @@ private:
 
 	std::unique_ptr<Se> se_playerAction_ = nullptr;
 
+	std::unique_ptr<Se> se_bullet = nullptr;
+
+	std::unique_ptr<Se> se_playertoutch = nullptr;
+
 private:
 	//position
 	Vector2  pos_;
