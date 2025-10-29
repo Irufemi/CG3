@@ -51,7 +51,8 @@ namespace {
 void EnemyManager::Initialize(Camera* camera) {
     tetra_ = std::make_unique<TetraRegion>();
     // 必要ならモデルのエッジ長をここで設定: tetra_->SetEdge(1.0f);
-    tetra_->Initialize(camera, "resources/uvChecker.png");
+    tetra_->Initialize(camera, "resources/whiteTexture.png");
+    tetra_->SetColor(Vector4{ 0.7f,0.4f,0.4f,1.0f });
 }
 
 void EnemyManager::Spawn (float pos, Vector2 goal) {

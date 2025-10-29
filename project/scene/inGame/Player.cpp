@@ -3,8 +3,6 @@
 #include "engine/Input/InputManager.h"
 #include "engine/Input/GamePad.h"
 #include "camera/Camera.h"
-#include "3D/SphereClass.h"
-#include "3D/CylinderClass.h"
 #include <dinput.h>
 #include <imgui.h>
 #include "InGameFunction.h"
@@ -76,7 +74,8 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
 
     sphere_ = std::make_unique<SphereClass>();
     sphere_->SetInfo(Sphere{ Vector3{pos_.x,pos_.y,0.0f},radius_.x });
-    sphere_->Initialize(camera);
+    sphere_->Initialize(camera,"resources/whiteTexture.png");
+	sphere_->SetColor(normalColor_);
 
     // 砲塔（Cylinder）を生成
     cylinder_ = std::make_unique<CylinderClass>();
@@ -87,7 +86,8 @@ void Player::Initialize (InputManager* inputManager, Camera* camera) {
         float  hWorld    = ScreenRadiusToWorld(camera, cannonPos_, cannonRadius_.y, 0.0f) * 2.0f; // 矩形の高さ相当
         cylinder_->SetInfo(Cylinder{ wcCannon, rWorld, hWorld });
     }
-    cylinder_->Initialize(camera);
+    cylinder_->Initialize(camera, "resources/whiteTexture.png");
+	cylinder_->SetColor(normalColor_);
 
 	se_playerAction_ = std::make_unique<Se>();
 	se_playerAction_->Initialize("resources/se/SE_PlayerAction.mp3");
@@ -184,12 +184,17 @@ void Player::Input () {
 }
 
 void Player::Stan() {
-	if (stanTime_ >= 0) {
+	if (isStan_ == false)return;
+
+	if (stanTime_ > 0) {
 		stanTime_--;
 	}
 
-	if (stanTime_ == 0) {
+	if (stanTime_ <= 0) {
 		isStan_ = false;
+
+		sphere_->SetColor(normalColor_);
+		cylinder_->SetColor(normalColor_);
 	}
 }
 
@@ -212,11 +217,10 @@ void Player::Update () {
 	pos_.y -= velocity_.y;
 
 	//壁へのめり込み予防
-	if (pos_.x - radius_.x - velocity_.x <= 0.0f) {
-		pos_.x = pos_.x + kPos;
-	}
-	if (pos_.x + radius_.x + velocity_.x >= 500.0f) {
-		pos_.x = pos_.x - kPos;
+	if (pos_.x - radius_.x < 0.0f) {
+		pos_.x = 0.0f + radius_.x;
+	} else if (pos_.x + radius_.x > 500.0f) {
+		pos_.x = 500.0f - radius_.x;
 	}
 
 	//大砲
@@ -225,10 +229,24 @@ void Player::Update () {
 	//弾
 	for (auto& b : bullet) {
 		b.Update();
+
 		if (b.IsRecovered()) {
+			b.SetIsReturn(true);
+			b.SetIsActive(false); 
 			bulletNum_ += 1;
-			b.SetIsActive(false);
 		}
+
+		if (b.GetIsReturn()) {
+			b.SetPosition(b.Return(pos_, b.easeInExpo(b.moveT(0.5f))));
+			if (b.GetT() > 1.0f) {
+				b.SetIsReturn(false);
+				b.Initialize(Vector2{1000.0f, 1000.0f}, 0.0f, 0.0f,camera_);
+				b.SetIsActive(false);
+			}
+		}
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+		ImGui::Text("isActive: %d", b.GetIsActive());
+#endif
 	}
 }
 

@@ -80,7 +80,7 @@ private: // メンバ変数
 
     // --- 地面（スクリーン上の線分を初回でワールドへ変換して固定） ---
     Segment2D titleGroundLeft_{ // screen coords (base)
-        Vector2{0.0f, 650.0f},
+        Vector2{-500.0f, 550.0f},
         Vector2{250.0f, 700.0f}
     };
     Segment2D titleGroundWorld_{};
@@ -88,7 +88,7 @@ private: // メンバ変数
     // 追加（右床：GameScene と同レイアウト）
     Segment2D titleGroundRight_{        // screen coords
         Vector2{250.0f, 700.0f},
-        Vector2{500.0f, 650.0f}
+        Vector2{1000.0f, 550.0f}
     };
     Segment2D titleGroundWorldRight_{}; // world coords
     std::unique_ptr<CylinderClass> groundObjRight_ = nullptr;
@@ -99,7 +99,7 @@ private: // メンバ変数
     float groundVisualExtendPx_ = 1600.0f;
 
     // カメラトランジション
-    enum class TransPhase { None, ZoomOut, ZoomIn };
+    enum class TransPhase { None, ZoomOut, ZoomIn, WipeIn }; // ← WipeIn 追加
     TransPhase transPhase_ = TransPhase::None;
     float transTimer_ = 0.0f;
     float outDuration_ = 0.6f;

@@ -6,6 +6,8 @@
 
 #include "3D/TriangleClass.h"
 #include "2D/Sprite.h"
+#include "2D/Circle2D.h"
+#include "2D/NumberText.h"
 #include "3D/SphereClass.h"
 #include "3D/ObjClass.h"
 #include "3D/ParticleClass.h"
@@ -23,15 +25,10 @@
 #include "EnemyManager.h"
 #include "../contents/CommonVisual.h"  // 追加
 
-//BGM
-#include <xaudio2.h>
-
 // 前方宣言
-
 class IrufemiEngine;
 
 class InputManager;
-
 
 /// <summary>
 /// ゲーム
@@ -59,12 +56,19 @@ private: // メンバ関数(ゲーム部分)
 private:
 
     //反発係数
-    const float kCOR = 0.80f;
-    const float deltaTime = 1.0f / 60.0f;
+    static inline const float kCOR = 0.80f;
+    static inline const float deltaTime = 1.0f / 60.0f;
 
     //敵の生成間隔の最小値、最大値
-    const float kMinSpawnTime = 1.0f;
-    const float kMaxSpawnTime = 5.0f;
+    const float kMinSpawnTimeFase1 = 1.0f;
+    const float kMaxSpawnTimeFase1 = 5.0f;
+
+    const float kMinSpawnTimeFase2 = 0.7f;
+    const float kMaxSpawnTimeFase2 = 3.0f;
+
+    const float kMinSpawnTimeFase3 = 0.3f;
+    const float kMaxSpawnTimeFase3 = 1.5f;
+
 
 private: // メンバ変数(ゲーム部分)
 
@@ -103,12 +107,47 @@ private: // メンバ変数(ゲーム部分)
     //===敵のランダム生成===//
     //経過時間のカウント
     float ingameTimer_;
+    //ゲーム時間のカウント
+    float Timer_;
     //生成した乱数を入れる箱
     float time_;
     //乱数の分布(敵を生成する目標時間)
-    std::uniform_real_distribution<float> spawnTime_;
+    std::uniform_real_distribution<float> spawnTime_[3];
 
     std::unique_ptr<Bgm> bgm = nullptr;
+
+    std::unique_ptr<Se> se_enemy = nullptr;
+
+    std::unique_ptr<Se> se_playerdamage = nullptr;
+
+
+    // --- private メンバ（適切な private セクションに追加） ---
+    std::unique_ptr<NumberText> gameTimerText_;
+    Vector2 gameTimerCenter_{ 400.0f, 32.0f }; // デフォルト表示中心（px）
+    float  gameTimerScale_ = 1.0f;
+    int    gameTimerDigits_ = 4;   // 固定 "XX.XX" 表示（小数点は別に描画する想定）
+    float  gameTimeLimitSec_ = 60.0f; // 制限時間（秒）
+    bool   showGameTimer_ = true;
+
+private: // メンバ変数(ゲーム内描画物)
+
+    // 文字(Bullet)
+    std::unique_ptr<Sprite> text_bullet_ = nullptr;
+
+    // 文字(HP)
+    std::unique_ptr<Sprite> text_HP_ = nullptr;
+
+    // 文字(/)
+    std::unique_ptr<Sprite> text_slash_ = nullptr;
+
+    // 文字(生き残れ)
+    std::unique_ptr<Sprite> text_pleaseAlive_ = nullptr;
+
+    // 文字(敵増える)
+    std::unique_ptr<Sprite> text_addEnemy_ = nullptr;
+
+    // 背景の倍率ゾーン
+    std::unique_ptr<Circle2D> zoneCircles_[3];
 
 private: // メンバ変数(システム)
 
@@ -131,6 +170,33 @@ private: // メンバ変数(システム)
     // エンジン
     IrufemiEngine* engine_ = nullptr;
 
+    // ==== 追加: 弾数UI ====
+    std::unique_ptr<NumberText> bulletNowText_;
+    std::unique_ptr<NumberText> bulletMaxText_;
+    Vector2 bulletUiLeftTop_{ 400.0f, 740.0f }; // 全体の左上
+    float  bulletUiSlashGap_ = 2.0f;        // スラッシュ予定位置の隙間（後で'/'を入れるための余白）
+    float  bulletUiBlockGap_ = 10.0f;         // ブロック間の余白
+    int    bulletUiMaxValue_ = 10;           // 表示する最大値（固定表示「10」）
+
+    // 追加：中央回収用の2D円（Circle2D）
+    std::unique_ptr<Circle2D> coreCircle_ = nullptr;
+
+    // === ゲームオーバー拡大パネル ===
+    std::unique_ptr<Sprite> gameOverPlate_ = nullptr;
+    bool   gameOverAnimActive_ = false;
+    // 追加: 一度だけ発火させるためのフラグ
+    bool   gameOverAnimPlayed_ = false;
+    float  gameOverAnimTime_   = 0.0f;
+    float  gameOverAnimDuration_ = 0.6f; // 秒
+    Vector2 gameOverTargetSize_{ 0.0f, 0.0f };
+
+    // ==== カウントダウン表示 ====
+    std::unique_ptr<NumberText> countdownText_;
+    bool countdownActive_ = false;            // カウント中フラグ
+    float countdownTime_ = 0.0f;              // 残り時間（秒）
+    int   countdownStartSeconds_ = 3;         // 開始秒（デフォルト3）
+    Vector2 countdownCenter_{ 0.0f, 0.0f };   // 表示中心（画面中心を初期化時に設定）
+    int   countdownDisplayDigits_ = 1;        // 現在の桁数（内部管理）
 public: // メンバ関数
 
     // デストラクタ

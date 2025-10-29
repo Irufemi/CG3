@@ -15,6 +15,16 @@ TextureManager* TetraRegion::textureManager_ = nullptr;
 DrawManager* TetraRegion::drawManager_ = nullptr;
 DescriptorAllocator* TetraRegion::srvAllocator_ = nullptr; // 追加
 
+TetraRegion::~TetraRegion() {
+    // SRV スロットを遅延解放で返す
+    if (instancingSrvIndex_ != UINT32_MAX && srvAllocator_ && dx_) {
+        srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
+        instancingSrvIndex_ = UINT32_MAX;
+        instancingSrvCPU_ = {};
+        instancingSrvGPU_ = {};
+    }
+}
+
 void TetraRegion::Initialize(Camera* camera, const std::string& textureName) {
     assert(dx_ && "Call TetraRegion::SetDirectXCommon first");
     assert(textureManager_ != nullptr);
@@ -163,12 +173,13 @@ void TetraRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void TetraRegion::AddInstance(const Transform& t) {
     instances_.push_back(t);
+    instanceColors_.push_back({1,1,1,1}); // 既定は白
     instanceDirty_ = true;
 }
 
-void TetraRegion::AddInstanceWorld(const Matrix4x4& world, const Vector4& color) {
-    instanceWorlds_.push_back(world);
-    instanceWorldColors_.push_back(color);
+void TetraRegion::AddInstance(const Transform& t, const Vector4& color) {
+    instances_.push_back(t);
+    instanceColors_.push_back(color);
     instanceDirty_ = true;
 }
 
@@ -180,8 +191,23 @@ void TetraRegion::AddInstance(const Vector3& center, float scale, const Vector3&
     AddInstance(t);
 }
 
+void TetraRegion::AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color) {
+    Transform t{};
+    t.translate = center;
+    t.scale = { scale, scale, scale };
+    t.rotate = rotate;
+    AddInstance(t, color);
+}
+
+void TetraRegion::AddInstanceWorld(const Matrix4x4& world, const Vector4& color) {
+    instanceWorlds_.push_back(world);
+    instanceWorldColors_.push_back(color);
+    instanceDirty_ = true;
+}
+
 void TetraRegion::ClearInstances() {
     instances_.clear();
+    instanceColors_.clear();
     instanceWorlds_.clear();
     instanceWorldColors_.clear();
     instanceDirty_ = true;
@@ -216,6 +242,11 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
             temp[i].color = (i < instanceWorldColors_.size()) ? instanceWorldColors_[i] : Vector4{1,1,1,1};
         }
     } else {
+        // Transform系の色配列をサイズ同期
+        if (instanceColors_.size() != instances_.size()) {
+            instanceColors_.resize(instances_.size(), Vector4{1,1,1,1});
+        }
+
         for (uint32_t i = 0; i < count; ++i) {
             const Transform& inst = instances_[i];
             Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
@@ -230,7 +261,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
             temp[i].WVP = wvp;
             temp[i].World = world;
             temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-            temp[i].color = {1,1,1,1};
+            temp[i].color = instanceColors_[i];
         }
     }
 
@@ -284,8 +315,27 @@ void TetraRegion::SetEdge(float edge) {
     meshDirty_ = false;
 }
 
+// --- 色設定API ---
+void TetraRegion::SetColor(const Vector4& color) {
+    Material* mat = nullptr;
+    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+    mat->color = color;
+}
+void TetraRegion::SetInstanceColor(uint32_t index, const Vector4& color) {
+    if (index >= instanceColors_.size()) {
+        assert(false && "TetraRegion::SetInstanceColor: index out of range");
+        return;
+    }
+    instanceColors_[index] = color;
+    instanceDirty_ = true;
+}
+void TetraRegion::SetAllInstanceColor(const Vector4& color) {
+    if (instanceColors_.empty()) { return; }
+    std::fill(instanceColors_.begin(), instanceColors_.end(), color);
+    instanceDirty_ = true;
+}
+
 // --- 追加: ヘッダで宣言した静的セッターの実体定義 ---
-// これをファイルの先頭近く（既にある静的メンバ定義の直後など）に追加してください。
 void TetraRegion::SetDirectXCommon(DirectXCommon* dx) {
     dx_ = dx;
 }

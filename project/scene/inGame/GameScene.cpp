@@ -11,6 +11,12 @@
 #include <algorithm>
 #include <cmath>
 
+// --- 0..1 のスムーズ補間（Hermite SmoothStep）---
+static float Smooth01(float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
+
 // --- Player と同等のスクリーン→ワールド変換ヘルパー ---
 static Vector3 ScreenToWorldOnZ(const Camera* cam, const Vector2& screen, float targetZ) {
     Matrix4x4 view = cam->GetViewMatrix();
@@ -58,7 +64,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     pointLight_ = std::make_unique <PointLightClass>();
     pointLight_->Initialize();
-    pointLight_->SetPos(Vector3{ 0.0f,30.0f,0.0f });
+    pointLight_->SetPos(Vector3{ 0.0f,-5.0f,0.0f });
 
     engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
 
@@ -67,6 +73,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     spotLight_->SetIntensity(0.0f);
 
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
+
+    se_enemy = std::make_unique<Se>();
+    se_enemy->Initialize("resources/se/SE_Enemy.mp3");
+
+    se_playerdamage = std::make_unique<Se>();
+    se_playerdamage->Initialize("resources/se/SE_PlayerDamage.mp3");
 
     bgm = std::make_unique<Bgm>();
     bgm->Initialize("resources/bgm/BGM_InGame.mp3");
@@ -122,13 +134,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         float L = Math::Length(d);
         Vector2 dir = (L > 0.0f) ? Math::Multiply(1.0f / L, d) : Vector2{ 1.0f, 0.0f };
 
-        // 左（i==0）は内側を前方へ少し伸ばす、右（i==1）は内側を後方へ少し伸ばす
+        // 左（i==0）は内側を前方へ少し伸ばす、右（i==1）は内側を後方へ少し移動
         Vector2 p0v, p1v;
         if (i == 0) {
             p0v = p0s; // 外側はそのまま
             p1v = Math::Add(p1s, Math::Multiply(innerOverlapPx, dir)); // 内側を少し拡張
         } else {
-            p0v = Math::Add(p0s, Math::Multiply(-innerOverlapPx, dir)); // 内側を少し前方へ移動（重ねる）
+            p0v = Math::Add(p0s, Math::Multiply(-innerOverlapPx, dir)); // 内側を少し後方へ移動（重ねる）
             p1v = p1s; // 外側はそのまま
         }
 
@@ -175,10 +187,124 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // std::mt19937 エンジンのインスタンスを作成し、rd()の結果で初期化する
     randomEngine_.seed(rd());
     enemy_x_ = std::uniform_real_distribution<float>(25.0f, 475.0f);
-    spawnTime_ = std::uniform_real_distribution<float>(kMinSpawnTime, kMaxSpawnTime);
+    spawnTime_[0] = std::uniform_real_distribution<float>(kMinSpawnTimeFase1, kMaxSpawnTimeFase1);
+    spawnTime_[1] = std::uniform_real_distribution<float>(kMinSpawnTimeFase2, kMaxSpawnTimeFase2);
+    spawnTime_[2] = std::uniform_real_distribution<float>(kMinSpawnTimeFase3, kMaxSpawnTimeFase3);
 
     ingameTimer_ = 0.0f;
-    time_ = spawnTime_(randomEngine_);
+    Timer_ = 0.0f;
+    time_ = spawnTime_[0](randomEngine_);
+
+    // 背景倍率ゾーン（Circle2D）
+    {
+        const Vector3 centerWS{ circle_.center.x, circle_.center.y, 0.0f };
+        const float radii[3] = { 750.0f, 583.2f, 316.6f };
+
+        for (int i = 0; i < 3; ++i) {
+            zoneCircles_[i] = std::make_unique<Circle2D>();
+            zoneCircles_[i]->Initialize(camera_.get(), "");
+            zoneCircles_[i]->SetUseTexture(false);
+            zoneCircles_[i]->SetInfo({ centerWS, radii[i] });
+        }
+        // 外側は暗め（通常ブレンドで背景のみを薄く暗くする）
+        zoneCircles_[0]->SetColor(Vector4{ 0.0f, 0.0f, 0.0f, 0.15f });
+        // 中間は少し明るく（加算で黄を薄く）
+        zoneCircles_[1]->SetColor(Vector4{ 1.0f, 0.95f, 0.4f, 0.20f });
+        // 内側はさらに明るく（加算で強め）
+        zoneCircles_[2]->SetColor(Vector4{ 1.0f, 0.95f, 0.4f, 0.35f });
+    }
+
+    text_addEnemy_ = std::make_unique<Sprite>();
+    text_addEnemy_->Initialize(camera_.get(), "resources/texture/gameText_addEnemy.png");
+    text_addEnemy_->SetAnchor(0.5f, 0.5f);
+    text_addEnemy_->SetPosition(camera_->GetViewportWidth() / 2.0f, camera_->GetViewportHeight() / 2.0f + 100.0f);
+
+    text_pleaseAlive_ = std::make_unique<Sprite>();
+    text_pleaseAlive_->Initialize(camera_.get(), "resources/texture/gametext_PlaeaseAlive.png");
+    text_pleaseAlive_->SetAnchor(0.5f, 0.5f);
+    text_pleaseAlive_->SetPosition(camera_->GetViewportWidth() / 2.0f, camera_->GetViewportHeight() / 2.0f-100.0f);
+
+    text_bullet_ = std::make_unique<Sprite>();
+    text_bullet_->Initialize(camera_.get(), "resources/texture/gameText_bullet.png");
+    text_bullet_->SetSize(96.0f,38.0f);
+    text_bullet_->SetPosition(300.0f, 740.0f);
+    
+    text_HP_ = std::make_unique<Sprite>();
+    text_HP_->Initialize(camera_.get(), "resources/texture/gameText_HP.png");
+    text_HP_->SetSize(48.0f, 38.0f);
+    text_HP_->SetPosition(10.0f, 740.0f);
+
+    text_slash_ = std::make_unique<Sprite>();
+    text_slash_->Initialize(camera_.get(), "resources/texture/gameText_slash.png");
+    text_slash_->SetSize(19.0f, 38.0f);
+    text_slash_->SetPosition(438.0f, 740.0f);
+
+    // ==== 弾数UI ====
+    bulletNowText_ = std::make_unique<NumberText>();
+    bulletNowText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, 2);
+    bulletNowText_->SetTracking(0.0f);
+    bulletNowText_->SetScale(0.6f);
+
+    bulletMaxText_ = std::make_unique<NumberText>();
+    bulletMaxText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, 2);
+    bulletMaxText_->SetTracking(0.0f);
+    bulletMaxText_->SetScale(0.6f);
+
+    // --- 背景倍率ゾーン（Circle2D）既存ブロックの直後に追加 ---
+    // 中心の回収円（Circle2D） — 赤色・塗りつぶし
+    coreCircle_ = std::make_unique<Circle2D>();
+    coreCircle_->Initialize(camera_.get(), ""); // テクスチャなしで描く
+    coreCircle_->SetUseTexture(false);
+    coreCircle_->SetInfo({ Vector3{ circle_.center.x, circle_.center.y, 0.0f }, circle_.radius });
+    // 赤（アルファは見た目で調整してください）
+    coreCircle_->SetColor(Vector4{ 1.0f, 0.0f, 0.0f, 0.35f });
+
+    // --- ゲームオーバー拡大用パネル生成 ---
+    {
+        gameOverPlate_ = std::make_unique<Sprite>();
+        gameOverPlate_->Initialize(camera_.get(), "resources/whiteTexture.png");
+        // 画面中央に配置（中央アンカー）
+        const float vw = camera_->GetViewportWidth();
+        const float vh = camera_->GetViewportHeight();
+        gameOverPlate_->SetAnchor(0.5f, 0.5f);
+        gameOverPlate_->SetPosition(vw * 0.5f, vh * 0.5f, 0.0f);
+        // 初期サイズはゼロ（中央から拡大する）
+        gameOverPlate_->SetSize(0.0f, 0.0f);
+        // 黒板で少し透過（必要に応じて変更）
+        gameOverPlate_->SetColor(Vector4{ 0.0f, 0.0f, 0.0f, 0.85f });
+        // 目標サイズ（画面の9割）
+        gameOverTargetSize_ = Vector2{ vw * 0.9f, vh * 0.9f };
+    }
+
+    // ==== カウントダウン初期化 ====
+    {
+        const float vw = camera_->GetViewportWidth();
+        const float vh = camera_->GetViewportHeight();
+
+        countdownText_ = std::make_unique<NumberText>();
+        // 0..9画像が横一列（32x64セル）を想定。表示桁は最初1桁
+        countdownText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, 1);
+        countdownText_->SetScale(1.0f);            // デフォルト大きく表示（ImGuiで調整可）
+        countdownText_->SetTracking(0.0f);
+        // 中心位置を画面中央へ
+        countdownCenter_ = Vector2{ vw * 0.5f, vh * 0.5f };
+        // カウント開始（初期値は countdownStartSeconds_ = 3）
+        countdownTime_ = static_cast<float>(countdownStartSeconds_);
+        countdownActive_ = true;
+        countdownDisplayDigits_ = 1;
+    }
+
+    {
+        const float vw = camera_->GetViewportWidth();
+
+        gameTimerText_ = std::make_unique<NumberText>();
+        // 0..9 が横一列のフォント画像を使い、桁数は最初4桁 (XX.XX)
+        gameTimerText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, static_cast<size_t>(gameTimerDigits_));
+        gameTimerText_->SetTracking(0.0f);
+        gameTimerText_->SetScale(gameTimerScale_);
+        // 初期表示位置は画面上部中央（ImGuiで調整可）
+        gameTimerCenter_ = Vector2{ vw * 0.5f, 32.0f };
+    }
 }
 
 // 更新
@@ -204,36 +330,151 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
-    // カメラの更新
+    // カメラの更新（既存処理）
     if (debugMode) {
         debugCamera_->Update();
         camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
         camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
     } else {
         camera_->Update("Camera");
-
     }
 
-    // ゲームシステムの更新
-    GameSystem();
+    // カウントダウン処理: カウント中は GameSystem をスキップ
+    if (countdownActive_) {
+        // deltaTime はファイル内の static 定義(1/60)を利用
+        countdownTime_ -= deltaTime;
+        if (countdownTime_ <= 0.0f) {
+            countdownActive_ = false;
+            countdownTime_ = 0.0f;
+            // カウント終了時の追加処理があればここへ（例: 効果音）
+        }
+    } else {
+        // 通常のゲームアップデートを実行
+        GameSystem();
+    }
 
-    // BGM
+    // BGM は常時更新しておく
     bgm->Update();
+
+    // 背景倍率ゾーンの中心を同期（必要なら）
+    if (zoneCircles_[0]) {
+        const Vector3 centerWS{ circle_.center.x, circle_.center.y, 0.0f };
+        for (int i = 0; i < 3; ++i) {
+            zoneCircles_[i]->SetCenter(centerWS);
+            zoneCircles_[i]->Update(i == 0 ? "ZoneOuter" : (i == 1 ? "ZoneMid" : "ZoneInner"));
+        }
+    }
+
+    text_bullet_->Update(false);
+    text_HP_->Update(false);
+    text_slash_->Update(false);
+    text_pleaseAlive_->Update(false);
+    text_addEnemy_->Update(false);
+
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+    // デバッグ UI
+
+    ImGui::Begin("GameScene");
+
+
+    ImGui::SeparatorText("Game Timer");
+    ImGui::Checkbox("Show Timer", &showGameTimer_);
+    float tcenter[2] = { gameTimerCenter_.x, gameTimerCenter_.y };
+    if (ImGui::DragFloat2("Timer Center", tcenter, 1.0f)) {
+        gameTimerCenter_.x = tcenter[0];
+        gameTimerCenter_.y = tcenter[1];
+    }
+    if (ImGui::DragFloat("Timer Scale", &gameTimerScale_, 0.01f, 0.1f, 10.0f)) {
+        if (gameTimerText_) gameTimerText_->SetScale(gameTimerScale_);
+    }
+    int digits = gameTimerDigits_;
+    if (ImGui::SliderInt("Timer Digits (incl decimals)", &digits, 2, 6)) {
+        gameTimerDigits_ = digits;
+        if (gameTimerText_) gameTimerText_->SetMaxDigits(static_cast<size_t>(gameTimerDigits_));
+    }
+    ImGui::Text("Remaining = %.2f (Timer = %.2f)", std::max(0.0f, gameTimeLimitSec_ - Timer_), Timer_);
+
+
+    ImGui::End();
+#endif // _DEBUG
+
+    // playerの座標などを描画物に反映
+    player_->DrawSet();
+
+    // 地面のワールド反映（カメラ更新後毎フレーム）
+    UpdateGroundObjects();
 
     //キーが押されていたら
     if (PressedVK('P')) {
         if (g_SceneManager) {
-            g_SceneManager->Request(SceneName::result);
+            g_SceneManager->Request(SceneName::title);
         }
     }
 
+    // --- GameOver 拡大演出の開始トリガ ---
+    if (gameOver_ && !gameOverAnimPlayed_) {
+        gameOverAnimActive_ = true;
+        gameOverAnimPlayed_ = true; // 二度目以降は入らない
+
+        gameOverAnimTime_   = 0.0f;
+
+        // ウィンドウサイズが変わっている可能性に備えて取り直し
+        const float vw = camera_->GetViewportWidth();
+        const float vh = camera_->GetViewportHeight();
+        gameOverTargetSize_ = Vector2{ vw * 0.9f, vh * 0.9f };
+        if (gameOverPlate_) {
+            gameOverPlate_->SetAnchor(0.5f, 0.5f);
+            gameOverPlate_->SetPosition(vw * 0.5f, vh * 0.5f, 0.0f);
+            gameOverPlate_->SetSize(0.0f, 0.0f);
+        }
+    }
+
+    // --- GameOver 拡大アニメーション ---
+    if (gameOverAnimActive_ && gameOverPlate_) {
+        gameOverAnimTime_ += deltaTime;
+        const float t  = Smooth01(gameOverAnimTime_ / gameOverAnimDuration_);
+        const float cw = gameOverTargetSize_.x * t;
+        const float ch = gameOverTargetSize_.y * t;
+        gameOverPlate_->SetSize(cw, ch);
+        gameOverPlate_->Update(false, "GameOverPlate");
+
+        if (gameOverAnimTime_ >= gameOverAnimDuration_) {
+            // 最終サイズで確定
+            gameOverPlate_->SetSize(gameOverTargetSize_.x, gameOverTargetSize_.y);
+            // アニメーション終了。以降は再トリガーしない（Playedがtrueのため）
+            gameOverAnimActive_ = false;
+        }
+    }
 }
 
 // 描画
 void GameScene::Draw() {
 
-    // 3D
+    // --- 背面に倍率ゾーン（2D）---
+    // 先に背景として描くことで他オブジェクトに影響しない
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->ApplySpritePSO();
 
+    // 外側：通常ブレンドで薄く暗く（背景のみ見える）
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    if (zoneCircles_[0]) zoneCircles_[0]->Draw();
+
+    // 中央側：加算ブレンドで明るさを足す
+    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    if (zoneCircles_[1]) zoneCircles_[1]->Draw();
+    if (zoneCircles_[2]) zoneCircles_[2]->Draw();
+
+    // 回収部分（Circle2Dで描画）
+    // （この直前で SpritePSO が適用され DepthWrite は Disable の状態）
+    engine_->SetBlend(BlendMode::kBlendModeAdd); // 加算で中央を明るくする
+    if (coreCircle_) coreCircle_->Draw();
+    //回収部分
+    /*Shape::DrawEllipse(circle_.pos.x, circle_.pos.y, circle_.radius.x, circle_.radius.y, 0.0f,
+        BLUE, kFillModeSolid);*/
+
+    // --- 以降は既存の3Dなど ---
+
+    // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
@@ -246,16 +487,10 @@ void GameScene::Draw() {
     // Player
     player_->Draw();
 
-
-    //倍率ゾーン
-    //DrawEllipse(circle_.center.x, circle_.center.y, 750.0f, 750.0f, 0.0f, 0xffff00ff, kFillModeSolid);
-    //DrawEllipse(circle_.center.x, circle_.center.y, 583.2f, 583.2f, 0.0f, 0xbbbb00ff, kFillModeSolid);
-    //DrawEllipse(circle_.center.x, circle_.center.y, 316.6f, 316.6f, 0.0f, 0x888800ff, kFillModeSolid);
-
     engine_->ApplyRegionPSO();
     player_->BulletDraw();
 
-    // 個別 e.Draw() ループを削除し、まとめて描画
+    // 敵
     e_Manager_->Draw(camera_.get());
 
     engine_->ApplyPSO();
@@ -266,40 +501,122 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
 
-    // 2D
+    // 2D（他のスプライトを描く場合のデフォルトへ戻す）
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
+
+    // ==== 弾数UI描画 ====
+    if (bulletNowText_ && bulletMaxText_) {
+        const size_t nowSlotDigits = 2; // 0～10想定で2桁スロット
+        const size_t maxDigits     = 2; // 「10」
+
+        // 現在弾数ブロックの右端座標（左上から固定幅で算出）
+        const float nowRight = bulletUiLeftTop_.x + bulletNowText_->GetWidthForDigits(nowSlotDigits);
+        bulletNowText_->SetPosRightTop(Vector2{ nowRight, bulletUiLeftTop_.y });
+
+        // 「/」分の余白 + ブロック間余白を空けて最大値ブロックを配置
+        const float maxLeft  = nowRight + bulletUiSlashGap_ + bulletUiBlockGap_;
+        const float maxRight = maxLeft + bulletMaxText_->GetWidthForDigits(maxDigits);
+        bulletMaxText_->SetPosRightTop(Vector2{ maxRight, bulletUiLeftTop_.y });
+
+        // 値の描画（スラッシュは後で追加予定）
+        bulletNowText_->DrawNumber(static_cast<uint64_t>(player_->GetBulletNum()));
+        bulletMaxText_->DrawString("10");
+    }
+
+
+    text_bullet_->Draw();
+    text_HP_->Draw();
+    text_slash_->Draw();
+
+    if (showGameTimer_ && gameTimerText_) {
+        // 最前面の 2D 表示状態を確実にする
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->ApplySpritePSO();
+
+        // 残り時間（秒）を計算し、小数点以下2桁（センティ秒）に切り捨て
+        const float remaining = std::max(0.0f, gameTimeLimitSec_ - Timer_);
+        const int centis = static_cast<int>(std::floor(remaining * 100.0f + 1e-6f)); // 例: 59.987 -> 5998
+
+        // 固定桁（例: 4桁 "XXYY" = "XX.YY" 相当）。必要なら gameTimerDigits_ を使って調整。
+        const int pad = std::max(1, gameTimerDigits_);
+        char fmt[8];
+        sprintf_s(fmt, "%%0%dd", pad);
+        char buf[16];
+        sprintf_s(buf, fmt, centis); // 先頭0埋めで文字列生成（"5998", "0099", "6000" など）
+
+        // 中央基準に合わせて rightTop を算出して配置
+        const float totalW = gameTimerText_->GetWidthForDigits(static_cast<size_t>(pad));
+        const float scaledH = gameTimerText_->GetCellH() * gameTimerText_->GetScale();
+        const float rightX = gameTimerCenter_.x + totalW * 0.5f;
+        const float topY = gameTimerCenter_.y - (scaledH * 0.5f);
+        gameTimerText_->SetPosRightTop(Vector2{ rightX, topY });
+
+        // ドット '.' は別スプライトで後から描く前提なので、ここでは数字のみ描画
+        gameTimerText_->DrawString(std::string(buf));
+    }
+
+    // --- 最前面にゲームオーバーパネルを描画 ---
+    if (gameOver_ && gameOverPlate_) {
+        // 最前面に載せるため、DepthWriteを無効化してSprite PSOで描く
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->ApplySpritePSO();
+        gameOverPlate_->Draw();
+    }
+
+    // ==== カウントダウン描画（最前面・SpritePSO が適用された状態で） ====
+    if (countdownActive_ && countdownText_) {
+        text_pleaseAlive_->Draw();
+        text_addEnemy_->Draw();
+
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->ApplySpritePSO();
+
+        const int disp = std::max(0, static_cast<int>(std::ceil(countdownTime_)));
+        const size_t neededDigits = (disp >= 10) ? 2 : 1;
+        if (static_cast<int>(neededDigits) != countdownDisplayDigits_) {
+            countdownText_->SetMaxDigits(neededDigits);
+            countdownDisplayDigits_ = static_cast<int>(neededDigits);
+        }
+
+        const float totalW = countdownText_->GetWidthForDigits(neededDigits);
+        const float scaledH = countdownText_->GetCellH() * countdownText_->GetScale();
+        const float rightX = countdownCenter_.x + totalW * 0.5f;
+        const float topY = countdownCenter_.y - (scaledH * 0.5f);
+        countdownText_->SetPosRightTop(Vector2{ rightX, topY });
+
+        countdownText_->DrawNumber(static_cast<uint64_t>(disp));
+    }
 }
 
 void GameScene::GameSystem() {
+    //時間のカウント
+    ingameTimer_ += deltaTime;
+    Timer_ += deltaTime;
+    player_->Input();
+    player_->SpeedCalculation();
+    player_->disCalculation(Vector2{ circle_.center.x,circle_.center.y });
+    player_->Update();
+    Reflection();
+    BulletRecovery();
+    EnemyProcess();
+
+    if (coreHp_ == 0 ) {
+        gameOver_ = true;
+    }
+
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 
     ImGui::Text("coreHp %d", coreHp_);
     ImGui::Text("bulletNum : %d", player_->GetBulletNum());
     ImGui::Text("enemyNum : %d", e_Manager_->GetEnemies().size());
     ImGui::Text("playerToCore :%f", player_->GetDisToCore());
+    ImGui::Text("Timer : %f", Timer_);
 #endif
-    //時間のカウント
-    ingameTimer_ += deltaTime;
-    player_->Input();
-    player_->SpeedCalculation();
-    player_->disCalculation(Vector2{ circle_.center.x,circle_.center.y });
-    player_->Update();
-    BulletRecovery();
-
-    Reflection();
-    EnemyProcess();
-
-    if (coreHp_ == 0) {
-        gameOver_ = true;
-    }
-
-    // playerの座標などを描画物に反映
-    player_->DrawSet();
-
-    // 地面のワールド反映（カメラ更新後毎フレーム）
-    UpdateGroundObjects();
 }
 
 void GameScene::EnemyProcess() {
@@ -311,7 +628,13 @@ void GameScene::EnemyProcess() {
         //経過時間から今回スポーンにかかった時間を減算
         ingameTimer_ -= time_;
 
-        time_ = spawnTime_(randomEngine_);
+        if (Timer_ <= 1200.0f) {
+            time_ = spawnTime_[0](randomEngine_);
+        } else if (Timer_ <= 2400.0f) {
+            time_ = spawnTime_[1](randomEngine_);
+        } else if (Timer_ <= 3600) {
+            time_ = spawnTime_[2](randomEngine_);
+        }
     }
 
     //敵の更新処理
@@ -319,16 +642,18 @@ void GameScene::EnemyProcess() {
         e.Update();
 
         //敵とコア
-        if (e.IsCollision(Vector2{ circle_.center.x,circle_.center.y }, circle_.radius)) {
+        if (e.IsCollision(Vector2{ circle_.center.x, circle_.center.y }, circle_.radius)) {
             if (e.GetIsAlive())
                 coreHp_--;
             e.SetIsAlive();
+            se_playerdamage->Play();
         }
 
         //敵と弾
         for (auto& b : player_->GetBullet())
             if (e.IsCollision(b.GetPositon(), b.GetRadius().x)) {
                 e.SetIsAlive();
+                se_enemy->Play();
 
                 if (player_->GetDisToCore() <= 316.6f) {
                     player_->CollectBullet(1);
@@ -382,7 +707,7 @@ void GameScene::Reflection() {
             if (!area) { // 左側
                 if (player_->GetVelocity().x > 0.0f && player_->GetWallTouch()) {
                     reflect.x = std::abs(reflect.x);
-                    reflect.x += 4.0f;
+                    reflect.x += 3.0f;
                 } else if (player_->GetVelocity().x >= 0.0f) {
                     reflect.x = std::abs(reflect.x);
                 } else if (player_->GetVelocity().x <= 0.0f) {
@@ -392,17 +717,16 @@ void GameScene::Reflection() {
             if (area) { // 右側
                 if (player_->GetVelocity().x < 0.0f && player_->GetWallTouch()) {
                     reflect.x = -std::abs(reflect.x);
-                    reflect.x -= 4.0f;
+                    reflect.x -= 3.0f;
                 } else if (player_->GetVelocity().x <= 0.0f) {
                     reflect.x = -std::abs(reflect.x);
                 } else if (player_->GetVelocity().x >= 0.0f) {
                     reflect.x *= -1.0f;
                 }
             }
-
-            player_->SetWallTouch();
             //プレイヤーの速度に掛ける
             player_->SetVelocity(reflect * kCOR);
+            player_->SetWallTouch();
         }
 
         //弾と地面の当たり判定
@@ -420,7 +744,7 @@ void GameScene::Reflection() {
                 if (!b.GetArea()) { // 左側
                     if (b.GetVelocity().x > 0.0f && b.GetWallTouch()) {
                         reflect.x = std::abs(reflect.x);
-                        reflect.x += 4.0f;
+                        reflect.x += 3.0f;
                     } else if (b.GetVelocity().x >= 0.0f) {
                         reflect.x = std::abs(reflect.x);
                     } else if (b.GetVelocity().x <= 0.0f) {
@@ -430,7 +754,7 @@ void GameScene::Reflection() {
                 if (b.GetArea()) { // 右側
                     if (b.GetVelocity().x < 0.0f && b.GetWallTouch()) {
                         reflect.x = -std::abs(reflect.x);
-                        reflect.x -= 4.0f;
+                        reflect.x -= 3.0f;
                     } else if (b.GetVelocity().x <= 0.0f) {
                         reflect.x = -std::abs(reflect.x);
                     } else if (b.GetVelocity().x >= 0.0f) {
@@ -439,6 +763,7 @@ void GameScene::Reflection() {
                 }
                 //弾の速度に掛ける
                 b.SetVelocity(reflect * kCOR);
+                b.SetWallTouch();
             }
         }
     }

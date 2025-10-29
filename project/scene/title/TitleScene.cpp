@@ -1,5 +1,4 @@
 #define NOMINMAX
-
 #include "TitleScene.h"
 
 #include "../SceneManager.h"
@@ -131,7 +130,6 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     se_select = std::make_unique<Se>();
     se_select->Initialize("resources/se/SE_Select.mp3");
-    se_select->SetVolume(0.01f);
 
     text_dan_1 = std::make_unique<ObjClass>();  text_dan_1->Initialize(camera_.get(), "text_dan_01.obj");
     text_dan_2 = std::make_unique<ObjClass>();  text_dan_2->Initialize(camera_.get(), "text_dan_02.obj");
@@ -181,12 +179,11 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     // --- 地面を先にスクリーン→ワールドに変換して固定 ---
     {
-        // 内側で僅かに重なりを作ってシーム（隙間）を消す
-        const float innerOverlapPx = 4.0f; // 目安：4px。見た目で増減して下さい。
+        const float innerOverlapPx = 4.0f;
         float halfVis = groundVisualExtendPx_ * 0.5f;
         float halfThickness = groundThicknessPx_ * 0.5f;
 
-        // --- 左床（外側を延長、内側は継ぎ目 + overlap） ---
+        // 左床（外側延長、内側は継ぎ目 + overlap）
         {
             Vector2 p0 = titleGroundLeft_.origin;
             Vector2 p1 = titleGroundLeft_.end;
@@ -194,8 +191,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             float L = Math::Length(d);
             Vector2 dir = (L > 0.0f) ? Math::Multiply(1.0f / L, d) : Vector2{1.0f, 0.0f};
 
-            Vector2 p0v = Math::Add(p0, Math::Multiply(-halfVis, dir));           // 外側を延長
-            Vector2 p1v = Math::Add(p1, Math::Multiply(innerOverlapPx, dir));     // 内側を少し延長して重ねる
+            Vector2 p0v = Math::Add(p0, Math::Multiply(-halfVis, dir));       // 外側を延長
+            Vector2 p1v = Math::Add(p1, Math::Multiply(innerOverlapPx, dir)); // 内側を少し延長して重ねる
 
             Vector3 w0 = ScreenToWorldOnZ(camera_.get(), p0v, 0.0f);
             Vector3 w1 = ScreenToWorldOnZ(camera_.get(), p1v, 0.0f);
@@ -206,7 +203,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             center.z += 0.1f;
             Vector2 d2 = Vector2{ w1.x - w0.x, w1.y - w0.y };
             float length = Math::Length(d2);
-            float radius = ScreenRadiusToWorld(camera_.get(), Math::Multiply(0.5f, Math::Add(p0v, p1v)), halfThickness, 0.0f);
+            float radius = ScreenRadiusToWorld(camera_.get(),
+                                Math::Multiply(0.5f, Math::Add(p0v, p1v)), halfThickness, 0.0f);
 
             groundObj_ = std::make_unique<CylinderClass>();
             groundObj_->Initialize(camera_.get(), "resources/whiteTexture.png");
@@ -215,12 +213,11 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             float zAngle = theta - (3.14159265f * 0.5f);
             groundObj_->SetRotate(Vector3{ 0.0f, 0.0f, zAngle });
 
-            // 保持（暫定）
             groundRadiusWorld_ = radius;
             groundConverted_ = true;
         }
 
-        // --- 右床（外側を延長、内側は継ぎ目 - overlap） ---
+        // 右床（外側延長、内側は継ぎ目 - overlap）
         {
             Vector2 p0 = titleGroundRight_.origin;
             Vector2 p1 = titleGroundRight_.end;
@@ -228,8 +225,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             float L = Math::Length(d);
             Vector2 dir = (L > 0.0f) ? Math::Multiply(1.0f / L, d) : Vector2{1.0f, 0.0f};
 
-            Vector2 p0v = Math::Add(p0, Math::Multiply(-innerOverlapPx, dir));    // 内側を少し左へ移動して重ねる
-            Vector2 p1v = Math::Add(p1, Math::Multiply( halfVis, dir));           // 外側を延長
+            Vector2 p0v = Math::Add(p0, Math::Multiply(-innerOverlapPx, dir)); // 内側を少し左へ
+            Vector2 p1v = Math::Add(p1, Math::Multiply( halfVis, dir));        // 外側を延長
 
             Vector3 w0 = ScreenToWorldOnZ(camera_.get(), p0v, 0.0f);
             Vector3 w1 = ScreenToWorldOnZ(camera_.get(), p1v, 0.0f);
@@ -240,7 +237,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             center.z += 0.1f;
             Vector2 d2 = Vector2{ w1.x - w0.x, w1.y - w0.y };
             float length = Math::Length(d2);
-            float radius = ScreenRadiusToWorld(camera_.get(), Math::Multiply(0.5f, Math::Add(p0v, p1v)), halfThickness, 0.0f);
+            float radius = ScreenRadiusToWorld(camera_.get(),
+                                Math::Multiply(0.5f, Math::Add(p0v, p1v)), halfThickness, 0.0f);
 
             groundObjRight_ = std::make_unique<CylinderClass>();
             groundObjRight_->Initialize(camera_.get(), "resources/whiteTexture.png");
@@ -248,26 +246,41 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             float theta  = std::atan2(d2.y, d2.x);
             float zAngle = theta - (3.14159265f * 0.5f);
             groundObjRight_->SetRotate(Vector3{ 0.0f, 0.0f, zAngle });
+        }
 
-            // 両側の半径の大きい方をシーン共通の床半径として使う（当たり判定用）
-            if (groundObj_ && groundObjRight_) {
-                float rL = groundObj_->GetInfo().radius;
-                float rR = groundObjRight_->GetInfo().radius;
-                groundRadiusWorld_ = std::max(rL, rR);
-                // 中心Zを両方統一して z-fighting を減らす（微小差がある場合は優先して上げる）
-                Vector3 cL = groundObj_->GetInfo().center;
-                Vector3 cR = groundObjRight_->GetInfo().center;
-                float commonZ = std::max(cL.z, cR.z);
-                cL.z = cR.z = commonZ;
-                groundObj_->SetCenter(cL);
-                groundObjRight_->SetCenter(cR);
-                // カメラ寄せ先 X を左右シリンダー中心の中点にする
-                xEnd_ = (cL.x + cR.x) * 0.5f;
-            }
+        // 当たり用の半径統一とカメラ初期寄せ
+        if (groundObj_ && groundObjRight_) {
+            float rL = groundObj_->GetInfo().radius;
+            float rR = groundObjRight_->GetInfo().radius;
+            groundRadiusWorld_ = std::max(rL, rR);
+
+            Vector3 cL = groundObj_->GetInfo().center;
+            Vector3 cR = groundObjRight_->GetInfo().center;
+            float commonZ = std::max(cL.z, cR.z);
+            cL.z = cR.z = commonZ;
+            groundObj_->SetCenter(cL);
+            groundObjRight_->SetCenter(cR);
+
+            // いったん床の中点を ZoomIn のデフォルト終点に
+            xEnd_ = (cL.x + cR.x) * 0.5f;
+
+            // 初期カメラは「左床の中心」を画面 25% に寄せて、左端が映り込みにくくする
+            float viewportW = camera_->GetViewportWidth();
+            float viewportH = camera_->GetViewportHeight();
+            Vector2 desiredScreen{ viewportW * 0.25f, viewportH * 0.5f };
+            Vector3 worldAtDesired = ScreenToWorldOnZ(camera_.get(), desiredScreen, 0.0f);
+
+            Vector3 camT = camera_->GetTranslate();
+            camT.x += (cL.x - worldAtDesired.x);
+            camera_->SetTranslate(camT);
+            camera_->UpdateMatrix();
+
+            xStart_ = camT.x;
+            zStart_ = camT.z;
         }
     }
 
-    // --- スクリーン→ワールド一括変換（文字） と 衝突回避（初期位置が地面と重なっていたら押し上げる） ---
+    // --- 文字のスクリーン→ワールド変換と初期のめり込み回避 ---
     for (auto& t : letters_) {
         Vector3 wp = ScreenToWorldOnZ(camera_.get(), t.screenPos, 0.0f);
         t.worldPos = wp;
@@ -275,7 +288,6 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
         t.worldRadius = ScreenRadiusToWorld(camera_.get(), t.startScreen, t.radiusPx.x, 0.0f);
         t.worldFallSpeed = ScreenRadiusToWorld(camera_.get(), t.startScreen, t.fallSpeedPx, 0.0f);
 
-        // 初期めり込み対策：床半径を加算して上面のみヒット扱い
         CollisionResult cr = isCollision(
             Vector2{ t.worldStartPos.x, t.worldStartPos.y },
             Vector2{ t.worldRadius + groundRadiusWorld_, t.worldRadius + groundRadiusWorld_ },
@@ -287,9 +299,39 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
             t.worldPos = t.worldStartPos;
         }
 
-        if (t.obj) {
-            t.obj->SetPosition(t.worldPos);
-        }
+        if (t.obj) { t.obj->SetPosition(t.worldPos); }
+    }
+
+    // --- ZoomIn の最終Xを「床の中点が画面中央に来るX」に調整 ---
+    if (groundObj_ && groundObjRight_) {
+        // world に変換済みの床の端点を使う（長さ不一致に強くする）
+        Vector2 seamL = titleGroundWorld_.end;
+        Vector2 seamR = titleGroundWorldRight_.origin;
+        float groundMidX = 0.5f * (seamL.x + seamR.x);
+
+        // 深度は床オブジェクトのZを平均して使用
+        float groundMidZ = 0.5f * (groundObj_->GetInfo().center.z + groundObjRight_->GetInfo().center.z);
+
+        // ズーム後（zEnd_）に画面中心が指すワールド座標を求めるため一時的にカメラZを変更
+        float viewportW = camera_->GetViewportWidth();
+        float viewportH = camera_->GetViewportHeight();
+        Vector2 screenCenter{ viewportW * 0.5f, viewportH * 0.5f };
+
+        Vector3 savedCamT = camera_->GetTranslate();
+        Vector3 tmpCamT = savedCamT;
+        tmpCamT.z = zEnd_;
+        camera_->SetTranslate(tmpCamT);
+        camera_->UpdateMatrix();
+
+        Vector3 worldAtCenter = ScreenToWorldOnZ(camera_.get(), screenCenter, groundMidZ);
+
+        // カメラを元に戻す
+        camera_->SetTranslate(savedCamT);
+        camera_->UpdateMatrix();
+
+        // groundMidX が画面中央に来るようにする
+        float camXForCenteringGround = savedCamT.x + (groundMidX - worldAtCenter.x);
+        xEnd_ = camXForCenteringGround;
     }
 }
 
@@ -354,9 +396,11 @@ void TitleScene::Update() {
         camera_->SetTranslate(Vector3{ x, 0.0f, z });
         camera_->UpdateMatrix();
 
-        if (transTimer_ >= inDuration_) {
-            // GameSceneへ
-            if (g_SceneManager) { g_SceneManager->Request(SceneName::inGame); }
+        if (transTimer_ > inDuration_) {
+
+            if (g_SceneManager) {
+                g_SceneManager->Request(SceneName::inGame);
+            }
         }
     }
 

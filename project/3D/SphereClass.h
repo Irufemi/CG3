@@ -78,6 +78,7 @@ public: //メンバ関数
     void SetInfo(const Sphere& info) { info_ = info; }
     void SetCenter(const Vector3& center) { info_.center = center; }
     void SetRadius(const float& radius) { info_.radius = radius; }
-    void SetRotate(const Vector3&rotate){resource_->transform_.rotate = rotate;}
+    void SetRotate(const Vector3& rotate) { resource_->transform_.rotate = rotate; }
+    void SetColor(const Vector4&color){resource_->materialData_->color = color;}
 };
 

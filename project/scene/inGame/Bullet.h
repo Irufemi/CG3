@@ -13,8 +13,11 @@ public:
 	void JudgeScreen();
 	void SpeedCalculation();
 	void Recover();
-	void Update();
 	void Collect();
+	float moveT(float second);
+	float easeInExpo(float t);
+	Vector2 Return(Vector2 pos, float t);
+	void Update();
 	void Draw();
 
 	//プレイヤー
@@ -32,8 +35,12 @@ public:
 	void SetWallTouch() { wallTouch_ = false; }
 	int GetRecoverTime() { return recoverTime_; }
 
-	//回収完了を知らせる関数
+	//回収完了を知らせる
 	bool IsRecovered() { return recoverTime_ == 0 && isActive_ == true; }
+	float GetT() { return t_; }
+	float GetResult() { return result_; }
+	bool GetIsReturn() { return isReturn_; }
+	void SetIsReturn(bool flag) { isReturn_ = flag; }
 
 private:
 	// 描画用生成物
@@ -56,6 +63,11 @@ private:
 	bool wallTouch_;
 	//回収タイマー
 	int recoverTime_;
+
+	//線形補間用の変数
+	float t_;
+	float result_;
+	bool isReturn_;
 
 	static inline const float kGravity = -8.5f;
 	static inline const float deltaTime = 1.0f / 60.0f;

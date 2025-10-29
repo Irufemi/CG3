@@ -167,6 +167,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="resources\shaders\Particle.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="2D\NumberText.cpp" />
     <ClCompile Include="2D\Sprite.cpp" />
     <ClCompile Include="3D\ObjClass.cpp" />
     <ClCompile Include="3D\ParticleClass.cpp" />
@@ -177,6 +178,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
+    <ClCompile Include="2D\Circle2D.cpp" />
     <ClCompile Include="engine\DescriptorAllocator.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
     <ClCompile Include="3D\PointLightClass.cpp" />
@@ -238,8 +240,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\SpotLightClass.cpp" />
     <ClCompile Include="3D\SphereRegion.cpp" />
     <ClCompile Include="3D\TetraRegion.cpp" />
+    <ClCompile Include="2D\SpriteRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="2D\NumberText.h" />
     <ClInclude Include="2D\Sprite.h" />
     <ClInclude Include="3D\ObjClass.h" />
     <ClInclude Include="3D\ParticleClass.h" />
@@ -250,6 +254,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />
     <ClInclude Include="3D\CylinderClass.h" />
+    <ClInclude Include="2D\Circle2D.h" />
     <ClInclude Include="engine\DescriptorAllocator.h" />
     <ClInclude Include="engine\directX\DirectXCommon.h" />
     <ClInclude Include="engine\D3DResourceLeakChecker.h" />
@@ -330,11 +335,22 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\SpotLightClass.h" />
     <ClInclude Include="3D\SphereRegion.h" />
     <ClInclude Include="3D\TetraRegion.h" />
+    <ClInclude Include="2D\SpriteRegion.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="resources\shaders\SpriteInstanced.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\SpriteInstanced.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="resources\shaders\Region.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

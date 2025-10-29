@@ -30,18 +30,27 @@ public:
     static void SetDrawManager(DrawManager* dm);
     static void SetSrvAllocator(DescriptorAllocator* alloc) { srvAllocator_ = alloc; } // 追加
 
+    ~TetraRegion(); // SRV遅延解放
+
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
 
-    // 既存のTransformベース
+    // Transformベース
     void AddInstance(const Transform& t);
+    void AddInstance(const Transform& t, const Vector4& color); // 追加: 色指定
     void AddInstance(const Vector3& center, float scale = 1.0f, const Vector3& rotate = {0,0,0});
+    void AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color); // 追加: 色指定
 
-    // 追加: World行列で直接インスタンスを追加（ドリル回転など用途）
+    // World行列ベース
     void AddInstanceWorld(const Matrix4x4& world, const Vector4& color = {1,1,1,1});
 
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
     void Draw();
+
+    // 色設定API（SphereRegion と同等）
+    void SetColor(const Vector4& color);                 // マテリアル色
+    void SetInstanceColor(uint32_t index, const Vector4& color); // 個別インスタンス色（Transform系）
+    void SetAllInstanceColor(const Vector4& color);      // 全インスタンス同色（Transform系）
 
     // サイズ関連
     void SetEdge(float edge);
@@ -106,9 +115,10 @@ private:
 
     // Transformベース
     std::vector<Transform> instances_;
+    std::vector<Vector4>   instanceColors_; // 追加: Transform系の色
     bool                   instanceDirty_ = false;
 
-    // 追加: World行列ベース
+    // World行列ベース
     std::vector<Matrix4x4> instanceWorlds_;
     std::vector<Vector4>   instanceWorldColors_;
 

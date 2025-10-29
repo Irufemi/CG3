@@ -37,9 +37,12 @@ public:
 
     // インスタンス追加（Transform 直接）
     void AddInstance(const Transform& t);
-
+    // 色つきインスタンス追加（Transform 直接）
+    void AddInstance(const Transform& t, const Vector4& color);
     // インスタンス追加（中心と半径の簡易API）
     void AddInstance(const Vector3& center, float radius, const Vector3& rotate = { 0,0,0 });
+    // 色つきインスタンス追加（中心と半径の簡易API）
+    void AddInstance(const Vector3& center, float radius, const Vector3& rotate, const Vector4& color);
 
     // 全インスタンス削除
     void ClearInstances();
@@ -49,6 +52,11 @@ public:
 
     // 描画（事前に DrawManager::PreDraw 済みであること）
     void Draw();
+
+    // 色設定（マテリアル全体 or インスタンス個別/一括）
+    void SetColor(const Vector4& color);                 // マテリアル色（全体に乗算される前提の色）
+    void SetInstanceColor(uint32_t index, const Vector4& color); // 個別インスタンス色
+    void SetAllInstanceColor(const Vector4& color);      // 全インスタンス同色
 
     // DrawManager 用 Getter
     D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
@@ -66,7 +74,7 @@ private:
         Matrix4x4 WVP;
         Matrix4x4 World;
         Matrix4x4 WorldInverseTranspose;
-        Vector4   color; // 今回は{1,1,1,1}固定
+        Vector4   color; // インスタンス色
     };
 
     // メッシュ生成（単位球）
@@ -110,7 +118,8 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
     uint32_t                               instancingSrvIndex_ = UINT32_MAX; // 1スロット確保して再利用
 
-    // インスタンス群（Transform を保持）
+    // インスタンス群（Transform / Color を保持）
     std::vector<Transform> instances_;
+    std::vector<Vector4>   instanceColors_;
     bool                   instanceDirty_ = false;
 };

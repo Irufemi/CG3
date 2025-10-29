@@ -21,6 +21,7 @@ struct PointLight;
 class PointLightClass;
 struct SpotLight;
 class SpotLightClass;
+class SpriteRegion; // 追加
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -88,4 +89,6 @@ public: //メンバ関数
 
     void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
     void SetSpotLight(SpotLight& info);
+
+    void DrawSpriteRegion(SpriteRegion* region); // 追加
 };

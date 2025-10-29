@@ -10,6 +10,7 @@
 #include "math/VertexData.h"
 #include "source/D3D12ResourceUtil.h"
 #include "2D/Sprite.h"
+#include "2D/Circle2D.h"
 #include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
 #include "3D/TriangleClass.h"
@@ -138,6 +139,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui = std::make_unique <DebugUI>();
     ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
     Sprite::SetDebugUI(ui.get());
+    Circle2D::SetDebugUI(ui.get());
     ObjClass::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
@@ -147,6 +149,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager = std::make_unique<DrawManager>();
     drawManager->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager.get());
+    Circle2D::SetDrawManager(drawManager.get());
     ObjClass::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
@@ -158,6 +161,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // テクスチャ
     ui->SetTextureManager(textureManager.get());
     Sprite::SetTextureManager(textureManager.get());
+    Circle2D::SetTextureManager(textureManager.get());
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
@@ -231,7 +235,7 @@ void IrufemiEngine::Execute() {
     sceneManager_->Register(SceneName::result, [] { return std::make_unique<ResultScene>(); });
 
     // 初期シーン
-    sceneManager_->ChangeTo(SceneName::inGame);
+    sceneManager_->ChangeTo(SceneName::title);
 
     while (winApp_->ProcessMessages()) {
         // 入力

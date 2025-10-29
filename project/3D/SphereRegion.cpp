@@ -202,6 +202,13 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void SphereRegion::AddInstance(const Transform& t) {
     instances_.push_back(t);
+    instanceColors_.push_back({1,1,1,1}); // 既定は白
+    instanceDirty_ = true;
+}
+
+void SphereRegion::AddInstance(const Transform& t, const Vector4& color) {
+    instances_.push_back(t);
+    instanceColors_.push_back(color);
     instanceDirty_ = true;
 }
 
@@ -213,8 +220,17 @@ void SphereRegion::AddInstance(const Vector3& center, float radius, const Vector
     AddInstance(t);
 }
 
+void SphereRegion::AddInstance(const Vector3& center, float radius, const Vector3& rotate, const Vector4& color) {
+    Transform t{};
+    t.scale = { radius, radius, radius };
+    t.rotate = rotate;
+    t.translate = center;
+    AddInstance(t, color);
+}
+
 void SphereRegion::ClearInstances() {
     instances_.clear();
+    instanceColors_.clear();
     instanceDirty_ = true;
 }
 
@@ -234,6 +250,11 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     const Matrix4x4 view = camera_->GetViewMatrix();
     const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
 
+    // 色配列サイズをインスタンス数に合わせる
+    if (instanceColors_.size() != instances_.size()) {
+        instanceColors_.resize(instances_.size(), {1,1,1,1});
+    }
+
     for (UINT i = 0; i < count; ++i) {
         const Transform& inst = instances_[i];
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
@@ -248,7 +269,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
         temp[i].WVP = wvp;
         temp[i].World = world;
         temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        temp[i].color = { 1,1,1,1 };
+        temp[i].color = instanceColors_[i];
     }
 
     uint8_t* dst = nullptr;
@@ -275,4 +296,26 @@ void SphereRegion::Draw() {
 
     drawManager_->DrawSphereRegion(this);
 
+}
+
+void SphereRegion::SetColor(const Vector4& color) {
+    // マテリアル色（テクスチャと乗算される想定）
+    Material* mat = nullptr;
+    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+    mat->color = color;
+}
+
+void SphereRegion::SetInstanceColor(uint32_t index, const Vector4& color) {
+    if (index >= instanceColors_.size()) {
+        assert(false && "SphereRegion::SetInstanceColor: index out of range");
+        return;
+    }
+    instanceColors_[index] = color;
+    instanceDirty_ = true;
+}
+
+void SphereRegion::SetAllInstanceColor(const Vector4& color) {
+    if (instanceColors_.empty()) { return; }
+    std::fill(instanceColors_.begin(), instanceColors_.end(), color);
+    instanceDirty_ = true;
 }

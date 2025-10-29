@@ -3,11 +3,11 @@
 #include <array>
 
 #include "math/Vector2.h"
+#include "3D/SphereClass.h"
+#include "3D/CylinderClass.h"
 #include "audio/Se.h"
 #include <memory>
 
-class SphereClass;
-class CylinderClass;
 class Camera;
 
 class InputManager;
@@ -24,10 +24,10 @@ public:
 	void Input();
 	void Stan();
 	void disCalculation(Vector2 pos);
+	void DrawSet();
 	void Update();
 	void Draw();
-	void BulletDraw () ;
-	void DrawSet();
+	void BulletDraw();
 
 	//プレイヤー
 	Vector2 GetPositon() { return pos_; }
@@ -45,6 +45,8 @@ public:
 	void SetIsStan() {
 		stanTime_ = 60;
 		isStan_ = true;
+		sphere_->SetColor(stanColor_);
+		cylinder_->SetColor(stanColor_);
 	}
 	float GetDisToCore() { return disToCore_; }
 
@@ -56,6 +58,9 @@ private:
 	// 描画用生成物
 	std::unique_ptr<SphereClass> sphere_ = nullptr;
 	std::unique_ptr<CylinderClass> cylinder_ = nullptr;
+
+	Vector4 normalColor_ = { 0.4f,0.4f,0.7f,1.0f };
+	Vector4 stanColor_ = { 0.7f,0.4f,0.4f,1.0f };
 
 	std::unique_ptr<Se> se_playerAction_ = nullptr;
 
