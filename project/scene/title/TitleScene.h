@@ -76,6 +76,8 @@ private: // メンバ変数
 
     std::unique_ptr<Sprite> text_press = nullptr;
 
+    bool isDraw_text_press;
+
     std::unique_ptr<PointLightClass> pointLight_ = nullptr;
     std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
 

@@ -114,9 +114,9 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode = false;
 
-    pointLight_ = std::make_unique<PointLightClass>();
+    pointLight_ = std::make_unique <PointLightClass>();
     pointLight_->Initialize();
-    pointLight_->SetPos(Vector3{ 0.0f,30.0f,0.0f });
+    pointLight_->SetPos(Vector3{ 0.0f,-5.0f,0.0f });
     engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
 
     spotLight_ = std::make_unique<SpotLightClass>();
@@ -141,7 +141,10 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     text_press = std::make_unique<Sprite>();
     text_press->Initialize(camera_.get(), "resources/texture/titleText_press.png");
-    
+    text_press->SetAnchor(0.5f, 0.5f);
+    text_press->SetPosition(camera_->GetViewportWidth() / 2.0f, camera_->GetViewportHeight() / 2.0f + 200.0f);
+    isDraw_text_press = true;
+
     // 文字プレースホルダ作成
     const int nLetters = 7;
     ObjClass* objs[nLetters] = {
@@ -369,6 +372,7 @@ void TitleScene::Update() {
     if (transPhase_ == TransPhase::None) {
         if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
             se_select->Play();
+            isDraw_text_press = false;
             transPhase_ = TransPhase::ZoomOut;
             transTimer_ = 0.0f;
             // 現在のXを開始値として保持（左寄りからのスタート）
@@ -415,6 +419,8 @@ void TitleScene::Update() {
     text_i->Update("text_i");
     text_ku->Update("text_ku");
     text_ru->Update("text_ru");
+
+    text_press->Update(true, "text_press");
 }
 
 void TitleScene::Draw() {
@@ -434,4 +440,13 @@ void TitleScene::Draw() {
     text_i->Draw();
     text_ku->Draw();
     text_ru->Draw();
+
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->ApplySpritePSO();
+
+    if (isDraw_text_press) {
+        text_press->Draw();
+    }
 }

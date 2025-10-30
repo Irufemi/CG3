@@ -7,7 +7,7 @@
 class Se {
 private:
     IXAudio2SourceVoice* voice_ = nullptr;
-    float volume_ = 1.0f; // SEは通常フルボリュームを想定
+    float volume_ = 0.6f; // SEは通常フルボリュームを想定
     std::shared_ptr<Sound> sound_;
     std::string soundKey_;
 
@@ -21,7 +21,7 @@ public:
     // audioManager は起動時に SetAudioManager でセットすること
     // filePath をロードして内部に保持。key を空にすると filePath がキーとして登録される
     // loop のデフォルトは false（初期設定でループ無し）
-    void Initialize(const std::string& filePath, const std::string& key = "", float volume = 1.0f, bool loop = false, bool autoPlay = false);
+    void Initialize(const std::string& filePath, const std::string& key = "", float volume = 0.6f, bool loop = false, bool autoPlay = false);
 
     // ランタイムで差し替え（ファイル／キー）
     bool SetSourceByFile(const std::string& filePath, const std::string& key = "", float volume = 1.0f);

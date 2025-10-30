@@ -63,10 +63,10 @@ private:
     const float kMinSpawnTimeFase1 = 1.0f;
     const float kMaxSpawnTimeFase1 = 5.0f;
 
-    const float kMinSpawnTimeFase2 = 0.7f;
-    const float kMaxSpawnTimeFase2 = 3.0f;
+    const float kMinSpawnTimeFase2 = 0.75f;
+    const float kMaxSpawnTimeFase2 = 3.5f;
 
-    const float kMinSpawnTimeFase3 = 0.3f;
+    const float kMinSpawnTimeFase3 = 0.4f;
     const float kMaxSpawnTimeFase3 = 1.5f;
 
 
@@ -114,6 +114,8 @@ private: // メンバ変数(ゲーム部分)
     //乱数の分布(敵を生成する目標時間)
     std::uniform_real_distribution<float> spawnTime_[3];
 
+    uint32_t killEnemyCount_;
+
     std::unique_ptr<Bgm> bgm = nullptr;
 
     std::unique_ptr<Se> se_enemy = nullptr;
@@ -132,6 +134,30 @@ private: // メンバ変数(ゲーム部分)
     int    gameTimerDigits_ = 4;   // 固定 "XX.XX" 表示（小数点は別に描画する想定）
     float  gameTimeLimitSec_ = 60.0f; // 制限時間（秒）
     bool   showGameTimer_ = true;
+
+    // ==== 追加: ゲームオーバー用メンバ ====
+
+    // 結果表示用テキスト
+    std::unique_ptr<NumberText> resultKillText_;
+    std::unique_ptr<NumberText> resultTimeText_;
+    // 結果表示用ドットスプライト
+    std::unique_ptr<Sprite>    resultDotSprite_;
+    // 表示桁数
+    int    resultKillDigits_ = 4;     // 表示桁（倒した数）
+    int    resultTimeDigits_ = 4;     // 表示桁（秒表示。例: "SScc" = 4桁で SS.cc）
+    // スケール
+    float  resultKillScale_  = 1.2f;
+    float  resultTimeScale_  = 1.2f;
+    // マージン
+    float  resultKillMargin_ = 16.0f; // ラベルと数字の間隔(px)
+    float  resultTimeMargin_ = 16.0f;
+    // 表示フラグ
+    bool   showResultNumbers_ = true;
+
+    Vector2 resultKillPos_{ 0.0f, 0.0f };   // 倒した数表示の right-top（手動 or 自動）
+    Vector2 resultTimePos_{ 0.0f, 0.0f };   // 生存時間表示の right-top（手動 or 自動）
+    bool   resultKillManualPos_ = true;    // true のとき resultKillPos_ を固定（ImGuiで移動）
+    bool   resultTimeManualPos_ = true;    // true のとき resultTimePos_ を固定（ImGuiで移動）
 
 private: // メンバ変数(ゲーム内描画物)
 
@@ -153,8 +179,19 @@ private: // メンバ変数(ゲーム内描画物)
     // 文字(敵増える)
     std::unique_ptr<Sprite> text_period_ = nullptr;
 
+    // 文字(倒した敵の数)
+    std::unique_ptr<Sprite> text_killEnemy_ = nullptr;
+
+    // 文字(生き残った時間   )
+    std::unique_ptr<Sprite> text_aliveTime_ = nullptr;
+
+    // 文字(回転入力 )
+    std::unique_ptr<Sprite> text_rotate_ = nullptr;
+
     // 背景の倍率ゾーン
     std::unique_ptr<Circle2D> zoneCircles_[3];
+
+    bool resultPhase_;
 
 private: // メンバ変数(システム)
 
@@ -205,14 +242,12 @@ private: // メンバ変数(システム)
     Vector2 countdownCenter_{ 0.0f, 0.0f };   // 表示中心（画面中心を初期化時に設定）
     int   countdownDisplayDigits_ = 1;        // 現在の桁数（内部管理）
 
-    // --- HP アイコン（調整可能） ---
+    // --- HP アイコン（Sprite: heart_gloss.png を横並び表示） ---
     static inline const int kMaxHpIcons = 10;
-    std::unique_ptr<SphereClass> hpIcons_[kMaxHpIcons];
-    Vector2 hpIconsPos_{ 70.0f, 740.0f };       // 第1アイコンの中心（px）
-    float   hpIconSpacing_ = 8.0f;              // アイコン間のギャップ（px）
-    float   hpIconScreenRadius_ = 12.0f;        // 表示半径（px）
-    float   hpIconTargetZ_ = 0.1f;              // スクリーン→ワールド変換で使う Z 平面
-    Vector4 hpIconColor_ = Vector4{ 1.0f, 0.0f, 0.0f, 1.0f }; // RGBA
+    std::unique_ptr<Sprite> hpIconSprites_[kMaxHpIcons];
+    Vector2 hpIconsPos_{ 70.0f, 740.0f };     // 第1アイコンの中心（px）
+    float   hpIconSpacing_ = 8.0f;            // アイコン間隔（px）
+    float   hpIconScreenRadius_ = 12.0f;      // 半径（px）→ サイズは直径 2R を使用
     bool    hpIconsVisible_ = true;
 
 public: // メンバ関数

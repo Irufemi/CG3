@@ -48,6 +48,8 @@ static float ScreenRadiusToWorld(const Camera* cam, const Vector2& center, float
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
 
+    killEnemyCount_ = 0;
+
     // 参照したものをコピー
     // エンジン
     this->engine_ = engine;
@@ -250,6 +252,20 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     text_slash_->SetSize(19.0f, 38.0f);
     text_slash_->SetPosition(438.0f, 720.0f);
 
+    text_killEnemy_ = std::make_unique<Sprite>();
+    text_killEnemy_->Initialize(camera_.get(), "resources/texture/gameText_killEnemy.png");
+    text_killEnemy_->SetAnchor(0.5f, 0.5f);
+    text_killEnemy_->SetPosition(camera_->GetViewportWidth() / 2.0f, 200.0f);
+
+    text_aliveTime_ = std::make_unique<Sprite>();
+    text_aliveTime_->Initialize(camera_.get(), "resources/texture/gameText_aliveTime.png");
+    text_aliveTime_->SetAnchor(0.5f, 0.5f);
+    text_aliveTime_->SetPosition(camera_->GetViewportWidth() / 2.0f, 450.0f);
+
+    text_rotate_ = std::make_unique<Sprite>();
+    text_rotate_->Initialize(camera_.get(), "resources/texture/gameText_Rotate.png");
+    text_rotate_->SetSize(171.0f, 64.0f);
+
     // ==== 弾数UI ====
     bulletNowText_ = std::make_unique<NumberText>();
     bulletNowText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, 2);
@@ -269,6 +285,20 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     coreCircle_->SetInfo({ Vector3{ circle_.center.x, circle_.center.y, 0.0f }, circle_.radius });
     // 赤（アルファは見た目で調整してください）
     coreCircle_->SetColor(Vector4{ 1.0f, 0.0f, 0.0f, 0.35f });
+
+    // HPアイコン初期化（Sprite: heart_gloss.png）
+    for (int i = 0; i < kMaxHpIcons; ++i) {
+        hpIconSprites_[i] = std::make_unique<Sprite>();
+        hpIconSprites_[i]->Initialize(camera_.get(), "resources/texture/heart_gloss.png");
+        hpIconSprites_[i]->SetAnchor(0.5f, 0.5f);
+        const float d = hpIconScreenRadius_ * 2.0f; // 直径
+        const float step = d + hpIconSpacing_;
+        const float cx = hpIconsPos_.x + i * step;
+        const float cy = hpIconsPos_.y;
+        hpIconSprites_[i]->SetSize(d, d);
+        hpIconSprites_[i]->SetPosition(cx, cy);
+        hpIconSprites_[i]->Update(false, "HPIconInit");
+    }
 
     // --- ゲームオーバー拡大用パネル生成 ---
     {
@@ -317,21 +347,36 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         gameTimerCenter_ = Vector2{ vw * 0.5f, 32.0f };
     }
 
-    // === Initialize 内（coreCircle_ の直後に挿入） ===
-    // HPアイコン初期化（SphereClass で描画）
-    for (int i = 0; i < kMaxHpIcons; ++i) {
-        hpIcons_[i] = std::make_unique<SphereClass>();
-        hpIcons_[i]->Initialize(camera_.get(), "resources/whiteTexture.png"); // テクスチャ無し（必要なら指定）
-        // スクリーン中心をワールドへ変換
-        Vector2 screenCenter{ hpIconsPos_.x + i * (hpIconScreenRadius_ * 2.0f + hpIconSpacing_), hpIconsPos_.y };
-        Vector3 worldCenter = ScreenToWorldOnZ(camera_.get(), screenCenter, hpIconTargetZ_);
-        worldCenter.z += 0.05f; // わずかに手前へ（必要に応じ調整）
-        float worldRadius = ScreenRadiusToWorld(camera_.get(), screenCenter, hpIconScreenRadius_, hpIconTargetZ_);
-        Sphere s; s.center = worldCenter; s.radius = worldRadius;
-        hpIcons_[i]->SetInfo(s);
-        hpIcons_[i]->SetColor(hpIconColor_);
-        hpIcons_[i]->Update(false);
-    }
+    // === Initialize 内（coreCircle_ の直後の Sphere 初期化ブロックを差し替え） ===
+
+    resultPhase_ = false;
+
+    // 結果表示用の NumberText（倒した数）
+    resultKillText_ = std::make_unique<NumberText>();
+    resultKillText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, static_cast<size_t>(resultKillDigits_));
+    resultKillText_->SetTracking(0.0f);
+    resultKillText_->SetScale(resultKillScale_);
+
+    // 結果表示用の NumberText（生き残った秒数：小数点2桁 -> NNNN 形式で '.' は別スプライト）
+    resultTimeText_ = std::make_unique<NumberText>();
+    resultTimeText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, static_cast<size_t>(resultTimeDigits_));
+    resultTimeText_->SetTracking(0.0f);
+    resultTimeText_->SetScale(resultTimeScale_);
+
+    // ドット（'.'）は別スプライトで描く
+    resultDotSprite_ = std::make_unique<Sprite>();
+    resultDotSprite_->Initialize(camera_.get(), "resources/texture/gameText_period.png");
+    resultDotSprite_->SetAnchor(0.5f, 0.5f);
+    resultDotSprite_->SetSize(19.0f * resultTimeScale_, 38.0f * resultTimeScale_);
+
+    // --- 固定配置（ImGui を使わない前提） ---
+    // 「アンカー: 中心」を満たすため、ここでは result*Pos_ に center座標を保存します。
+    const float centerX = camera_->GetViewportWidth() * 0.5f;
+    resultKillPos_ = Vector2{ centerX, 280.0f }; // center(x,y)
+    resultTimePos_ = Vector2{ centerX, 530.0f }; // center(x,y)
+    // 手動モード（コード上で固定）にする
+    resultKillManualPos_ = true;
+    resultTimeManualPos_ = true;
 }
 
 // 更新
@@ -340,20 +385,63 @@ void GameScene::Update() {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 
     ImGui::Begin("GameScene");
-    // pointLight / spotLight のデバッグ表示（既存）
-    pointLight_->Debug();
-    spotLight_->Debug();
+    ImGui::SeparatorText("Result Display");
+    ImGui::Checkbox("Show Result Numbers", &showResultNumbers_);
+    if (ImGui::DragFloat("Kill Scale", &resultKillScale_, 0.01f, 0.1f, 10.0f)) {
+        if (resultKillText_) resultKillText_->SetScale(resultKillScale_);
+    }
+    if (ImGui::DragFloat("Time Scale", &resultTimeScale_, 0.01f, 0.1f, 10.0f)) {
+        if (resultTimeText_) resultTimeText_->SetScale(resultTimeScale_);
+        if (resultDotSprite_) resultDotSprite_->SetSize(19.0f * resultTimeScale_, 38.0f * resultTimeScale_);
+    }
+    int rkd = resultKillDigits_;
+    if (ImGui::SliderInt("Kill Digits", &rkd, 1, 6)) {
+        resultKillDigits_ = rkd;
+        if (resultKillText_) resultKillText_->SetMaxDigits(static_cast<size_t>(resultKillDigits_));
+    }
+    int rtd = resultTimeDigits_;
+    if (ImGui::SliderInt("Time Digits (incl decimals)", &rtd, 2, 6)) {
+        resultTimeDigits_ = rtd;
+        if (resultTimeText_) resultTimeText_->SetMaxDigits(static_cast<size_t>(resultTimeDigits_));
+    }
+    ImGui::DragFloat("Kill Margin (px)", &resultKillMargin_, 1.0f, 0.0f, 400.0f);
+    ImGui::DragFloat("Time Margin (px)", &resultTimeMargin_, 1.0f, 0.0f, 400.0f);
+    if (ImGui::Button("Sync dot size")) {
+        if (resultDotSprite_) resultDotSprite_->SetSize(19.0f * resultTimeScale_, 38.0f * resultTimeScale_);
+    }
 
-    // HPアイコン調整パネル
-    ImGui::SeparatorText("HP Icons");
-    ImGui::Checkbox("Show HP Icons", &hpIconsVisible_);
-    ImGui::DragFloat2("HP Icons Pos (px)", &hpIconsPos_.x, 1.0f, 0.0f, camera_->GetViewportWidth());
-    ImGui::DragFloat("HP Icon Spacing (px)", &hpIconSpacing_, 1.0f, 0.0f, 300.0f);
-    ImGui::DragFloat("HP Icon Screen Radius (px)", &hpIconScreenRadius_, 0.5f, 1.0f, 200.0f);
-    ImGui::DragFloat("HP Icon Target Z", &hpIconTargetZ_, 0.01f, -50.0f, 50.0f);
-    float col[4] = { hpIconColor_.x, hpIconColor_.y, hpIconColor_.z, hpIconColor_.w };
-    if (ImGui::ColorEdit4("HP Icon Color", col)) {
-        hpIconColor_ = Vector4{ col[0], col[1], col[2], col[3] };
+    ImGui::SeparatorText("Result Position");
+    ImGui::Checkbox("Manual Kill Position", &resultKillManualPos_);
+    {
+        float kp[2] = { resultKillPos_.x, resultKillPos_.y };
+        if (ImGui::DragFloat2("Kill RightTop", kp, 1.0f)) {
+            resultKillPos_ = Vector2{ kp[0], kp[1] };
+            resultKillManualPos_ = true; // ドラッグしたら手動モードに切替
+        }
+        if (ImGui::Button("Auto Align Kill")) {
+            resultKillManualPos_ = false; // 次回 Draw で自動位置に戻す
+        }
+    }
+    ImGui::Checkbox("Manual Time Position", &resultTimeManualPos_);
+    {
+        float tp[2] = { resultTimePos_.x, resultTimePos_.y };
+        if (ImGui::DragFloat2("Time RightTop", tp, 1.0f)) {
+            resultTimePos_ = Vector2{ tp[0], tp[1] };
+            resultTimeManualPos_ = true;
+        }
+        if (ImGui::Button("Auto Align Time")) {
+            resultTimeManualPos_ = false;
+        }
+    }
+
+    // ImGui デバッグブロック内に貼る（動作確認用）
+    ImGui::SeparatorText("HP Icon Debug");
+    ImGui::Text("coreHp = %d", coreHp_);
+    ImGui::Text("hpIcon[0] ptr = %p", static_cast<void*>(hpIconSprites_[0].get()));
+    if (hpIconSprites_[0]) {
+        Vector2 sz = hpIconSprites_[0]->GetSize();
+        Vector2 pos = hpIconSprites_[0]->GetPosition2D();
+        ImGui::Text("hpIcon size=(%.1f,%.1f) pos=(%.1f,%.1f)", sz.x, sz.y, pos.x, pos.y);
     }
 
     ImGui::End();
@@ -377,6 +465,7 @@ void GameScene::Update() {
             countdownTime_ = 0.0f;
             // カウント終了時の追加処理があればここへ（例: 効果音）
         }
+    } else if (resultPhase_) {
     } else {
         // 通常のゲームアップデートを実行
         GameSystem();
@@ -399,47 +488,19 @@ void GameScene::Update() {
     text_slash_->Update(false);
     text_pleaseAlive_->Update(false);
     text_addEnemy_->Update(false);
-    text_period_->Update(true,"text_period_");
-
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    // デバッグ UI
-
-    ImGui::Begin("GameScene");
-
-
-    ImGui::SeparatorText("Game Timer");
-    ImGui::Checkbox("Show Timer", &showGameTimer_);
-    float tcenter[2] = { gameTimerCenter_.x, gameTimerCenter_.y };
-    if (ImGui::DragFloat2("Timer Center", tcenter, 1.0f)) {
-        gameTimerCenter_.x = tcenter[0];
-        gameTimerCenter_.y = tcenter[1];
+    text_period_->Update(false);
+    text_rotate_->Update(true, "text_rotate_");
+    if (resultPhase_) {
+        text_killEnemy_->Update(false);
+        text_aliveTime_->Update(false);
+        resultDotSprite_->Update(true, "resultDot_");
     }
-    if (ImGui::DragFloat("Timer Scale", &gameTimerScale_, 0.01f, 0.1f, 10.0f)) {
-        if (gameTimerText_) gameTimerText_->SetScale(gameTimerScale_);
-    }
-    int digits = gameTimerDigits_;
-    if (ImGui::SliderInt("Timer Digits (incl decimals)", &digits, 2, 6)) {
-        gameTimerDigits_ = digits;
-        if (gameTimerText_) gameTimerText_->SetMaxDigits(static_cast<size_t>(gameTimerDigits_));
-    }
-    ImGui::Text("Remaining = %.2f (Timer = %.2f)", std::max(0.0f, gameTimeLimitSec_ - Timer_), Timer_);
-
-
-    ImGui::End();
-#endif // _DEBUG
 
     // playerの座標などを描画物に反映
     player_->DrawSet();
 
     // 地面のワールド反映（カメラ更新後毎フレーム）
     UpdateGroundObjects();
-
-    //キーが押されていたら
-    if (PressedVK('P')) {
-        if (g_SceneManager) {
-            g_SceneManager->Request(SceneName::title);
-        }
-    }
 
     // --- GameOver 拡大演出の開始トリガ ---
     if (gameOver_ && !gameOverAnimPlayed_) {
@@ -454,8 +515,16 @@ void GameScene::Update() {
         gameOverTargetSize_ = Vector2{ vw * 0.9f, vh * 0.9f };
         if (gameOverPlate_) {
             gameOverPlate_->SetAnchor(0.5f, 0.5f);
-            gameOverPlate_->SetPosition(vw * 0.5f, vh * 0.5f, 0.0f);
+            gameOverPlate_->SetPosition(vw * 0.5f, vh * 0.5f, 0.0f);  
             gameOverPlate_->SetSize(0.0f, 0.0f);
+        }
+    }
+
+    if (resultPhase_) {
+        if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+            if (g_SceneManager) {
+                g_SceneManager->Request(SceneName::title);
+            }
         }
     }
 
@@ -473,6 +542,20 @@ void GameScene::Update() {
             gameOverPlate_->SetSize(gameOverTargetSize_.x, gameOverTargetSize_.y);
             // アニメーション終了。以降は再トリガーしない（Playedがtrueのため）
             gameOverAnimActive_ = false;
+            resultPhase_ = true;
+        }
+    }
+
+    // HPアイコンの位置・サイズを毎フレーム反映
+    if (hpIconSprites_[0]) {
+        const float d = hpIconScreenRadius_ * 2.0f;
+        const float step = d + hpIconSpacing_;
+        for (int i = 0; i < kMaxHpIcons; ++i) {
+            const float cx = hpIconsPos_.x + i * step;
+            const float cy = hpIconsPos_.y;
+            hpIconSprites_[i]->SetSize(d, d);
+            hpIconSprites_[i]->SetPosition(cx, cy);
+            hpIconSprites_[i]->Update(false, "HPIcon");
         }
     }
 }
@@ -555,7 +638,7 @@ void GameScene::Draw() {
         bulletMaxText_->DrawString("10");
     }
 
-
+    text_rotate_->Draw();
     text_bullet_->Draw();
     text_HP_->Draw();
     text_slash_->Draw();
@@ -566,16 +649,14 @@ void GameScene::Draw() {
     if (hpIconsVisible_) {
         const int drawCount = std::clamp(coreHp_, 0, kMaxHpIcons);
         if (drawCount > 0) {
-            // 深度バッファを汚さないため DepthWrite を無効化して描画（Z位置での前寄せも併用）
+            // UI は最前面に描く（2DスプライトPSO / DepthWrite 無効）
             engine_->SetBlend(BlendMode::kBlendModeNormal);
             engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-            engine_->ApplyPSO();
+            engine_->ApplySpritePSO();
+
             for (int i = 0; i < drawCount; ++i) {
-                if (hpIcons_[i]) hpIcons_[i]->Draw();
+                if (hpIconSprites_[i]) hpIconSprites_[i]->Draw();
             }
-            // 後続の描画のため DepthWrite を戻す
-            engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-            engine_->ApplyPSO();
         }
     }
 
@@ -640,6 +721,94 @@ void GameScene::Draw() {
 
         countdownText_->DrawNumber(static_cast<uint64_t>(disp));
     }
+
+    // --- resultPhase_ 描画（置換済） ---
+    if (resultPhase_) {
+        text_killEnemy_->Draw();
+        text_aliveTime_->Draw();
+
+        // --- 倒した敵数（整数） ---
+        if (resultKillText_ && text_killEnemy_) {
+            const size_t pad = static_cast<size_t>(std::max(1, resultKillDigits_));
+            const Vector2 lblPos = text_killEnemy_->GetPosition2D();
+
+            const float digitsW = resultKillText_->GetWidthForDigits(pad);
+            const float scaledCellH = resultKillText_->GetCellH() * resultKillText_->GetScale();
+
+            if (resultKillManualPos_) {
+                // resultKillPos_ は center (x,y)
+                const float centerX = resultKillPos_.x;
+                const float centerY = resultKillPos_.y;
+                const float rightTopX = centerX + digitsW * 0.5f;
+                const float topY = centerY - (scaledCellH * 0.5f);
+                resultKillText_->SetPosRightTop(Vector2{ rightTopX, topY });
+            } else {
+                // 自動配置（画面中央合わせ。必要ならラベル追従ロジックに変更可）
+                const float defaultRightX = camera_->GetViewportWidth() * 0.5f + digitsW * 0.5f;
+                const float defaultTopY = lblPos.y - (scaledCellH * 0.5f);
+                resultKillText_->SetPosRightTop(Vector2{ defaultRightX, defaultTopY });
+            }
+            resultKillText_->DrawNumber(static_cast<uint64_t>(killEnemyCount_));
+        }
+
+        // --- 生き残った秒数（小数点2桁、ドットは別スプライトで描画） ---
+        if (resultTimeText_ && text_aliveTime_) {
+            const size_t pad = static_cast<size_t>(std::max(2, resultTimeDigits_));
+            const float survived = std::min(Timer_, gameTimeLimitSec_);
+            const int centis = static_cast<int>(std::floor(survived * 100.0f + 0.5f)); // 四捨五入
+
+            char fmt[8]; sprintf_s(fmt, "%%0%dd", static_cast<int>(pad));
+            char buf[16]; sprintf_s(buf, fmt, centis);
+
+            const Vector2 lblPos = text_aliveTime_->GetPosition2D();
+
+            const float digitsW = resultTimeText_->GetWidthForDigits(pad);
+            const float scaledCellW = resultTimeText_->GetCellW() * resultTimeText_->GetScale();
+            const float scaledCellH = resultTimeText_->GetCellH() * resultTimeText_->GetScale();
+            const float scaledTracking = resultTimeText_->GetTracking() * resultTimeText_->GetScale();
+
+            if (resultTimeManualPos_) {
+                // resultTimePos_ は center (x,y)
+                const float centerX = resultTimePos_.x;
+                const float centerY = resultTimePos_.y;
+                const float rightTopX = centerX + digitsW * 0.5f;
+                const float topY = centerY - (scaledCellH * 0.5f);
+                resultTimeText_->SetPosRightTop(Vector2{ rightTopX, topY });
+            } else {
+                const float defaultRightX = camera_->GetViewportWidth() * 0.5f + digitsW * 0.5f;
+                const float defaultTopY = lblPos.y - (scaledCellH * 0.5f);
+                resultTimeText_->SetPosRightTop(Vector2{ defaultRightX, defaultTopY });
+            }
+
+            resultTimeText_->DrawString(std::string(buf));
+
+            // ドット '.' を数字の間に描画（center を基準に配置）
+            if (resultDotSprite_) {
+                // 右Top を求める（現在 SetPosRightTop に与えた値を逆算する）
+                float usedRightX;
+                float usedTopY;
+                if (resultTimeManualPos_) {
+                    usedRightX = (resultTimePos_.x + digitsW * 0.5f);
+                    usedTopY = (resultTimePos_.y - (scaledCellH * 0.5f));
+                } else {
+                    usedRightX = camera_->GetViewportWidth() * 0.5f + digitsW * 0.5f;
+                    usedTopY = lblPos.y - (scaledCellH * 0.5f);
+                }
+
+                const float leftX = usedRightX - digitsW; // digits 左端
+                const int integerCount = std::max(0, static_cast<int>(pad) - 2); // 整数桁数
+                const float integerBlockWidth = static_cast<float>(integerCount) * scaledCellW
+                    + static_cast<float>(std::max(0, integerCount - 1)) * scaledTracking;
+                const float dotCenterX = leftX + integerBlockWidth + (scaledTracking * 0.5f);
+                const float dotCenterY = usedTopY + (scaledCellH * 0.5f);
+
+                resultDotSprite_->SetSize(19.0f * resultTimeText_->GetScale(), 38.0f * resultTimeText_->GetScale());
+                resultDotSprite_->SetAnchor(0.5f, 0.5f);
+                resultDotSprite_->SetPosition(dotCenterX, dotCenterY);
+                resultDotSprite_->Draw();
+            }
+        }
+    }
 }
 
 void GameScene::GameSystem() {
@@ -654,7 +823,7 @@ void GameScene::GameSystem() {
     BulletRecovery();
     EnemyProcess();
 
-    if (coreHp_ == 0) {
+    if (coreHp_ == 0 || Timer_ >= 60.0f) {
         gameOver_ = true;
     }
 
@@ -672,6 +841,7 @@ void GameScene::EnemyProcess() {
 
     if (ingameTimer_ >= time_) {
         //敵を生成する	
+        e_Manager_->Spawn(enemy_x_(randomEngine_), Vector2{ circle_.center.x,circle_.center.y });
         e_Manager_->Spawn(enemy_x_(randomEngine_), Vector2{ circle_.center.x,circle_.center.y });
 
         //経過時間から今回スポーンにかかった時間を減算
@@ -699,10 +869,11 @@ void GameScene::EnemyProcess() {
         }
 
         //敵と弾
-        for (auto& b : player_->GetBullet())
+        for (auto& b : player_->GetBullet()){
             if (e.IsCollision(b.GetPositon(), b.GetRadius().x)) {
                 e.SetIsAlive();
                 se_enemy->Play();
+                killEnemyCount_++;
 
                 if (player_->GetDisToCore() <= 316.6f) {
                     player_->CollectBullet(1);
@@ -712,10 +883,10 @@ void GameScene::EnemyProcess() {
                     player_->CollectBullet(3);
                 }
             }
+        }
 
         //敵とプレイヤー
         if (e.IsCollision(player_->GetPositon(), player_->GetRadius().x)) {
-            e.SetIsAlive();
             player_->SetIsStan();
 
             se_playerstan->Play();
